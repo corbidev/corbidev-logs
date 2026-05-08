@@ -1,0 +1,31 @@
+# Exemple d'utilisation du workflow de liaison au projet GitHub avec version
+# Ce workflow ajoute automatiquement les PR et issues à un projet GitHub
+
+name: 🔗 Lier au projet GitHub
+
+on:
+  pull_request:
+    branches: [ develop, homol, main ]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  link-project-in-pr:
+    name: 🔗 Lier le projet a la PR
+    uses: LeZouzouEnWeb/workflows/.github/workflows/link-project-in-pr.yml@v1.0.10
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    secrets:
+      # PAT avec permissions repository-projects pour ajouter au projet
+      ADD_TO_PROJECT_PAT: ${{ secrets.ADD_TO_PROJECT_PAT }}
+    with:
+      # URL du projet GitHub
+      project-url: https://github.com/users/LeZouzouEnWeb/projects/4
+      # Mot-clé pour lier l'issue (Closes, Fixes, Resolves, etc.)
+      PR_KEYWORD: Closes

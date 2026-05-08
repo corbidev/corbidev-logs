@@ -1,0 +1,81 @@
+services:
+# ##> BASE DE DONNÉES // ADMINER ET mariadb
+    adminer:
+        platform: linux/x86_64
+        container_name: adminer_${NAME}_${ADMINER_VERSION}
+        image: adminer:${ADMINER_VERSION}
+        restart: no
+        ports:
+            - ${ADMINER_LOCALHOST_PORT}:${ADMINER_DOCKER_PORT}
+        env_file:
+            - .env
+        depends_on:
+            - database
+
+    phpmyadmin:
+        platform: linux/x86_64
+        container_name: phpmyadmin_${NAME}_${PHPMYADMIN_VERSION}
+        image: phpmyadmin:${PHPMYADMIN_VERSION}
+        restart: always
+        ports:
+        - ${PHPMYADMIN_LOCALHOST_PORT}:${PHPMYADMIN_DOCKER_PORT}
+        env_file:
+            - .env
+        environment:
+        - PMA_ARBITRARY=1
+        depends_on:
+            - database
+
+
+
+
+
+###> doctrine/doctrine-bundle ###
+    database:
+        platform: linux/x86_64
+        container_name: mariadb_${NAME}_${MARIADB_VERSION}
+        image: mariadb:${MARIADB_VERSION}
+        restart: no
+        env_file:
+            - .env
+        volumes:
+            - ./${FOLDER_DATASQL}:/docker-entrypoint-initdb.d/
+            - ./${FOLDER_DATABASE}:/var/lib/mysql:rw
+        ports:
+            - ${SQL_LOCALHOST_PORT}:${SQL_DOCKER_PORT}
+
+    
+###< doctrine/doctrine-bundle ###
+# ##< BASE DE DONNÉES // ADMINER ET mariadb
+
+
+##> SMTP4DEV - Serveur SMTP de développement
+    smtp4dev:
+        image: rnwood/smtp4dev:latest
+        container_name: smtp4dev_${NAME}
+        restart: no
+        ports:
+            - ${SMTP4DEV_LOCALHOST_WEB_PORT}:${SMTP4DEV_DOCKER_WEB_PORT}    # Interface Web
+            - ${SMTP4DEV_LOCALHOST_SMTP_PORT}:${SMTP4DEV_DOCKER_SMTP_PORT}  # SMTP
+        environment:
+            - SMTP4DEV_HOSTNAME=smtp4dev.local
+            - SMTP4DEV_SMTP_USERNAME=dev
+            - SMTP4DEV_SMTP_PASSWORD=dev
+            - SMTP4DEV_SMTP_TLS_MODE=None
+            - SMTP4DEV_STORAGE_RETENTION_DAYS=7
+            - SMTP4DEV_RELAY_MODE=Off
+        volumes:
+            - smtp4dev-data:/smtp4dev
+        networks:
+            - dev
+# ##< SMTP4DEV - Serveur SMTP de développement
+
+volumes:
+###> doctrine/doctrine-bundle ###
+    database:
+###< doctrine/doctrine-bundle ###
+    smtp4dev-data:
+
+networks:
+    dev:
+        driver: bridge

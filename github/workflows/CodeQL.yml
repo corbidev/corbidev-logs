@@ -1,0 +1,26 @@
+# Exemple d'utilisation du workflow CodeQL avec version
+# Ce workflow effectue une analyse de sécurité du code JavaScript/TypeScript
+
+name: 🔣 Analyse CodeQL
+
+on:
+  push:
+    branches: [ main, homol, develop ]
+  pull_request:
+    branches: [ main, homol, develop ]
+  schedule:
+    - cron: '0 3 * * 1'  # Tous les lundis à 3h du matin (optionnel)
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  codeql:
+    name: 🔣 Analyse CodeQL
+    uses: LeZouzouEnWeb/workflows/.github/workflows/CodeQL.yml@v1.0.10
+    permissions:
+      contents: read
+      security-events: write
+      actions: read

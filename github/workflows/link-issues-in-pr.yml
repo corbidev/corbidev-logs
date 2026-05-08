@@ -1,0 +1,21 @@
+# Exemple d'utilisation du workflow de liaison de tickets avec version
+# Ce workflow détecte et lie automatiquement les tickets/issues dans les PR
+
+name: 🔗 Lier les tickets à la PR
+
+on:
+  pull_request:
+    branches: [ develop, homol, main ]
+    types: [opened, edited, synchronize, ready_for_review, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  link-issues-in-pr:
+    name: 🔗 Lier les tickets a la PR
+    uses: LeZouzouEnWeb/workflows/.github/workflows/link-issues-in-pr.yml@v1.0.10
+    permissions:
+      contents: read
+      pull-requests: write

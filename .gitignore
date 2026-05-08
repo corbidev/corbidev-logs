@@ -1,0 +1,28 @@
+###> symfony/framework-bundle ###
+.env
+.env.*
+!.env.*.example
+api/.env
+api/.env.*
+!api/.env.*.example
+/config/secrets/prod/prod.decrypt.private.php
+api/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+api/public/bundles/
+api/var/*
+!api/var/.gitkeep
+/vendor/
+api/vendor/
+api/migrations/*.php
+###> lexik/jwt-authentication-bundle ###
+api/config/jwt/*.pem
+###< lexik/jwt-authentication-bundle ###
+###< symfony/framework-bundle ###
+/.vscode/sftp*
+/.docker/database/mariadb
+deploy
+database/*
+!database/sql/
+api_*/
+temp/
+*.zip
