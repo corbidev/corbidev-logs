@@ -25,4 +25,4 @@ jobs:
       ADRESSE_GLOBAL: ${{ vars.ADRESSE_GLOBAL }}
       ADRESSE_LOCAL: ${{ vars.ADRESSE_LOCAL }}
       SFTP_PORT: '22'
-      create_missing_folder: false
+      create_missing_folder: true

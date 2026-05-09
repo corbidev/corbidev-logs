@@ -1,11 +1,9 @@
-name: Tests
+name: ⚪ Symfony tests
 
 on:
   pull_request:
     branches:
       - develop
-
-  pull_request:
 
 jobs:
   tests:
