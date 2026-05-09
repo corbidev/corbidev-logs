@@ -1,0 +1,25 @@
+# Exemple d'utilisation du workflow de commentaire et fermeture de ticket avec version
+# Ce workflow commente automatiquement les commits sur le ticket lié et le ferme après merge
+
+name: 📝 Commenter et clôturer le ticket
+
+on:
+  pull_request:
+    branches: [ develop ]
+    types: [closed]
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+
+jobs:
+  comment-and-close:
+    name: 📝 Commenter et clôturer le ticket
+    uses: LeZouzouEnWeb/workflows/.github/workflows/comment-and-close-ticket.yml@v1.0.11
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: write
+
+

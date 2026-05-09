@@ -1,0 +1,32 @@
+name: 🚀 Déploiement HOMOL
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - homol
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  deploy-homol:
+    name: 🚀 Déploiement HOMOL
+    if: github.event.pull_request.merged == true
+    uses: LeZouzouEnWeb/workflows/.github/workflows/deploy.yml@v1.0.10
+    permissions:
+      contents: write
+      pull-requests: write
+    secrets:
+      # Secrets requis pour le déploiement SSH
+      REMOTE_CHEMIN: ${{ secrets.REMOTE_CHEMIN }}        # Chemin de base sur le serveur
+      SFTP_HOST: ${{ secrets.SFTP_HOST }}                # Adresse du serveur
+      SFTP_USER: ${{ secrets.SFTP_USER }}                # Utilisateur SSH
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}    # Clé privée SSH
+    with:
+      # Variables pour construire le chemin distant
+      ADRESSE_GLOBAL: ${{ vars.ADRESSE_GLOBAL }}         # Ex: www
+      ADRESSE_LOCAL: ${{ vars.ADRESSE_LOCAL }}           # Ex: mon-site
+      remote_env: 'homol'
+      enable_mirror: true
