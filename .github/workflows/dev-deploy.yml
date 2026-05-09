@@ -21,7 +21,7 @@ jobs:
     if: |
       (github.event_name == 'pull_request' && github.event.pull_request.merged == true) ||
       (github.event_name == 'workflow_dispatch')
-    uses: LeZouzouEnWeb/workflows/.github/workflows/deploy.yml@v1.0.10
+    uses: LeZouzouEnWeb/workflows/.github/workflows/deploy.yml@v1.0.11
     permissions:
       contents: write
       pull-requests: write

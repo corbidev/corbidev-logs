@@ -19,7 +19,7 @@ permissions:
 jobs:
   codeql:
     name: 🔣 Analyse CodeQL
-    uses: LeZouzouEnWeb/workflows/.github/workflows/CodeQL.yml@v1.0.10
+    uses: LeZouzouEnWeb/workflows/.github/workflows/CodeQL.yml@v1.0.11
     permissions:
       contents: read
       security-events: write
