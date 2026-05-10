@@ -1,0 +1,216 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Queue\Presentation\Console;
+
+use App\Queue\Application\QueueConsumerInterface;
+use App\Queue\Infrastructure\QueueConsumeResult;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
+
+/**
+ * Commande CLI de consommation de queue.
+ *
+ * Responsabilités :
+ * - déclencher un batch de consommation
+ * - limiter le nombre d'items traités
+ * - afficher un résumé d'exécution
+ * - rester compatible CRON
+ *
+ * Invariants :
+ * - aucun daemon permanent
+ * - aucune boucle infinie
+ * - aucune logique métier
+ * - aucune dépendance Doctrine directe
+ *
+ * Utilisation :
+ *
+ * php bin/console app:queue:consume
+ *
+ * php bin/console app:queue:consume 500
+ *
+ * Compatible :
+ * - mutualisé
+ * - cron
+ * - exécution ponctuelle
+ */
+#[AsCommand(
+    name: 'app:queue:consume',
+    description: 'Consume queue batch and persist logs.',
+)]
+final class ConsumeQueueCommand extends Command
+{
+    /**
+     * Limite batch par défaut.
+     */
+    private const int DEFAULT_LIMIT = 100;
+
+    public function __construct(
+        private readonly QueueConsumerInterface $consumer,
+    ) {
+        parent::__construct();
+    }
+
+    /**
+     * Configure les arguments CLI.
+     */
+    protected function configure(): void
+    {
+        $this->addArgument(
+            'limit',
+            InputArgument::OPTIONAL,
+            'Maximum number of queue items to consume.',
+            self::DEFAULT_LIMIT,
+        );
+    }
+
+    /**
+     * Exécute la consommation queue.
+     */
+    protected function execute(
+        InputInterface $input,
+        OutputInterface $output,
+    ): int {
+        $io = new SymfonyStyle(
+            $input,
+            $output,
+        );
+
+        try {
+            $limit = $this->resolveLimit($input);
+
+            $start = microtime(true);
+
+            $result = $this->consumer->consume($limit);
+
+            $duration = microtime(true) - $start;
+
+            $this->renderSuccess(
+                $io,
+                $result,
+                $duration,
+            );
+
+            return Command::SUCCESS;
+        } catch (\Throwable $exception) {
+            $this->renderFailure(
+                $io,
+                $exception,
+            );
+
+            return Command::FAILURE;
+        }
+    }
+
+    /**
+     * Résout la limite batch CLI.
+     */
+    private function resolveLimit(
+        InputInterface $input,
+    ): int {
+        $value = $input->getArgument('limit');
+
+        if (is_int($value)) {
+            return $this->validateLimit($value);
+        }
+
+        if (!is_string($value)) {
+            throw new \InvalidArgumentException(
+                'Queue consume limit must be a string or integer.',
+            );
+        }
+
+        if (!ctype_digit($value)) {
+            throw new \InvalidArgumentException(
+                sprintf(
+                    'Invalid queue consume limit "%s".',
+                    $value,
+                ),
+            );
+        }
+
+        return $this->validateLimit(
+            (int) $value,
+        );
+    }
+
+    /**
+     * Vérifie la validité de la limite.
+     */
+    private function validateLimit(
+        int $limit,
+    ): int {
+        if ($limit <= 0) {
+            throw new \InvalidArgumentException(
+                'Queue consume limit must be greater than zero.',
+            );
+        }
+
+        return $limit;
+    }
+
+    /**
+     * Affiche le résumé de succès.
+     */
+    private function renderSuccess(
+        SymfonyStyle $io,
+        QueueConsumeResult $result,
+        float $duration,
+    ): void {
+        $io->success(
+            sprintf(
+                'Queue consumption completed in %.3f seconds.',
+                $duration,
+            ),
+        );
+
+        $io->table(
+            ['Metric', 'Value'],
+            [
+                [
+                    'Processed',
+                    (string) $result->getProcessedCount(),
+                ],
+                [
+                    'Failed',
+                    (string) $result->getFailedCount(),
+                ],
+                [
+                    'Duration',
+                    sprintf(
+                        '%.3f sec',
+                        $duration,
+                    ),
+                ],
+            ],
+        );
+    }
+
+    /**
+     * Affiche les erreurs critiques.
+     */
+    private function renderFailure(
+        SymfonyStyle $io,
+        \Throwable $exception,
+    ): void {
+        $io->error(
+            [
+                'Queue consumption failed.',
+                '',
+                sprintf(
+                    'Type: %s',
+                    $exception::class,
+                ),
+                sprintf(
+                    'Message: %s',
+                    $exception->getMessage(),
+                ),
+            ],
+        );
+    }
+}
