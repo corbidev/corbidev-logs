@@ -1,0 +1,245 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Queue\Infrastructure;
+
+use App\Queue\Application\QueueConsumeResult;
+use App\Queue\Application\QueueConsumerInterface;
+use App\Queue\Application\QueuePersistenceInterface;
+use App\Queue\Application\QueueReaderInterface;
+
+/**
+ * Consumer de queue disque.
+ *
+ * Responsabilités :
+ * - orchestrer la consommation batch
+ * - coordonner lecture et persistence
+ * - supprimer les fichiers persistés
+ * - déplacer les fichiers en failed
+ * - isoler les erreurs de persistence
+ * - garantir un traitement borné
+ *
+ * Invariants :
+ * - aucune logique métier
+ * - aucune dépendance Doctrine directe
+ * - aucune dépendance Symfony
+ * - mémoire bornée
+ * - compatible CRON
+ * - traitement progressif
+ * - aucune boucle infinie
+ *
+ * Flux :
+ * QueueReader
+ * →
+ * QueuePersistence
+ * →
+ * delete | failed
+ *
+ * Le consumer doit :
+ * - continuer malgré les erreurs isolées
+ * - ne jamais bloquer toute la queue
+ * - rester prédictible
+ * - rester idempotent
+ * - toujours isoler les corruptions
+ */
+final readonly class FileQueueConsumer implements QueueConsumerInterface
+{
+    public function __construct(
+        private QueueReaderInterface $reader,
+        private QueuePersistenceInterface $persistence,
+    ) {
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function consume(
+        int $limit = 100,
+    ): QueueConsumeResult {
+        $this->validateLimit($limit);
+
+        $result = new QueueConsumeResult();
+
+        foreach ($this->reader->readBatch($limit) as $item) {
+            try {
+                $this->consumeItem($item);
+
+                $result->incrementProcessed();
+
+                continue;
+            } catch (\Throwable $exception) {
+                $result->incrementFailed();
+
+                $movedToFailed = $this->handleFailedItem(
+                    $item,
+                    $exception,
+                );
+
+                if ($movedToFailed) {
+                    $result->incrementMovedToFailed();
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Consomme un item queue.
+     *
+     * @param array{
+     *     path: string,
+     *     payload: array<string, mixed>
+     * } $item
+     */
+    private function consumeItem(
+        array $item,
+    ): void {
+        $path = $this->extractPath($item);
+
+        $payload = $this->extractPayload($item);
+
+        /**
+         * Persistence technique.
+         *
+         * Toute exception doit :
+         * - interrompre cet item
+         * - être isolée
+         * - déclencher moveToFailed()
+         */
+        $this->persistence->persist($payload);
+
+        /**
+         * Suppression uniquement APRÈS persistence réussie.
+         */
+        $this->reader->delete($path);
+    }
+
+    /**
+     * Gère un item échoué.
+     *
+     * Toute erreur doit :
+     * - être isolée
+     * - ne jamais stopper le batch
+     * - déplacer le fichier en failed
+     * - éviter les boucles infinies
+     *
+     * @param array{
+     *     path?: mixed,
+     *     payload?: mixed
+     * } $item
+     */
+    private function handleFailedItem(
+        array $item,
+        \Throwable $exception,
+    ): bool {
+        try {
+            $path = $this->extractPath($item);
+
+            /**
+             * Le fichier peut déjà avoir disparu :
+             * - suppression concurrente
+             * - corruption
+             * - nettoyage externe
+             */
+            if (!file_exists($path)) {
+                return false;
+            }
+
+            $this->reader->moveToFailed($path);
+
+            return true;
+        } catch (\Throwable) {
+            /**
+             * Isolation volontaire.
+             *
+             * Le consumer ne doit jamais :
+             * - stopper tout le batch
+             * - relancer une exception secondaire
+             * - produire une cascade d'erreurs
+             */
+            return false;
+        }
+    }
+
+    /**
+     * Extrait le chemin queue.
+     *
+     * @param array<string, mixed> $item
+     */
+    private function extractPath(
+        array $item,
+    ): string {
+        $path = $item['path'] ?? null;
+
+        if (!is_string($path)) {
+            throw new \RuntimeException(
+                'Queue item path is invalid.',
+            );
+        }
+
+        $path = trim($path);
+
+        if ('' === $path) {
+            throw new \RuntimeException(
+                'Queue item path cannot be empty.',
+            );
+        }
+
+        return $path;
+    }
+
+    /**
+     * Extrait le payload queue.
+     *
+     * @param array<string, mixed> $item
+     *
+     * @return array<string, mixed>
+     */
+    private function extractPayload(
+        array $item,
+    ): array {
+        $payload = $item['payload'] ?? null;
+
+        if (!is_array($payload)) {
+            throw new \RuntimeException(
+                'Queue item payload is invalid.',
+            );
+        }
+
+        return $payload;
+    }
+
+    /**
+     * Vérifie la limite batch.
+     *
+     * La limite doit rester :
+     * - strictement positive
+     * - bornée
+     * - prédictible
+     */
+    private function validateLimit(
+        int $limit,
+    ): void {
+        if ($limit <= 0) {
+            throw new \InvalidArgumentException(
+                'Queue consume limit must be greater than zero.',
+            );
+        }
+
+        /**
+         * Protection anti batch massif.
+         *
+         * Évite :
+         * - surcharge mémoire
+         * - timeouts mutualisés
+         * - CRON trop longs
+         */
+        if ($limit > 10_000) {
+            throw new \InvalidArgumentException(
+                'Queue consume limit is too large.',
+            );
+        }
+    }
+}
