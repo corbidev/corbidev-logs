@@ -10,7 +10,6 @@ use App\Log\Domain\ValueObject\Fingerprint;
 use App\Log\Domain\ValueObject\HttpStatus;
 use App\Log\Domain\ValueObject\IpAddress;
 use App\Log\Domain\ValueObject\Request;
-use App\Log\Domain\ValueObject\Tags;
 use App\Log\Domain\ValueObject\Uri;
 use App\Log\Enum\Environment;
 use App\Log\Enum\LogLevel;
@@ -26,6 +25,16 @@ use PHPUnit\Framework\TestCase;
  * - garantir robustesse mémoire
  * - garantir stabilité domaine
  * - tester payloads hostiles
+ *
+ * IMPORTANT :
+ * ------------
+ * Les tags ont été supprimés du domaine.
+ *
+ * Les crash tests doivent désormais :
+ * - rester focalisés sur LogEntry
+ * - rester déterministes
+ * - rester bornés
+ * - ne contenir aucune logique legacy
  */
 final class LogEntryCrashTest extends TestCase
 {
@@ -33,7 +42,7 @@ final class LogEntryCrashTest extends TestCase
     {
         $context = [];
 
-        for ($i = 0; $i < 10000; $i++) {
+        for ($i = 0; $i < 10000; ++$i) {
             $context['key-' . $i] = str_repeat(
                 'A',
                 1000,
@@ -48,13 +57,18 @@ final class LogEntryCrashTest extends TestCase
             LogEntry::class,
             $entry,
         );
+
+        self::assertCount(
+            10000,
+            $entry->context(),
+        );
     }
 
     public function testItHandlesHugeExtraWithoutCrash(): void
     {
         $extra = [];
 
-        for ($i = 0; $i < 10000; $i++) {
+        for ($i = 0; $i < 10000; ++$i) {
             $extra['extra-' . $i] = str_repeat(
                 'B',
                 1000,
@@ -68,6 +82,11 @@ final class LogEntryCrashTest extends TestCase
         self::assertInstanceOf(
             LogEntry::class,
             $entry,
+        );
+
+        self::assertCount(
+            10000,
+            $entry->extra(),
         );
     }
 
@@ -91,6 +110,8 @@ final class LogEntryCrashTest extends TestCase
     public function testItHandlesInvalidUtf8Payloads(): void
     {
         $payload = hex2bin('b131');
+
+        self::assertNotFalse($payload);
 
         $entry = $this->createEntry(
             context: [
@@ -147,9 +168,6 @@ final class LogEntryCrashTest extends TestCase
             fingerprint: new Fingerprint(
                 'abcdef1234567890',
             ),
-            tags: new Tags([
-                'feature' => 'checkout',
-            ]),
             context: $context,
             extra: $extra,
         );

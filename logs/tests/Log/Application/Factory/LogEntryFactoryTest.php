@@ -14,6 +14,22 @@ use PHPUnit\Framework\TestCase;
  * @internal
  *
  * Tests unitaires de LogEntryFactory.
+ *
+ * OBJECTIFS :
+ * -----------
+ * - robustesse
+ * - stabilité
+ * - prédictibilité
+ * - protection ingestion
+ *
+ * IMPORTANT :
+ * ------------
+ * Les tags ont été supprimés du domaine.
+ *
+ * La factory doit néanmoins :
+ * - ignorer les anciens payloads
+ * - rester rétrocompatible ingestion
+ * - ne jamais crash
  */
 final class LogEntryFactoryTest extends TestCase
 {
@@ -224,6 +240,29 @@ final class LogEntryFactoryTest extends TestCase
         self::assertSame(
             [],
             $entry->extra(),
+        );
+    }
+
+    /**
+     * IMPORTANT :
+     * ------------
+     * Les anciens clients peuvent encore
+     * envoyer un champ "tags".
+     *
+     * La factory doit l'ignorer sans crash.
+     */
+    public function testItIgnoresLegacyTagsPayload(): void
+    {
+        $entry = $this->factory->create([
+            'tags' => [
+                'feature' => 'checkout',
+                'region' => 'eu',
+            ],
+        ]);
+
+        self::assertInstanceOf(
+            LogEntry::class,
+            $entry,
         );
     }
 

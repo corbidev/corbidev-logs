@@ -10,7 +10,6 @@ use App\Log\Domain\ValueObject\Fingerprint;
 use App\Log\Domain\ValueObject\HttpStatus;
 use App\Log\Domain\ValueObject\IpAddress;
 use App\Log\Domain\ValueObject\Request;
-use App\Log\Domain\ValueObject\Tags;
 use App\Log\Enum\Environment;
 use App\Log\Enum\LogLevel;
 use DateTimeImmutable;
@@ -19,20 +18,35 @@ use Symfony\Component\Uid\Uuid;
 /**
  * Représente un log immutable valide.
  *
- * Source de vérité du système.
+ * SOURCE DE VÉRITÉ :
+ * ------------------
+ * LogEntry représente l'événement métier
+ * central du système de logs.
  *
- * Responsabilités :
- * - encapsuler un événement de log complet
- * - garantir les invariants métier
- * - fournir une structure stable
- * - protéger le domaine des données hostiles
+ * RESPONSABILITÉS :
+ * -----------------
+ * - encapsuler un log valide
+ * - protéger les invariants métier
+ * - garantir une structure stable
+ * - fournir une représentation immutable
+ * - empêcher les états incohérents
  *
- * Invariants :
+ * OBJECTIFS :
+ * -----------
+ * - robustesse
+ * - simplicité
+ * - prédictibilité
+ * - stabilité long terme
+ *
+ * GARANTIES :
+ * -----------
  * - toujours valide
  * - immutable
- * - données normalisées
- * - message jamais vide
+ * - message normalisé
+ * - domaine normalisé
  * - fingerprint toujours présent
+ * - aucune dépendance Symfony métier
+ * - aucun état partiel
  */
 final readonly class LogEntry
 {
@@ -42,7 +56,12 @@ final readonly class LogEntry
     private const MAX_MESSAGE_LENGTH = 1000;
 
     /**
-     * Identifiant unique externe.
+     * Taille maximale du domaine.
+     */
+    private const MAX_DOMAIN_LENGTH = 100;
+
+    /**
+     * Identifiant externe unique.
      */
     private string $id;
 
@@ -52,7 +71,7 @@ final readonly class LogEntry
     private string $message;
 
     /**
-     * Niveau de log.
+     * Niveau du log.
      */
     private LogLevel $level;
 
@@ -82,7 +101,7 @@ final readonly class LogEntry
     private Request $request;
 
     /**
-     * Adresse IP.
+     * Adresse IP source.
      */
     private IpAddress $ipAddress;
 
@@ -90,11 +109,6 @@ final readonly class LogEntry
      * Fingerprint serveur.
      */
     private Fingerprint $fingerprint;
-
-    /**
-     * Tags normalisés.
-     */
-    private Tags $tags;
 
     /**
      * Contexte libre.
@@ -136,7 +150,6 @@ final readonly class LogEntry
         Request $request,
         IpAddress $ipAddress,
         Fingerprint $fingerprint,
-        Tags $tags,
         array $context = [],
         array $extra = [],
         ?DateTimeImmutable $clientDate = null,
@@ -151,9 +164,17 @@ final readonly class LogEntry
             $domain,
         );
 
-        $this->guardMessage($message);
+        $this->guardMessage(
+            $message,
+        );
 
-        $this->guardDomain($domain);
+        $this->guardDomain(
+            $domain,
+        );
+
+        $this->id = $this->buildId(
+            $id,
+        );
 
         $this->message = $message;
         $this->level = $level;
@@ -164,19 +185,15 @@ final readonly class LogEntry
         $this->request = $request;
         $this->ipAddress = $ipAddress;
         $this->fingerprint = $fingerprint;
-        $this->tags = $tags;
         $this->context = $context;
         $this->extra = $extra;
         $this->clientDate = $clientDate;
         $this->createdAt = $createdAt
             ?? new DateTimeImmutable();
-
-        $this->id = $id
-            ?? Uuid::v7()->toRfc4122();
     }
 
     /**
-     * Retourne l'identifiant unique.
+     * Retourne l'identifiant externe.
      */
     public function id(): string
     {
@@ -232,7 +249,7 @@ final readonly class LogEntry
     }
 
     /**
-     * Retourne la requête.
+     * Retourne la requête HTTP.
      */
     public function request(): Request
     {
@@ -256,14 +273,8 @@ final readonly class LogEntry
     }
 
     /**
-     * Retourne les tags.
-     */
-    public function tags(): Tags
-    {
-        return $this->tags;
-    }
-
-    /**
+     * Retourne le contexte.
+     *
      * @return array<string, mixed>
      */
     public function context(): array
@@ -272,6 +283,8 @@ final readonly class LogEntry
     }
 
     /**
+     * Retourne les données supplémentaires.
+     *
      * @return array<string, mixed>
      */
     public function extra(): array
@@ -296,7 +309,7 @@ final readonly class LogEntry
     }
 
     /**
-     * Vérifie si le log est une erreur.
+     * Vérifie si le log représente une erreur.
      */
     public function isError(): bool
     {
@@ -314,7 +327,7 @@ final readonly class LogEntry
     }
 
     /**
-     * Snapshot sérialisable.
+     * Retourne une représentation sérialisable stable.
      *
      * @return array<string, mixed>
      */
@@ -328,12 +341,11 @@ final readonly class LogEntry
             'environment' => $this->environment->value,
             'httpStatus' => $this->httpStatus->value(),
             'client' => $this->client->value(),
-            'uri' => $this->request->uri()->value(),
             'method' => $this->request->method(),
+            'uri' => $this->request->uri()->value(),
             'userAgent' => $this->request->userAgent(),
             'ip' => $this->ipAddress->value(),
             'fingerprint' => $this->fingerprint->value(),
-            'tags' => $this->tags->values(),
             'context' => $this->context,
             'extra' => $this->extra,
             'createdAt' => $this->createdAt->format(
@@ -346,6 +358,25 @@ final readonly class LogEntry
     }
 
     /**
+     * Construit un identifiant stable.
+     */
+    private function buildId(
+        ?string $id,
+    ): string {
+        $id = trim(
+            (string) $id,
+        );
+
+        if ($id !== '') {
+            return $id;
+        }
+
+        return Uuid::v7()->toRfc4122();
+    }
+
+    /**
+     * Vérifie le message.
+     *
      * @throws InvalidLogEntryException
      */
     private function guardMessage(
@@ -366,6 +397,8 @@ final readonly class LogEntry
     }
 
     /**
+     * Vérifie le domaine.
+     *
      * @throws InvalidLogEntryException
      */
     private function guardDomain(
@@ -373,6 +406,15 @@ final readonly class LogEntry
     ): void {
         if ($domain === '') {
             throw InvalidLogEntryException::emptyDomain();
+        }
+
+        if (
+            mb_strlen($domain)
+            > self::MAX_DOMAIN_LENGTH
+        ) {
+            throw InvalidLogEntryException::domainTooLong(
+                self::MAX_DOMAIN_LENGTH,
+            );
         }
     }
 

@@ -11,7 +11,6 @@ use App\Log\Domain\ValueObject\Fingerprint;
 use App\Log\Domain\ValueObject\HttpStatus;
 use App\Log\Domain\ValueObject\IpAddress;
 use App\Log\Domain\ValueObject\Request;
-use App\Log\Domain\ValueObject\Tags;
 use App\Log\Domain\ValueObject\Uri;
 use App\Log\Enum\Environment;
 use App\Log\Enum\LogLevel;
@@ -22,6 +21,17 @@ use PHPUnit\Framework\TestCase;
  * @internal
  *
  * Tests métier standards de LogEntry.
+ *
+ * IMPORTANT :
+ * ------------
+ * Les tags ont été supprimés du domaine.
+ *
+ * Ces tests garantissent désormais :
+ * - invariants métier
+ * - stabilité
+ * - immutabilité
+ * - robustesse
+ * - cohérence des ValueObjects
  */
 final class LogEntryTest extends TestCase
 {
@@ -147,6 +157,11 @@ final class LogEntryTest extends TestCase
             '/orders',
             $entry->request()->uri()->value(),
         );
+
+        self::assertSame(
+            'POST',
+            $entry->request()->method(),
+        );
     }
 
     public function testItReturnsIpAddress(): void
@@ -166,18 +181,6 @@ final class LogEntryTest extends TestCase
         self::assertSame(
             'abcdef1234567890',
             $entry->fingerprint()->value(),
-        );
-    }
-
-    public function testItReturnsTags(): void
-    {
-        $entry = $this->createEntry();
-
-        self::assertSame(
-            'checkout',
-            $entry->tags()->get(
-                'feature',
-            ),
         );
     }
 
@@ -293,6 +296,11 @@ final class LogEntryTest extends TestCase
             'billing',
             $data['domain'],
         );
+
+        self::assertArrayNotHasKey(
+            'tags',
+            $data,
+        );
     }
 
     /**
@@ -324,9 +332,6 @@ final class LogEntryTest extends TestCase
             fingerprint: new Fingerprint(
                 'abcdef1234567890',
             ),
-            tags: new Tags([
-                'feature' => 'checkout',
-            ]),
             context: $context,
             extra: $extra,
             clientDate: $clientDate,

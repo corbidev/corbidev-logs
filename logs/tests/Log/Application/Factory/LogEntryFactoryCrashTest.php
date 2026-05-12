@@ -36,6 +36,8 @@ final class LogEntryFactoryCrashTest extends TestCase
             'r',
         );
 
+        self::assertIsResource($resource);
+
         $payloads = [
             [],
             [
@@ -75,9 +77,6 @@ final class LogEntryFactoryCrashTest extends TestCase
                 'extra' => $resource,
             ],
             [
-                'tags' => $resource,
-            ],
-            [
                 'fingerprint' => [],
             ],
             [
@@ -115,7 +114,7 @@ final class LogEntryFactoryCrashTest extends TestCase
     {
         $context = [];
 
-        for ($i = 0; $i < 10000; $i++) {
+        for ($i = 0; $i < 10000; ++$i) {
             $context['key-' . $i] = str_repeat(
                 'A',
                 1000,
@@ -130,13 +129,18 @@ final class LogEntryFactoryCrashTest extends TestCase
             LogEntry::class,
             $entry,
         );
+
+        self::assertCount(
+            10000,
+            $entry->context(),
+        );
     }
 
     public function testItHandlesHugeExtra(): void
     {
         $extra = [];
 
-        for ($i = 0; $i < 10000; $i++) {
+        for ($i = 0; $i < 10000; ++$i) {
             $extra['key-' . $i] = str_repeat(
                 'B',
                 1000,
@@ -151,13 +155,27 @@ final class LogEntryFactoryCrashTest extends TestCase
             LogEntry::class,
             $entry,
         );
+
+        self::assertCount(
+            10000,
+            $entry->extra(),
+        );
     }
 
-    public function testItHandlesHugeTags(): void
+    /**
+     * IMPORTANT :
+     * ------------
+     * Les tags ont été supprimés du domaine.
+     *
+     * Ce test vérifie qu'un payload hostile
+     * contenant encore "tags" ne provoque
+     * aucun crash.
+     */
+    public function testItIgnoresLegacyTagsPayload(): void
     {
         $tags = [];
 
-        for ($i = 0; $i < 1000; $i++) {
+        for ($i = 0; $i < 1000; ++$i) {
             $tags['tag-' . $i] = str_repeat(
                 'C',
                 100,

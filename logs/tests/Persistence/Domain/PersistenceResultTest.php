@@ -10,21 +10,25 @@ use PHPUnit\Framework\TestCase;
 /**
  * Tests nominaux de PersistenceResult.
  *
- * Objectifs :
+ * OBJECTIFS :
+ * -----------
  * - stabilité
- * - prédictibilité
- * - invariants métier
  * - robustesse
+ * - invariants métier
  * - immutabilité
+ * - comportement prédictible
+ * - sécurité des données
  *
  * IMPORTANT :
- * Ces tests ne doivent JAMAIS :
- * - utiliser Doctrine
+ * ------------
+ * Ces tests ne doivent jamais :
+ *
  * - utiliser Symfony
+ * - utiliser Doctrine
  * - utiliser SQLite
  * - utiliser DatabaseTestCase
  *
- * PersistenceResult est un pur objet Domain.
+ * PersistenceResult est un pur objet Domain immutable.
  */
 final class PersistenceResultTest extends TestCase
 {
@@ -76,6 +80,10 @@ final class PersistenceResultTest extends TestCase
 
         self::assertFalse(
             $result->isPartial(),
+        );
+
+        self::assertFalse(
+            $result->isNothingToPersist(),
         );
 
         self::assertSame(
@@ -138,8 +146,15 @@ final class PersistenceResultTest extends TestCase
             $result->isPartial(),
         );
 
-        self::assertCount(
-            2,
+        self::assertFalse(
+            $result->isNothingToPersist(),
+        );
+
+        self::assertSame(
+            [
+                'sql error',
+                'deadlock',
+            ],
             $result->getErrors(),
         );
     }
@@ -197,6 +212,68 @@ final class PersistenceResultTest extends TestCase
         self::assertTrue(
             $result->isPartial(),
         );
+
+        self::assertFalse(
+            $result->isNothingToPersist(),
+        );
+    }
+
+    public function testItCreatesNothingToPersistResult(): void
+    {
+        $result = PersistenceResult::nothingToPersist();
+
+        self::assertSame(
+            0,
+            $result->getPersistedCount(),
+        );
+
+        self::assertSame(
+            0,
+            $result->getFailedCount(),
+        );
+
+        self::assertSame(
+            0,
+            $result->getTotalCount(),
+        );
+
+        self::assertSame(
+            0.0,
+            $result->getSuccessRate(),
+        );
+
+        self::assertTrue(
+            $result->isNothingToPersist(),
+        );
+
+        self::assertFalse(
+            $result->isSuccess(),
+        );
+
+        self::assertFalse(
+            $result->isFailure(),
+        );
+
+        self::assertFalse(
+            $result->isPartial(),
+        );
+
+        self::assertFalse(
+            $result->hasPersistedLogs(),
+        );
+
+        self::assertFalse(
+            $result->hasFailures(),
+        );
+
+        self::assertFalse(
+            $result->hasErrors(),
+        );
+
+        self::assertSame(
+            [],
+            $result->getErrors(),
+        );
     }
 
     public function testItMergesResults(): void
@@ -239,13 +316,20 @@ final class PersistenceResultTest extends TestCase
             $merged->getSuccessRate(),
         );
 
-        self::assertCount(
-            2,
+        self::assertSame(
+            [
+                'error-1',
+                'error-2',
+            ],
             $merged->getErrors(),
         );
 
         self::assertTrue(
             $merged->isPartial(),
+        );
+
+        self::assertFalse(
+            $merged->isNothingToPersist(),
         );
     }
 
@@ -259,6 +343,10 @@ final class PersistenceResultTest extends TestCase
         self::assertSame(
             0.0,
             $result->getSuccessRate(),
+        );
+
+        self::assertTrue(
+            $result->isNothingToPersist(),
         );
     }
 
@@ -281,6 +369,7 @@ final class PersistenceResultTest extends TestCase
                 'isSuccess' => false,
                 'isFailure' => false,
                 'isPartial' => true,
+                'isNothingToPersist' => false,
                 'errors' => [
                     'timeout',
                 ],
@@ -320,6 +409,46 @@ final class PersistenceResultTest extends TestCase
         self::assertSame(
             [
                 'sql error',
+            ],
+            $result->getErrors(),
+        );
+    }
+
+    public function testItRemovesEmptyErrors(): void
+    {
+        $result = PersistenceResult::failure(
+            failedCount: 2,
+            errors: [
+                '',
+                '   ',
+                "\n",
+                'valid',
+            ],
+        );
+
+        self::assertSame(
+            [
+                'valid',
+            ],
+            $result->getErrors(),
+        );
+    }
+
+    public function testItIgnoresNonScalarErrors(): void
+    {
+        $result = PersistenceResult::failure(
+            failedCount: 3,
+            errors: [
+                new \stdClass(),
+                [],
+                fopen('php://memory', 'rb'),
+                'valid',
+            ],
+        );
+
+        self::assertSame(
+            [
+                'valid',
             ],
             $result->getErrors(),
         );
@@ -381,6 +510,14 @@ final class PersistenceResultTest extends TestCase
         self::assertTrue(
             $result->isSuccess(),
         );
+
+        self::assertFalse(
+            $result->isPartial(),
+        );
+
+        self::assertFalse(
+            $result->isFailure(),
+        );
     }
 
     public function testItHandlesZeroPersistedFailureCase(): void
@@ -392,6 +529,44 @@ final class PersistenceResultTest extends TestCase
 
         self::assertTrue(
             $result->isFailure(),
+        );
+
+        self::assertFalse(
+            $result->isPartial(),
+        );
+
+        self::assertFalse(
+            $result->isSuccess(),
+        );
+    }
+
+    public function testItHandlesEmptyErrorsArray(): void
+    {
+        $result = PersistenceResult::failure(
+            failedCount: 1,
+            errors: [],
+        );
+
+        self::assertFalse(
+            $result->hasErrors(),
+        );
+
+        self::assertSame(
+            [],
+            $result->getErrors(),
+        );
+    }
+
+    public function testItHandlesOverflowProtection(): void
+    {
+        $result = PersistenceResult::partial(
+            persistedCount: PHP_INT_MAX,
+            failedCount: PHP_INT_MAX,
+        );
+
+        self::assertSame(
+            PHP_INT_MAX,
+            $result->getTotalCount(),
         );
     }
 }

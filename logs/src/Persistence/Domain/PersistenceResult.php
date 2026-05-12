@@ -10,18 +10,28 @@ use App\Persistence\Constantes\PersistenceLimits;
  * Représente le résultat explicite
  * d'une opération de persistence.
  *
- * Objectifs :
+ * OBJECTIFS :
+ * -----------
  * - immutable
  * - prédictible
  * - robuste
  * - sans ambiguïté
  * - résistant aux payloads hostiles
  *
- * Invariants :
+ * INVARIANTS :
+ * ------------
  * - compteurs toujours valides
  * - erreurs normalisées
  * - structure bornée
  * - aucune donnée non scalaire
+ * - état toujours cohérent
+ *
+ * ÉTATS POSSIBLES :
+ * -----------------
+ * - success
+ * - failure
+ * - partial
+ * - nothing_to_persist
  */
 final readonly class PersistenceResult
 {
@@ -29,6 +39,7 @@ final readonly class PersistenceResult
      * Liste bornée des erreurs.
      *
      * IMPORTANT :
+     * ------------
      * - unique
      * - nettoyée
      * - immutable
@@ -51,7 +62,9 @@ final readonly class PersistenceResult
             failedCount: $failedCount,
         );
 
-        $this->errors = $this->normalizeErrors($errors);
+        $this->errors = $this->normalizeErrors(
+            $errors,
+        );
     }
 
     /**
@@ -61,7 +74,7 @@ final readonly class PersistenceResult
         int $persistedCount,
     ): self {
         return new self(
-            persistedCount: $persistedCount,
+            persistedCount: max(0, $persistedCount),
             failedCount: 0,
         );
     }
@@ -77,7 +90,7 @@ final readonly class PersistenceResult
     ): self {
         return new self(
             persistedCount: 0,
-            failedCount: $failedCount,
+            failedCount: max(0, $failedCount),
             errors: $errors,
         );
     }
@@ -93,9 +106,29 @@ final readonly class PersistenceResult
         array $errors = [],
     ): self {
         return new self(
-            persistedCount: $persistedCount,
-            failedCount: $failedCount,
+            persistedCount: max(0, $persistedCount),
+            failedCount: max(0, $failedCount),
             errors: $errors,
+        );
+    }
+
+    /**
+     * Aucun log à persister.
+     *
+     * IMPORTANT :
+     * ------------
+     * Cet état est distinct d'un succès.
+     *
+     * Il signifie :
+     * - aucune persistence nécessaire
+     * - aucun traitement effectué
+     * - aucun échec
+     */
+    public static function nothingToPersist(): self
+    {
+        return new self(
+            persistedCount: 0,
+            failedCount: 0,
         );
     }
 
@@ -193,6 +226,17 @@ final readonly class PersistenceResult
     }
 
     /**
+     * Indique qu'aucune persistence
+     * n'était nécessaire.
+     */
+    public function isNothingToPersist(): bool
+    {
+        return $this->persistedCount === 0
+            && $this->failedCount === 0
+            && $this->errors === [];
+    }
+
+    /**
      * Retourne le ratio de réussite.
      */
     public function getSuccessRate(): float
@@ -203,7 +247,9 @@ final readonly class PersistenceResult
             return 0.0;
         }
 
-        $rate = ($this->persistedCount / $total) * 100;
+        $rate = (
+            $this->persistedCount / $total
+        ) * 100;
 
         if (
             is_nan($rate)
@@ -254,6 +300,7 @@ final readonly class PersistenceResult
      *     isSuccess:bool,
      *     isFailure:bool,
      *     isPartial:bool,
+     *     isNothingToPersist:bool,
      *     errors:list<string>
      * }
      */
@@ -267,6 +314,7 @@ final readonly class PersistenceResult
             'isSuccess' => $this->isSuccess(),
             'isFailure' => $this->isFailure(),
             'isPartial' => $this->isPartial(),
+            'isNothingToPersist' => $this->isNothingToPersist(),
             'errors' => $this->errors,
         ];
     }
@@ -313,6 +361,7 @@ final readonly class PersistenceResult
      * Normalise les erreurs.
      *
      * IMPORTANT :
+     * ------------
      * - supprime objets
      * - supprime tableaux
      * - limite longueur

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Queue\Presentation\Console;
+namespace App\Queue\Console;
 
 use App\Queue\Application\QueueConsumerInterface;
 use App\Queue\Infrastructure\QueueConsumeResult;
