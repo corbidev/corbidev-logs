@@ -8,7 +8,6 @@ use App\Log\Domain\Exception\InvalidClientException;
 use App\Log\Domain\Exception\InvalidFingerprintException;
 use App\Log\Domain\Exception\InvalidHttpStatusException;
 use App\Log\Domain\Exception\InvalidIpAddressException;
-use App\Log\Domain\Exception\InvalidRequestException;
 use App\Log\Domain\Exception\InvalidRequestIdException;
 use App\Log\Domain\Exception\InvalidUriException;
 use App\Log\Enum\IngestionWarningType;
@@ -452,7 +451,7 @@ final class LogEntryFactoryCrashTest extends TestCase
             static fn ($warning): string => $warning
                 ->type()
                 ->value,
-            $entry->ingestionWarnings(),
+            $entry->getIngestionWarnings(),
         );
 
         self::assertContains(

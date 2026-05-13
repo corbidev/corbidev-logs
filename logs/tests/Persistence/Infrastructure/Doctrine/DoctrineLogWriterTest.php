@@ -33,7 +33,7 @@ final class DoctrineLogWriterTest extends TestCase
      */
     public function testPersistReturnsNothingToPersistWhenBatchIsEmpty(): void
     {
-        $connection = $this->createMock(
+        $connection = $this->createStub(
             Connection::class,
         );
 
@@ -135,16 +135,17 @@ final class DoctrineLogWriterTest extends TestCase
             ->expects(self::exactly(2))
             ->method('insert')
             ->willReturnCallback(
-                static function (): void {
-                    static $count = 0;
-
-                    ++$count;
-
-                    if ($count === 2) {
+                static function (
+                    string $_table,
+                    array $data,
+                ): int {
+                    if (($data['request_id'] ?? '') === 'req_test_fail') {
                         throw new \RuntimeException(
                             'SQL insert failed',
                         );
                     }
+
+                    return 1;
                 },
             );
 
@@ -155,7 +156,7 @@ final class DoctrineLogWriterTest extends TestCase
 
         $result = $writer->persist([
             $this->createLogEntry(),
-            $this->createLogEntry(),
+            $this->createLogEntry('req_test_fail'),
         ]);
 
         self::assertTrue(
@@ -284,8 +285,9 @@ final class DoctrineLogWriterTest extends TestCase
         );
     }
 
-    private function createLogEntry(): LogEntry
-    {
+    private function createLogEntry(
+        string $requestId = 'req_test_123',
+    ): LogEntry {
         return new LogEntry(
             message: 'Login failed',
             level: LogLevel::ERROR,
@@ -302,10 +304,10 @@ final class DoctrineLogWriterTest extends TestCase
                 '127.0.0.1',
             ),
             fingerprint: new Fingerprint(
-                'abcd1234efgh5678',
+                'abcdef1234567890',
             ),
             requestId: new RequestId(
-                'req_test_123',
+                $requestId,
             ),
             context: [
                 'security' => [

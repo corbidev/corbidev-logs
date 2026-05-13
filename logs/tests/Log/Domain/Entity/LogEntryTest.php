@@ -263,7 +263,7 @@ final class LogEntryTest extends TestCase
     public function testItUsesProvidedId(): void
     {
         $entry = $this->createEntry(
-            id: 'external-id',
+            externalId: 'external-id',
         );
 
         self::assertSame(
@@ -285,7 +285,7 @@ final class LogEntryTest extends TestCase
         $data = $entry->toArray();
 
         self::assertArrayHasKey(
-            'id',
+            'externalId',
             $data,
         );
 
@@ -378,11 +378,11 @@ final class LogEntryTest extends TestCase
     public function testItComparesEntriesById(): void
     {
         $entry = $this->createEntry(
-            id: 'same-id',
+            externalId: 'same-id',
         );
 
         $same = $this->createEntry(
-            id: 'same-id',
+            externalId: 'same-id',
         );
 
         self::assertTrue(
@@ -401,11 +401,11 @@ final class LogEntryTest extends TestCase
     public function testItDetectsDifferentEntries(): void
     {
         $left = $this->createEntry(
-            id: 'left',
+            externalId: 'left',
         );
 
         $right = $this->createEntry(
-            id: 'right',
+            externalId: 'right',
         );
 
         self::assertFalse(
@@ -563,7 +563,7 @@ final class LogEntryTest extends TestCase
         array $extra = [],
         ?DateTimeImmutable $clientDate = null,
         ?DateTimeImmutable $createdAt = null,
-        ?string $id = null,
+        ?string $externalId = null,
     ): LogEntry {
         return new LogEntry(
             message: $message,
@@ -591,7 +591,7 @@ final class LogEntryTest extends TestCase
             extra: $extra,
             clientDate: $clientDate,
             createdAt: $createdAt,
-            externalId: $id,
+            externalId: $externalId,
         );
     }
 }

@@ -33,7 +33,7 @@ final class DoctrineLogWriterCrashTest extends TestCase
      */
     public function testPersistSurvivesTransactionCrash(): void
     {
-        $connection = $this->createMock(
+        $connection = $this->createStub(
             Connection::class,
         );
 
@@ -80,7 +80,7 @@ final class DoctrineLogWriterCrashTest extends TestCase
      */
     public function testPersistSurvivesRollbackFailure(): void
     {
-        $connection = $this->createMock(
+        $connection = $this->createStub(
             Connection::class,
         );
 
@@ -131,7 +131,7 @@ final class DoctrineLogWriterCrashTest extends TestCase
      */
     public function testPersistSurvivesMassiveInsertFailures(): void
     {
-        $connection = $this->createMock(
+        $connection = $this->createStub(
             Connection::class,
         );
 
@@ -197,7 +197,7 @@ final class DoctrineLogWriterCrashTest extends TestCase
                 '127.0.0.1',
             ),
             fingerprint: new Fingerprint(
-                'crash123456789',
+                'abcdef1234567890',
             ),
             requestId: new RequestId(
                 'req_crash',

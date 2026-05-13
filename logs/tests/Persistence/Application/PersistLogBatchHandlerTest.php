@@ -215,9 +215,9 @@ final class PersistLogBatchHandlerTest extends TestCase
                     static function (
                         array $entries,
                     ): bool {
-                        return $entries[0]->message()
+                        return $entries[0]->getMessage()
                                 === 'first'
-                            && $entries[1]->message()
+                            && $entries[1]->getMessage()
                                 === 'second';
                     },
                 ),
@@ -315,11 +315,11 @@ final class PersistLogBatchHandlerTest extends TestCase
                         array $entries,
                     ): bool {
                         return $entries[0]
-                                ->requestId()
+                                ->getRequestId()
                                 ->value()
                                 === 'req_checkout_1'
                             && $entries[1]
-                                ->requestId()
+                                ->getRequestId()
                                 ->value()
                                 === 'req_checkout_2';
                     },
