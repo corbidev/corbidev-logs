@@ -10,6 +10,7 @@ use App\Log\Domain\ValueObject\Fingerprint;
 use App\Log\Domain\ValueObject\HttpStatus;
 use App\Log\Domain\ValueObject\IpAddress;
 use App\Log\Domain\ValueObject\Request;
+use App\Log\Domain\ValueObject\RequestId;
 use App\Log\Domain\ValueObject\Uri;
 use App\Log\Enum\Environment;
 use App\Log\Enum\LogLevel;
@@ -23,14 +24,26 @@ use PHPUnit\Framework\TestCase;
  * @internal
  *
  * Tests unitaires de PersistLogBatchHandler.
+ *
+ * OBJECTIFS :
+ * -----------
+ * - robustesse
+ * - stabilité
+ * - prédictibilité
+ * - cohérence batch
  */
 final class PersistLogBatchHandlerTest extends TestCase
 {
     public function testItPersistsBatch(): void
     {
         $entries = [
-            $this->createEntry(),
-            $this->createEntry(),
+            $this->createEntry(
+                requestId: 'req_batch_1',
+            ),
+
+            $this->createEntry(
+                requestId: 'req_batch_2',
+            ),
         ];
 
         $writer = $this->createMock(
@@ -77,7 +90,9 @@ final class PersistLogBatchHandlerTest extends TestCase
         );
 
         $result = $handler->handle(
-            new PersistLogBatchRequest([]),
+            new PersistLogBatchRequest(
+                [],
+            ),
         );
 
         self::assertFalse(
@@ -133,7 +148,9 @@ final class PersistLogBatchHandlerTest extends TestCase
         );
 
         $result = $handler->handle(
-            new PersistLogBatchRequest([]),
+            new PersistLogBatchRequest(
+                [],
+            ),
         );
 
         self::assertInstanceOf(
@@ -147,9 +164,12 @@ final class PersistLogBatchHandlerTest extends TestCase
         $entries = [
             $this->createEntry(
                 message: 'first',
+                requestId: 'req_first',
             ),
+
             $this->createEntry(
                 message: 'second',
+                requestId: 'req_second',
             ),
         ];
 
@@ -228,26 +248,103 @@ final class PersistLogBatchHandlerTest extends TestCase
         );
     }
 
+    public function testItPreservesRequestIds(): void
+    {
+        $entries = [
+            $this->createEntry(
+                requestId: 'req_checkout_1',
+            ),
+
+            $this->createEntry(
+                requestId: 'req_checkout_2',
+            ),
+        ];
+
+        $writer = $this->createMock(
+            LogWriterInterface::class,
+        );
+
+        $writer
+            ->expects(self::once())
+            ->method('persist')
+            ->with(
+                self::callback(
+                    static function (
+                        array $entries,
+                    ): bool {
+                        return $entries[0]
+                                ->requestId()
+                                ->value()
+                                === 'req_checkout_1'
+                            && $entries[1]
+                                ->requestId()
+                                ->value()
+                                === 'req_checkout_2';
+                    },
+                ),
+            )
+            ->willReturn(
+                PersistenceResult::success(
+                    persistedCount: 2,
+                ),
+            );
+
+        $handler = new PersistLogBatchHandler(
+            $writer,
+        );
+
+        $result = $handler->handle(
+            new PersistLogBatchRequest(
+                $entries,
+            ),
+        );
+
+        self::assertTrue(
+            $result->isSuccess(),
+        );
+    }
+
     private function createEntry(
         string $message = 'Payment failed',
+        string $requestId = 'req_checkout_test',
     ): LogEntry {
         return new LogEntry(
             message: $message,
+
             level: LogLevel::ERROR,
+
             domain: 'billing',
+
             environment: Environment::Production,
-            httpStatus: new HttpStatus(500),
-            client: new Client('checkout-app'),
-            request: new Request(
-                new Uri('/orders'),
-                'POST',
-                'Mozilla/5.0',
+
+            httpStatus: new HttpStatus(
+                500,
             ),
+
+            client: new Client(
+                'checkout-app',
+            ),
+
+            request: new Request(
+                uri: new Uri(
+                    '/orders',
+                ),
+
+                method: 'POST',
+
+                userAgent: 'Mozilla/5.0',
+            ),
+
             ipAddress: new IpAddress(
                 '127.0.0.1',
             ),
+
             fingerprint: new Fingerprint(
                 'abcdef1234567890',
+            ),
+
+            requestId: new RequestId(
+                $requestId,
             ),
         );
     }

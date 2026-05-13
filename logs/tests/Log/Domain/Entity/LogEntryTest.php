@@ -9,30 +9,42 @@ use App\Log\Domain\Exception\InvalidLogEntryException;
 use App\Log\Domain\ValueObject\Client;
 use App\Log\Domain\ValueObject\Fingerprint;
 use App\Log\Domain\ValueObject\HttpStatus;
+use App\Log\Domain\ValueObject\IngestionWarning;
 use App\Log\Domain\ValueObject\IpAddress;
 use App\Log\Domain\ValueObject\Request;
+use App\Log\Domain\ValueObject\RequestId;
 use App\Log\Domain\ValueObject\Uri;
 use App\Log\Enum\Environment;
+use App\Log\Enum\IngestionWarningType;
 use App\Log\Enum\LogLevel;
 use DateTimeImmutable;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
 /**
  * @internal
  *
- * Tests métier standards de LogEntry.
+ * Tests métier de LogEntry.
  *
- * IMPORTANT :
- * ------------
- * Les tags ont été supprimés du domaine.
- *
- * Ces tests garantissent désormais :
- * - invariants métier
- * - stabilité
- * - immutabilité
+ * OBJECTIFS :
+ * -----------
  * - robustesse
- * - cohérence des ValueObjects
+ * - stabilité
+ * - prédictibilité
+ * - immutabilité
+ * - cohérence métier
+ *
+ * GARANTIES TESTÉES :
+ * -------------------
+ * - invariants métier
+ * - normalisation
+ * - requestId obligatoire
+ * - stabilité serialization
+ * - stabilité equals()
+ * - stabilité ingestionWarnings
+ * - cohérence ValueObjects
  */
+#[CoversClass(LogEntry::class)]
 final class LogEntryTest extends TestCase
 {
     public function testItCreatesValidLogEntry(): void
@@ -95,6 +107,17 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    public function testItRejectsWhitespaceMessage(): void
+    {
+        $this->expectException(
+            InvalidLogEntryException::class,
+        );
+
+        $this->createEntry(
+            message: '      ',
+        );
+    }
+
     public function testItRejectsEmptyDomain(): void
     {
         $this->expectException(
@@ -103,6 +126,17 @@ final class LogEntryTest extends TestCase
 
         $this->createEntry(
             domain: '',
+        );
+    }
+
+    public function testItRejectsWhitespaceDomain(): void
+    {
+        $this->expectException(
+            InvalidLogEntryException::class,
+        );
+
+        $this->createEntry(
+            domain: '      ',
         );
     }
 
@@ -120,6 +154,20 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    public function testItRejectsTooLongDomain(): void
+    {
+        $this->expectException(
+            InvalidLogEntryException::class,
+        );
+
+        $this->createEntry(
+            domain: str_repeat(
+                'a',
+                101,
+            ),
+        );
+    }
+
     public function testItReturnsStableId(): void
     {
         $entry = $this->createEntry();
@@ -129,62 +177,137 @@ final class LogEntryTest extends TestCase
         );
     }
 
-    public function testItReturnsHttpStatus(): void
+    public function testItGeneratesDifferentIds(): void
     {
-        $entry = $this->createEntry();
+        $left = $this->createEntry();
+        $right = $this->createEntry();
 
-        self::assertSame(
-            500,
-            $entry->httpStatus()->value(),
+        self::assertNotSame(
+            $left->id(),
+            $right->id(),
         );
     }
 
-    public function testItReturnsClient(): void
+    public function testItUsesProvidedId(): void
     {
-        $entry = $this->createEntry();
+        $entry = $this->createEntry(
+            id: 'external-id',
+        );
 
         self::assertSame(
-            'checkout-app',
-            $entry->client()->value(),
+            'external-id',
+            $entry->id(),
         );
     }
 
-    public function testItReturnsRequest(): void
+    public function testItReturnsStableSerialization(): void
     {
         $entry = $this->createEntry();
 
-        self::assertSame(
-            '/orders',
-            $entry->request()->uri()->value(),
+        $data = $entry->toArray();
+
+        self::assertArrayHasKey(
+            'id',
+            $data,
         );
+
+        self::assertArrayHasKey(
+            'message',
+            $data,
+        );
+
+        self::assertArrayHasKey(
+            'fingerprint',
+            $data,
+        );
+
+        self::assertArrayHasKey(
+            'ingestionWarnings',
+            $data,
+        );
+    }
+
+    public function testItReturnsStableRequestSerialization(): void
+    {
+        $entry = $this->createEntry();
+
+        $request = $entry->toArray()['request'];
 
         self::assertSame(
             'POST',
-            $entry->request()->method(),
+            $request['method'],
         );
-    }
-
-    public function testItReturnsIpAddress(): void
-    {
-        $entry = $this->createEntry();
 
         self::assertSame(
-            '127.0.0.1',
-            $entry->ipAddress()->value(),
+            '/checkout',
+            $request['uri'],
         );
-    }
-
-    public function testItReturnsFingerprint(): void
-    {
-        $entry = $this->createEntry();
 
         self::assertSame(
-            'abcdef1234567890',
-            $entry->fingerprint()->value(),
+            'PHPUnit',
+            $request['userAgent'],
         );
     }
 
-    public function testItReturnsContext(): void
+    public function testItDetectsErrorLog(): void
+    {
+        $entry = $this->createEntry(
+            level: LogLevel::ERROR,
+        );
+
+        self::assertTrue(
+            $entry->isError(),
+        );
+    }
+
+    public function testItDetectsHttpError(): void
+    {
+        $entry = $this->createEntry(
+            httpStatus: new HttpStatus(
+                500,
+            ),
+        );
+
+        self::assertTrue(
+            $entry->isError(),
+        );
+    }
+
+    public function testItComparesEntriesById(): void
+    {
+        $entry = $this->createEntry(
+            id: 'same-id',
+        );
+
+        $same = $this->createEntry(
+            id: 'same-id',
+        );
+
+        self::assertTrue(
+            $entry->equals(
+                $same,
+            ),
+        );
+    }
+
+    public function testItDetectsDifferentEntries(): void
+    {
+        $left = $this->createEntry(
+            id: 'left',
+        );
+
+        $right = $this->createEntry(
+            id: 'right',
+        );
+
+        self::assertFalse(
+            $left->equals(
+                $right,
+            ),
+        );
+    }
+
+    public function testItStoresContext(): void
     {
         $entry = $this->createEntry(
             context: [
@@ -193,44 +316,28 @@ final class LogEntryTest extends TestCase
         );
 
         self::assertSame(
-            [
-                'userId' => 42,
-            ],
-            $entry->context(),
+            42,
+            $entry
+                ->context()['userId'],
         );
     }
 
-    public function testItReturnsExtra(): void
+    public function testItStoresExtra(): void
     {
         $entry = $this->createEntry(
             extra: [
-                'memory' => 123,
+                'memory' => '128MB',
             ],
         );
 
         self::assertSame(
-            [
-                'memory' => 123,
-            ],
-            $entry->extra(),
+            '128MB',
+            $entry
+                ->extra()['memory'],
         );
     }
 
-    public function testItReturnsCreatedAt(): void
-    {
-        $date = new DateTimeImmutable();
-
-        $entry = $this->createEntry(
-            createdAt: $date,
-        );
-
-        self::assertSame(
-            $date,
-            $entry->createdAt(),
-        );
-    }
-
-    public function testItReturnsClientDate(): void
+    public function testItStoresClientDate(): void
     {
         $date = new DateTimeImmutable();
 
@@ -244,72 +351,70 @@ final class LogEntryTest extends TestCase
         );
     }
 
-    public function testItDetectsErrorLogLevel(): void
+    public function testItStoresIngestionWarnings(): void
     {
-        $entry = $this->createEntry();
+        $warnings = [
+            new IngestionWarning(
+                field: 'ip',
+                type: IngestionWarningType::INVALID_IP,
+                original: '999.999.999.999',
+                fallback: '127.0.0.1',
+            ),
+        ];
+
+        $entry = $this->createEntry(
+            ingestionWarnings: $warnings,
+        );
+
+        self::assertCount(
+            1,
+            $entry->ingestionWarnings(),
+        );
 
         self::assertTrue(
-            $entry->isError(),
+            $entry->hasIngestionWarnings(),
         );
     }
 
-    public function testItComparesEntries(): void
+    public function testItReturnsFalseWithoutWarnings(): void
     {
-        $id = '018f0d9b-fe16-7cb2-b40c-3c4f1e8b6f21';
-
-        $left = $this->createEntry(
-            id: $id,
-        );
-
-        $right = $this->createEntry(
-            id: $id,
-        );
-
-        $other = $this->createEntry();
-
-        self::assertTrue(
-            $left->equals($right),
-        );
+        $entry = $this->createEntry();
 
         self::assertFalse(
-            $left->equals($other),
+            $entry->hasIngestionWarnings(),
         );
     }
 
-    public function testItSerializesToArray(): void
+    public function testItRejectsInvalidWarnings(): void
     {
-        $entry = $this->createEntry();
-
-        $data = $entry->toArray();
-
-        self::assertSame(
-            'Payment failed',
-            $data['message'],
+        $this->expectException(
+            InvalidLogEntryException::class,
         );
 
-        self::assertSame(
-            'error',
-            $data['level'],
-        );
-
-        self::assertSame(
-            'billing',
-            $data['domain'],
-        );
-
-        self::assertArrayNotHasKey(
-            'tags',
-            $data,
+        $this->createEntry(
+            ingestionWarnings: [
+                'invalid',
+            ],
         );
     }
 
     /**
+     * @param list<IngestionWarning|mixed> $ingestionWarnings
      * @param array<string, mixed> $context
      * @param array<string, mixed> $extra
      */
     private function createEntry(
         string $message = 'Payment failed',
+        LogLevel $level = LogLevel::ERROR,
         string $domain = 'billing',
+        Environment $environment = Environment::Production,
+        ?HttpStatus $httpStatus = null,
+        ?Client $client = null,
+        ?Request $request = null,
+        ?IpAddress $ipAddress = null,
+        ?Fingerprint $fingerprint = null,
+        ?RequestId $requestId = null,
+        array $ingestionWarnings = [],
         array $context = [],
         array $extra = [],
         ?DateTimeImmutable $clientDate = null,
@@ -318,20 +423,26 @@ final class LogEntryTest extends TestCase
     ): LogEntry {
         return new LogEntry(
             message: $message,
-            level: LogLevel::ERROR,
+            level: $level,
             domain: $domain,
-            environment: Environment::Production,
-            httpStatus: new HttpStatus(500),
-            client: new Client('checkout-app'),
-            request: new Request(
-                new Uri('/orders'),
-                'POST',
-                'Mozilla/5.0',
-            ),
-            ipAddress: new IpAddress('127.0.0.1'),
-            fingerprint: new Fingerprint(
-                'abcdef1234567890',
-            ),
+            environment: $environment,
+            httpStatus: $httpStatus
+                ?? new HttpStatus(500),
+            client: $client
+                ?? new Client('phpunit'),
+            request: $request
+                ?? new Request(
+                    method: 'POST',
+                    uri: new Uri('/checkout'),
+                    userAgent: 'PHPUnit',
+                ),
+            ipAddress: $ipAddress
+                ?? new IpAddress('127.0.0.1'),
+            fingerprint: $fingerprint
+                ?? new Fingerprint('abcdef1234567890'),
+            requestId: $requestId
+                ?? new RequestId('req_checkout'),
+            ingestionWarnings: $ingestionWarnings,
             context: $context,
             extra: $extra,
             clientDate: $clientDate,

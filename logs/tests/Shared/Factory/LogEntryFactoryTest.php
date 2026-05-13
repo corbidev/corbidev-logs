@@ -6,11 +6,30 @@ namespace App\Tests\Shared\Factory;
 
 use App\Log\Domain\Entity\LogEntry;
 use App\Log\Enum\Environment;
+use App\Log\Enum\IngestionWarningType;
 use App\Log\Enum\LogLevel;
 use PHPUnit\Framework\TestCase;
 
 /**
+ * @internal
+ *
  * Tests nominaux de LogEntryFactory.
+ *
+ * OBJECTIFS :
+ * -----------
+ * - stabilité
+ * - prédictibilité
+ * - cohérence des invariants
+ * - robustesse des valeurs par défaut
+ * - stabilité des warnings ingestion
+ *
+ * IMPORTANT :
+ * ------------
+ * Cette factory doit toujours produire :
+ * - des LogEntry valides
+ * - des données cohérentes
+ * - des objets immutables
+ * - des warnings ingestion stables
  */
 final class LogEntryFactoryTest extends TestCase
 {
@@ -45,32 +64,63 @@ final class LogEntryFactoryTest extends TestCase
 
         self::assertSame(
             500,
-            $entry->httpStatus()->value(),
+            $entry
+                ->httpStatus()
+                ->value(),
         );
 
         self::assertSame(
             'phpunit',
-            $entry->client()->value(),
+            $entry
+                ->client()
+                ->value(),
+        );
+
+        self::assertSame(
+            'req_phpunit_test',
+            $entry
+                ->requestId()
+                ->value(),
         );
 
         self::assertSame(
             '/test',
-            $entry->request()->uri()->value(),
+            $entry
+                ->request()
+                ->uri()
+                ->value(),
         );
 
         self::assertSame(
             'GET',
-            $entry->request()->method(),
+            $entry
+                ->request()
+                ->method(),
+        );
+
+        self::assertSame(
+            'PHPUnit',
+            $entry
+                ->request()
+                ->userAgent(),
         );
 
         self::assertSame(
             '127.0.0.1',
-            $entry->ipAddress()->value(),
+            $entry
+                ->ipAddress()
+                ->value(),
         );
 
         self::assertMatchesRegularExpression(
             '/^[a-f0-9]{16}$/',
-            $entry->fingerprint()->value(),
+            $entry
+                ->fingerprint()
+                ->value(),
+        );
+
+        self::assertFalse(
+            $entry->hasIngestionWarnings(),
         );
     }
 
@@ -83,6 +133,32 @@ final class LogEntryFactoryTest extends TestCase
         self::assertSame(
             'Database failure',
             $entry->message(),
+        );
+    }
+
+    public function testItTruncatesHugeMessage(): void
+    {
+        $entry = LogEntryFactory::create(
+            message: str_repeat(
+                'A',
+                5000,
+            ),
+        );
+
+        self::assertSame(
+            1000,
+            mb_strlen(
+                $entry->message(),
+            ),
+        );
+
+        self::assertTrue(
+            $entry->hasIngestionWarnings(),
+        );
+
+        self::assertContainsWarningType(
+            $entry,
+            IngestionWarningType::MESSAGE_TRUNCATED,
         );
     }
 
@@ -152,8 +228,13 @@ final class LogEntryFactoryTest extends TestCase
         );
 
         self::assertNotSame(
-            $entry1->fingerprint()->value(),
-            $entry2->fingerprint()->value(),
+            $entry1
+                ->fingerprint()
+                ->value(),
+
+            $entry2
+                ->fingerprint()
+                ->value(),
         );
     }
 
@@ -169,6 +250,20 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    public function testItUsesProvidedRequestId(): void
+    {
+        $entry = LogEntryFactory::create(
+            requestId: 'req_checkout_42',
+        );
+
+        self::assertSame(
+            'req_checkout_42',
+            $entry
+                ->requestId()
+                ->value(),
+        );
+    }
+
     public function testItUsesProvidedFingerprint(): void
     {
         $entry = LogEntryFactory::create(
@@ -177,7 +272,9 @@ final class LogEntryFactoryTest extends TestCase
 
         self::assertSame(
             'abcdef1234567890',
-            $entry->fingerprint()->value(),
+            $entry
+                ->fingerprint()
+                ->value(),
         );
     }
 
@@ -247,17 +344,73 @@ final class LogEntryFactoryTest extends TestCase
 
         self::assertSame(
             'POST',
-            $entry->request()->method(),
+            $entry
+                ->request()
+                ->method(),
         );
 
         self::assertSame(
             '/api/logs',
-            $entry->request()->uri()->value(),
+            $entry
+                ->request()
+                ->uri()
+                ->value(),
         );
 
         self::assertSame(
             'Symfony HttpClient',
-            $entry->request()->userAgent(),
+            $entry
+                ->request()
+                ->userAgent(),
+        );
+    }
+
+    public function testItNormalizesHugeMethod(): void
+    {
+        $entry = LogEntryFactory::create(
+            method: str_repeat(
+                'POST',
+                50,
+            ),
+        );
+
+        self::assertContains(
+            $entry
+                ->request()
+                ->method(),
+            [
+                'GET',
+                'POST',
+                'PUT',
+                'PATCH',
+                'DELETE',
+                'HEAD',
+                'OPTIONS',
+            ],
+        );
+    }
+
+    public function testItTruncatesHugeUserAgent(): void
+    {
+        $entry = LogEntryFactory::create(
+            userAgent: str_repeat(
+                'Mozilla',
+                500,
+            ),
+        );
+
+        self::assertSame(
+            500,
+            mb_strlen(
+                $entry
+                    ->request()
+                    ->userAgent(),
+            ),
+        );
+
+        self::assertContainsWarningType(
+            $entry,
+            IngestionWarningType::USER_AGENT_TRUNCATED,
         );
     }
 
@@ -269,7 +422,9 @@ final class LogEntryFactoryTest extends TestCase
 
         self::assertSame(
             '192.168.1.10',
-            $entry->ipAddress()->value(),
+            $entry
+                ->ipAddress()
+                ->value(),
         );
     }
 
@@ -294,6 +449,89 @@ final class LogEntryFactoryTest extends TestCase
         self::assertCount(
             250,
             LogEntryFactory::many(250),
+        );
+    }
+
+    public function testManyCreatesUniqueRequestIds(): void
+    {
+        $entries = LogEntryFactory::many(
+            50,
+        );
+
+        $requestIds = array_map(
+            static fn (LogEntry $entry): string => $entry
+                ->requestId()
+                ->value(),
+            $entries,
+        );
+
+        self::assertCount(
+            50,
+            array_unique(
+                $requestIds,
+            ),
+        );
+    }
+
+    public function testItStoresIngestionWarnings(): void
+    {
+        $entry = LogEntryFactory::create(
+            ingestionWarnings: [
+                LogEntryFactory::warningMessageTruncated(),
+                LogEntryFactory::warningInvalidIp(),
+            ],
+        );
+
+        self::assertCount(
+            2,
+            $entry->ingestionWarnings(),
+        );
+
+        self::assertTrue(
+            $entry->hasIngestionWarnings(),
+        );
+    }
+
+    public function testItSerializesWarnings(): void
+    {
+        $entry = LogEntryFactory::create(
+            ingestionWarnings: [
+                LogEntryFactory::warningMessageTruncated(),
+            ],
+        );
+
+        $data = $entry->toArray();
+
+        self::assertArrayHasKey(
+            'ingestionWarnings',
+            $data,
+        );
+
+        self::assertCount(
+            1,
+            $data['ingestionWarnings'],
+        );
+
+        self::assertSame(
+            IngestionWarningType::MESSAGE_TRUNCATED->value,
+            $data['ingestionWarnings'][0]['type'],
+        );
+    }
+
+    private function assertContainsWarningType(
+        LogEntry $entry,
+        IngestionWarningType $expected,
+    ): void {
+        $types = array_map(
+            static fn ($warning): string => $warning
+                ->type()
+                ->value,
+            $entry->ingestionWarnings(),
+        );
+
+        self::assertContains(
+            $expected->value,
+            $types,
         );
     }
 }

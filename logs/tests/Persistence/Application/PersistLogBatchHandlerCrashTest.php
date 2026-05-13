@@ -10,6 +10,7 @@ use App\Log\Domain\ValueObject\Fingerprint;
 use App\Log\Domain\ValueObject\HttpStatus;
 use App\Log\Domain\ValueObject\IpAddress;
 use App\Log\Domain\ValueObject\Request;
+use App\Log\Domain\ValueObject\RequestId;
 use App\Log\Domain\ValueObject\Uri;
 use App\Log\Enum\Environment;
 use App\Log\Enum\LogLevel;
@@ -44,7 +45,9 @@ final class PersistLogBatchHandlerCrashTest extends TestCase
             ->expects(self::once())
             ->method('persist')
             ->willThrowException(
-                new RuntimeException('db failure'),
+                new RuntimeException(
+                    'db failure',
+                ),
             );
 
         $handler = new PersistLogBatchHandler(
@@ -94,8 +97,10 @@ final class PersistLogBatchHandlerCrashTest extends TestCase
     {
         $entries = [];
 
-        for ($i = 0; $i < 10000; $i++) {
-            $entries[] = $this->createEntry();
+        for ($i = 0; $i < 10000; ++$i) {
+            $entries[] = $this->createEntry(
+                requestId: 'req_batch_' . $i,
+            );
         }
 
         $writer = $this->createMock(
@@ -107,7 +112,9 @@ final class PersistLogBatchHandlerCrashTest extends TestCase
             ->method('persist')
             ->willReturn(
                 PersistenceResult::success(
-                    persistedCount: count($entries),
+                    persistedCount: count(
+                        $entries,
+                    ),
                 ),
             );
 
@@ -169,9 +176,11 @@ final class PersistLogBatchHandlerCrashTest extends TestCase
             $writer,
         );
 
-        for ($i = 0; $i < 1000; $i++) {
+        for ($i = 0; $i < 1000; ++$i) {
             $result = $handler->handle(
-                new PersistLogBatchRequest([]),
+                new PersistLogBatchRequest(
+                    [],
+                ),
             );
 
             self::assertInstanceOf(
@@ -200,10 +209,12 @@ final class PersistLogBatchHandlerCrashTest extends TestCase
             $writer,
         );
 
-        for ($i = 0; $i < 100; $i++) {
+        for ($i = 0; $i < 100; ++$i) {
             $result = $handler->handle(
                 new PersistLogBatchRequest([
-                    $this->createEntry(),
+                    $this->createEntry(
+                        requestId: 'req_failure_' . $i,
+                    ),
                 ]),
             );
 
@@ -213,25 +224,46 @@ final class PersistLogBatchHandlerCrashTest extends TestCase
         }
     }
 
-    private function createEntry(): LogEntry
-    {
+    private function createEntry(
+        string $requestId = 'req_checkout_test',
+    ): LogEntry {
         return new LogEntry(
             message: 'Payment failed',
+
             level: LogLevel::ERROR,
+
             domain: 'billing',
+
             environment: Environment::Production,
-            httpStatus: new HttpStatus(500),
-            client: new Client('checkout-app'),
-            request: new Request(
-                new Uri('/orders'),
-                'POST',
-                'Mozilla/5.0',
+
+            httpStatus: new HttpStatus(
+                500,
             ),
+
+            client: new Client(
+                'checkout-app',
+            ),
+
+            request: new Request(
+                uri: new Uri(
+                    '/orders',
+                ),
+
+                method: 'POST',
+
+                userAgent: 'Mozilla/5.0',
+            ),
+
             ipAddress: new IpAddress(
                 '127.0.0.1',
             ),
+
             fingerprint: new Fingerprint(
                 'abcdef1234567890',
+            ),
+
+            requestId: new RequestId(
+                $requestId,
             ),
         );
     }

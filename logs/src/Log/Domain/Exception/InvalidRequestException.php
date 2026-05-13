@@ -8,15 +8,25 @@ use DomainException;
 
 /**
  * Exception levée lorsqu'une Request
+ * ou une donnée HTTP liée à la requête
  * est invalide.
  *
- * Responsabilités :
+ * RESPONSABILITÉS :
+ * -----------------
  * - centraliser les erreurs métier
  * - fournir des messages explicites
  * - stabiliser les erreurs domaine
+ * - éviter les messages d'erreur implicites
  *
+ * IMPORTANT :
+ * ------------
  * Cette exception appartient strictement
  * au domaine métier.
+ *
+ * Elle ne doit dépendre :
+ * - ni de Symfony
+ * - ni de l'infrastructure
+ * - ni du transport HTTP
  */
 final class InvalidRequestException extends DomainException
 {
@@ -59,6 +69,20 @@ final class InvalidRequestException extends DomainException
         return new self(
             sprintf(
                 'Request method cannot exceed %d characters.',
+                $max,
+            ),
+        );
+    }
+
+    /**
+     * Message trop long.
+     */
+    public static function messageTooLong(
+        int $max,
+    ): self {
+        return new self(
+            sprintf(
+                'Message cannot exceed %d characters.',
                 $max,
             ),
         );

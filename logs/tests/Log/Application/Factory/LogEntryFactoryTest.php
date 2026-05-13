@@ -7,7 +7,9 @@ namespace App\Tests\Unit\Log\Application\Factory;
 use App\Log\Application\Factory\LogEntryFactory;
 use App\Log\Domain\Entity\LogEntry;
 use App\Log\Enum\Environment;
+use App\Log\Enum\IngestionWarningType;
 use App\Log\Enum\LogLevel;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -21,16 +23,19 @@ use PHPUnit\Framework\TestCase;
  * - stabilité
  * - prédictibilité
  * - protection ingestion
+ * - stabilité des warnings
  *
  * IMPORTANT :
  * ------------
- * Les tags ont été supprimés du domaine.
- *
- * La factory doit néanmoins :
- * - ignorer les anciens payloads
- * - rester rétrocompatible ingestion
+ * La factory doit :
  * - ne jamais crash
+ * - tolérer les payloads hostiles
+ * - générer requestId si absent
+ * - stabiliser les anciennes structures
+ * - rester rétrocompatible ingestion
+ * - tracer les corrections ingestion
  */
+#[CoversClass(LogEntryFactory::class)]
 final class LogEntryFactoryTest extends TestCase
 {
     private LogEntryFactory $factory;
@@ -49,15 +54,76 @@ final class LogEntryFactoryTest extends TestCase
             'env' => 'prod',
             'httpStatus' => 500,
             'client' => 'checkout-app',
-            'uri' => '/orders',
-            'method' => 'POST',
+
+            'requestId' => 'req_checkout_123',
+
+            'request' => [
+                'uri' => '/orders',
+                'method' => 'POST',
+                'userAgent' => 'Mozilla/5.0',
+            ],
+
             'ip' => '127.0.0.1',
+
             'fingerprint' => 'abcdef1234567890',
         ]);
 
         self::assertInstanceOf(
             LogEntry::class,
             $entry,
+        );
+
+        self::assertFalse(
+            $entry->hasIngestionWarnings(),
+        );
+    }
+
+    public function testItCreatesRequestId(): void
+    {
+        $entry = $this->factory->create([
+            'requestId' => 'REQ_CHECKOUT_123',
+        ]);
+
+        self::assertSame(
+            'req_checkout_123',
+            $entry
+                ->requestId()
+                ->value(),
+        );
+    }
+
+    public function testItGeneratesRequestIdWhenMissing(): void
+    {
+        $entry = $this->factory->create([]);
+
+        self::assertStringStartsWith(
+            'req_',
+            $entry
+                ->requestId()
+                ->value(),
+        );
+    }
+
+    public function testItGeneratesRequestIdWhenInvalid(): void
+    {
+        $entry = $this->factory->create([
+            'requestId' => '<script>',
+        ]);
+
+        self::assertStringStartsWith(
+            'req_',
+            $entry
+                ->requestId()
+                ->value(),
+        );
+
+        self::assertTrue(
+            $entry->hasIngestionWarnings(),
+        );
+
+        self::assertContainsWarningType(
+            $entry,
+            IngestionWarningType::INVALID_REQUEST_ID,
         );
     }
 
@@ -82,6 +148,28 @@ final class LogEntryFactoryTest extends TestCase
         self::assertSame(
             'unknown error',
             $entry->message(),
+        );
+    }
+
+    public function testItTruncatesHugeMessage(): void
+    {
+        $entry = $this->factory->create([
+            'message' => str_repeat(
+                'A',
+                5000,
+            ),
+        ]);
+
+        self::assertLessThanOrEqual(
+            1000,
+            mb_strlen(
+                $entry->message(),
+            ),
+        );
+
+        self::assertContainsWarningType(
+            $entry,
+            IngestionWarningType::MESSAGE_TRUNCATED,
         );
     }
 
@@ -131,6 +219,11 @@ final class LogEntryFactoryTest extends TestCase
             LogLevel::ERROR,
             $entry->level(),
         );
+
+        self::assertContainsWarningType(
+            $entry,
+            IngestionWarningType::INVALID_LEVEL,
+        );
     }
 
     public function testItCreatesEnvironment(): void
@@ -155,35 +248,132 @@ final class LogEntryFactoryTest extends TestCase
             Environment::Production,
             $entry->environment(),
         );
+
+        self::assertContainsWarningType(
+            $entry,
+            IngestionWarningType::INVALID_ENVIRONMENT,
+        );
     }
 
     public function testItCreatesRequest(): void
     {
         $entry = $this->factory->create([
-            'uri' => '/orders',
-            'method' => 'POST',
+            'request' => [
+                'uri' => '/orders',
+                'method' => 'POST',
+                'userAgent' => 'Mozilla/5.0',
+            ],
         ]);
 
         self::assertSame(
             '/orders',
-            $entry->request()->uri()->value(),
+            $entry
+                ->request()
+                ->uri()
+                ->value(),
         );
 
         self::assertSame(
             'POST',
-            $entry->request()->method(),
+            $entry
+                ->request()
+                ->method(),
+        );
+
+        self::assertSame(
+            'Mozilla/5.0',
+            $entry
+                ->request()
+                ->userAgent(),
+        );
+    }
+
+    public function testItSupportsLegacyRequestPayload(): void
+    {
+        $entry = $this->factory->create([
+            'uri' => '/legacy',
+            'method' => 'PUT',
+            'userAgent' => 'LegacyAgent',
+        ]);
+
+        self::assertSame(
+            '/legacy',
+            $entry
+                ->request()
+                ->uri()
+                ->value(),
+        );
+
+        self::assertSame(
+            'PUT',
+            $entry
+                ->request()
+                ->method(),
+        );
+
+        self::assertSame(
+            'LegacyAgent',
+            $entry
+                ->request()
+                ->userAgent(),
         );
     }
 
     public function testItFallsBackRequestMethod(): void
     {
         $entry = $this->factory->create([
-            'method' => null,
+            'request' => [
+                'method' => null,
+            ],
         ]);
 
         self::assertSame(
             'GET',
-            $entry->request()->method(),
+            $entry
+                ->request()
+                ->method(),
+        );
+    }
+
+    public function testItTruncatesHugeUserAgent(): void
+    {
+        $entry = $this->factory->create([
+            'request' => [
+                'userAgent' => str_repeat(
+                    'Mozilla/5.0 ',
+                    5000,
+                ),
+            ],
+        ]);
+
+        self::assertLessThanOrEqual(
+            500,
+            mb_strlen(
+                $entry
+                    ->request()
+                    ->userAgent(),
+            ),
+        );
+
+        self::assertContainsWarningType(
+            $entry,
+            IngestionWarningType::USER_AGENT_TRUNCATED,
+        );
+    }
+
+    public function testItFallsBackUserAgent(): void
+    {
+        $entry = $this->factory->create([
+            'request' => [
+                'userAgent' => null,
+            ],
+        ]);
+
+        self::assertSame(
+            '',
+            $entry
+                ->request()
+                ->userAgent(),
         );
     }
 
@@ -240,6 +430,69 @@ final class LogEntryFactoryTest extends TestCase
         self::assertSame(
             [],
             $entry->extra(),
+        );
+    }
+
+    public function testItFallsBackInvalidIp(): void
+    {
+        $entry = $this->factory->create([
+            'ip' => '999.999.999.999',
+        ]);
+
+        self::assertSame(
+            '127.0.0.1',
+            $entry
+                ->ipAddress()
+                ->value(),
+        );
+
+        self::assertContainsWarningType(
+            $entry,
+            IngestionWarningType::INVALID_IP,
+        );
+    }
+
+    public function testItFallsBackInvalidFingerprint(): void
+    {
+        $entry = $this->factory->create([
+            'fingerprint' => 'INVALID',
+        ]);
+
+        self::assertMatchesRegularExpression(
+            '/^[a-f0-9]{16}$/',
+            $entry
+                ->fingerprint()
+                ->value(),
+        );
+
+        self::assertContainsWarningType(
+            $entry,
+            IngestionWarningType::FINGERPRINT_REGENERATED,
+        );
+    }
+
+    public function testItFallsBackInvalidUri(): void
+    {
+        $entry = $this->factory->create([
+            'request' => [
+                'uri' => str_repeat(
+                    '/orders',
+                    1000,
+                ),
+            ],
+        ]);
+
+        self::assertSame(
+            '/',
+            $entry
+                ->request()
+                ->uri()
+                ->value(),
+        );
+
+        self::assertContainsWarningType(
+            $entry,
+            IngestionWarningType::INVALID_URI,
         );
     }
 
@@ -300,6 +553,108 @@ final class LogEntryFactoryTest extends TestCase
             $entry
                 ->createdAt()
                 ->format('Y-m-d'),
+        );
+    }
+
+    public function testItHandlesInvalidDate(): void
+    {
+        $entry = $this->factory->create([
+            'createdAt' => 'INVALID_DATE',
+        ]);
+
+        self::assertNotNull(
+            $entry->createdAt(),
+        );
+
+        self::assertContainsWarningType(
+            $entry,
+            IngestionWarningType::INVALID_CREATED_AT,
+        );
+    }
+
+    public function testItNeverCrashesWithHostilePayload(): void
+    {
+        $entry = $this->factory->create([
+            'message' => [
+                'invalid',
+            ],
+
+            'domain' => new \stdClass(),
+
+            'requestId' => [
+                'bad',
+            ],
+
+            'request' => 'invalid',
+
+            'context' => 'bad',
+
+            'extra' => false,
+        ]);
+
+        self::assertInstanceOf(
+            LogEntry::class,
+            $entry,
+        );
+    }
+
+    public function testItExposesStableWarningsStructure(): void
+    {
+        $entry = $this->factory->create([
+            'message' => str_repeat(
+                'A',
+                5000,
+            ),
+
+            'ip' => '999.999.999.999',
+        ]);
+
+        self::assertTrue(
+            $entry->hasIngestionWarnings(),
+        );
+
+        foreach (
+            $entry->ingestionWarnings()
+            as $warning
+        ) {
+            $data = $warning->toArray();
+
+            self::assertArrayHasKey(
+                'field',
+                $data,
+            );
+
+            self::assertArrayHasKey(
+                'type',
+                $data,
+            );
+
+            self::assertArrayHasKey(
+                'original',
+                $data,
+            );
+
+            self::assertArrayHasKey(
+                'fallback',
+                $data,
+            );
+        }
+    }
+
+    private function assertContainsWarningType(
+        LogEntry $entry,
+        IngestionWarningType $expected,
+    ): void {
+        $types = array_map(
+            static fn ($warning): string => $warning
+                ->type()
+                ->value,
+            $entry->ingestionWarnings(),
+        );
+
+        self::assertContains(
+            $expected->value,
+            $types,
         );
     }
 }

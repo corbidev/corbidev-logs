@@ -4,10 +4,40 @@ declare(strict_types=1);
 
 namespace App\Tests\Shared\Factory;
 
+use App\Log\Domain\Exception\InvalidClientException;
+use App\Log\Domain\Exception\InvalidFingerprintException;
+use App\Log\Domain\Exception\InvalidHttpStatusException;
+use App\Log\Domain\Exception\InvalidIpAddressException;
+use App\Log\Domain\Exception\InvalidRequestException;
+use App\Log\Domain\Exception\InvalidRequestIdException;
+use App\Log\Domain\Exception\InvalidUriException;
+use App\Log\Enum\IngestionWarningType;
 use PHPUnit\Framework\TestCase;
 
 /**
+ * @internal
+ *
  * Crash tests de LogEntryFactory.
+ *
+ * OBJECTIFS :
+ * -----------
+ * - garantir robustesse
+ * - garantir stabilité mémoire
+ * - garantir absence de crash
+ * - garantir cohérence des invariants
+ * - garantir stabilité des warnings ingestion
+ *
+ * IMPORTANT :
+ * ------------
+ * Cette factory DOIT :
+ * - toujours produire des LogEntry valides
+ * - préserver les invariants Domain
+ * - tracer les corrections ingestion
+ *
+ * Les crash tests ne doivent JAMAIS :
+ * - bypass le Domain
+ * - contourner les invariants
+ * - produire des états invalides
  */
 final class LogEntryFactoryCrashTest extends TestCase
 {
@@ -23,24 +53,36 @@ final class LogEntryFactoryCrashTest extends TestCase
         );
     }
 
-    public function testItRejectsVeryLongMessage(): void
+    public function testItTruncatesVeryLongMessage(): void
     {
-        $this->expectException(
-            \Throwable::class,
-        );
-
-        LogEntryFactory::create(
+        $entry = LogEntryFactory::create(
             message: str_repeat(
                 'a',
                 5000,
             ),
+        );
+
+        self::assertSame(
+            1000,
+            mb_strlen(
+                $entry->message(),
+            ),
+        );
+
+        self::assertTrue(
+            $entry->hasIngestionWarnings(),
+        );
+
+        self::assertContainsWarningType(
+            $entry,
+            IngestionWarningType::MESSAGE_TRUNCATED,
         );
     }
 
     public function testItRejectsInvalidHttpStatus(): void
     {
         $this->expectException(
-            \Throwable::class,
+            InvalidHttpStatusException::class,
         );
 
         LogEntryFactory::create(
@@ -51,7 +93,7 @@ final class LogEntryFactoryCrashTest extends TestCase
     public function testItRejectsInvalidIp(): void
     {
         $this->expectException(
-            \Throwable::class,
+            InvalidIpAddressException::class,
         );
 
         LogEntryFactory::create(
@@ -62,7 +104,7 @@ final class LogEntryFactoryCrashTest extends TestCase
     public function testItRejectsInvalidFingerprint(): void
     {
         $this->expectException(
-            \Throwable::class,
+            InvalidFingerprintException::class,
         );
 
         LogEntryFactory::create(
@@ -75,7 +117,7 @@ final class LogEntryFactoryCrashTest extends TestCase
         $context = [];
 
         for ($i = 0; $i < 5000; ++$i) {
-            $context['key_'.$i] = $i;
+            $context['key_' . $i] = $i;
         }
 
         $entry = LogEntryFactory::create(
@@ -93,7 +135,7 @@ final class LogEntryFactoryCrashTest extends TestCase
         $extra = [];
 
         for ($i = 0; $i < 5000; ++$i) {
-            $extra['extra_'.$i] = $i;
+            $extra['extra_' . $i] = $i;
         }
 
         $entry = LogEntryFactory::create(
@@ -133,12 +175,14 @@ final class LogEntryFactoryCrashTest extends TestCase
     {
         for ($i = 0; $i < 3000; ++$i) {
             $entry = LogEntryFactory::create(
-                message: 'message-'.$i,
+                message: 'message-' . $i,
             );
 
             self::assertMatchesRegularExpression(
                 '/^[a-f0-9]{16}$/',
-                $entry->fingerprint()->value(),
+                $entry
+                    ->fingerprint()
+                    ->value(),
             );
         }
     }
@@ -146,7 +190,7 @@ final class LogEntryFactoryCrashTest extends TestCase
     public function testItRejectsHugeUri(): void
     {
         $this->expectException(
-            \Throwable::class,
+            InvalidUriException::class,
         );
 
         LogEntryFactory::create(
@@ -158,30 +202,79 @@ final class LogEntryFactoryCrashTest extends TestCase
         );
     }
 
-    public function testItRejectsHugeUserAgent(): void
+    public function testItTruncatesHugeUserAgent(): void
     {
-        $this->expectException(
-            \Throwable::class,
-        );
-
-        LogEntryFactory::create(
+        $entry = LogEntryFactory::create(
             userAgent: str_repeat(
                 'Mozilla/5.0 ',
                 500,
             ),
+        );
+
+        self::assertSame(
+            500,
+            mb_strlen(
+                $entry
+                    ->request()
+                    ->userAgent(),
+            ),
+        );
+
+        self::assertContainsWarningType(
+            $entry,
+            IngestionWarningType::USER_AGENT_TRUNCATED,
         );
     }
 
     public function testItRejectsHugeClientName(): void
     {
         $this->expectException(
-            \Throwable::class,
+            InvalidClientException::class,
         );
 
         LogEntryFactory::create(
             client: str_repeat(
                 'phpunit-client-',
                 100,
+            ),
+        );
+    }
+
+    public function testItNormalizesHugeMethod(): void
+    {
+        $entry = LogEntryFactory::create(
+            method: str_repeat(
+                'POST',
+                200,
+            ),
+        );
+
+        self::assertContains(
+            $entry
+                ->request()
+                ->method(),
+            [
+                'GET',
+                'POST',
+                'PUT',
+                'PATCH',
+                'DELETE',
+                'HEAD',
+                'OPTIONS',
+            ],
+        );
+    }
+
+    public function testItRejectsHugeRequestId(): void
+    {
+        $this->expectException(
+            InvalidRequestIdException::class,
+        );
+
+        LogEntryFactory::create(
+            requestId: str_repeat(
+                'req_',
+                50,
             ),
         );
     }
@@ -199,6 +292,64 @@ final class LogEntryFactoryCrashTest extends TestCase
         self::assertSame(
             [],
             LogEntryFactory::many(0),
+        );
+    }
+
+    public function testItSupportsStableWarningSerialization(): void
+    {
+        $entry = LogEntryFactory::create(
+            message: str_repeat(
+                'A',
+                5000,
+            ),
+        );
+
+        $warnings = $entry
+            ->ingestionWarnings();
+
+        self::assertNotEmpty(
+            $warnings,
+        );
+
+        foreach ($warnings as $warning) {
+            $data = $warning->toArray();
+
+            self::assertArrayHasKey(
+                'field',
+                $data,
+            );
+
+            self::assertArrayHasKey(
+                'type',
+                $data,
+            );
+
+            self::assertArrayHasKey(
+                'original',
+                $data,
+            );
+
+            self::assertArrayHasKey(
+                'fallback',
+                $data,
+            );
+        }
+    }
+
+    private function assertContainsWarningType(
+        mixed $entry,
+        IngestionWarningType $expected,
+    ): void {
+        $types = array_map(
+            static fn ($warning): string => $warning
+                ->type()
+                ->value,
+            $entry->ingestionWarnings(),
+        );
+
+        self::assertContains(
+            $expected->value,
+            $types,
         );
     }
 }

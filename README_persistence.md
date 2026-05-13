@@ -69,7 +69,7 @@ Objectifs :
 src/Persistence/
 │
 ├── Application/
-│   ├── PersistLogBatchCommand.php
+│   ├── PersistLogBatchRequest.php
 │   ├── PersistLogBatchHandler.php
 │   └── PersistLogBatchResult.php
 │

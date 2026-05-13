@@ -8,8 +8,10 @@ use App\Log\Domain\Exception\InvalidLogEntryException;
 use App\Log\Domain\ValueObject\Client;
 use App\Log\Domain\ValueObject\Fingerprint;
 use App\Log\Domain\ValueObject\HttpStatus;
+use App\Log\Domain\ValueObject\IngestionWarning;
 use App\Log\Domain\ValueObject\IpAddress;
 use App\Log\Domain\ValueObject\Request;
+use App\Log\Domain\ValueObject\RequestId;
 use App\Log\Enum\Environment;
 use App\Log\Enum\LogLevel;
 use DateTimeImmutable;
@@ -45,8 +47,17 @@ use Symfony\Component\Uid\Uuid;
  * - message normalisé
  * - domaine normalisé
  * - fingerprint toujours présent
+ * - requestId toujours présent
  * - aucune dépendance Symfony métier
  * - aucun état partiel
+ *
+ * IMPORTANT :
+ * ------------
+ * LogEntry représente l'état FINAL valide
+ * après ingestion et normalisation.
+ *
+ * Les anomalies ingestion éventuelles
+ * sont conservées dans ingestionWarnings.
  */
 final readonly class LogEntry
 {
@@ -96,6 +107,11 @@ final readonly class LogEntry
     private Client $client;
 
     /**
+     * Identifiant de corrélation requête.
+     */
+    private RequestId $requestId;
+
+    /**
      * Requête HTTP.
      */
     private Request $request;
@@ -109,6 +125,13 @@ final readonly class LogEntry
      * Fingerprint serveur.
      */
     private Fingerprint $fingerprint;
+
+    /**
+     * Warnings ingestion.
+     *
+     * @var list<IngestionWarning>
+     */
+    private array $ingestionWarnings;
 
     /**
      * Contexte libre.
@@ -135,6 +158,7 @@ final readonly class LogEntry
     private ?DateTimeImmutable $clientDate;
 
     /**
+     * @param list<IngestionWarning> $ingestionWarnings
      * @param array<string, mixed> $context
      * @param array<string, mixed> $extra
      *
@@ -150,6 +174,8 @@ final readonly class LogEntry
         Request $request,
         IpAddress $ipAddress,
         Fingerprint $fingerprint,
+        RequestId $requestId,
+        array $ingestionWarnings = [],
         array $context = [],
         array $extra = [],
         ?DateTimeImmutable $clientDate = null,
@@ -172,6 +198,10 @@ final readonly class LogEntry
             $domain,
         );
 
+        $this->guardWarnings(
+            $ingestionWarnings,
+        );
+
         $this->id = $this->buildId(
             $id,
         );
@@ -185,6 +215,8 @@ final readonly class LogEntry
         $this->request = $request;
         $this->ipAddress = $ipAddress;
         $this->fingerprint = $fingerprint;
+        $this->requestId = $requestId;
+        $this->ingestionWarnings = $ingestionWarnings;
         $this->context = $context;
         $this->extra = $extra;
         $this->clientDate = $clientDate;
@@ -249,6 +281,14 @@ final readonly class LogEntry
     }
 
     /**
+     * Retourne l'identifiant de requête.
+     */
+    public function requestId(): RequestId
+    {
+        return $this->requestId;
+    }
+
+    /**
      * Retourne la requête HTTP.
      */
     public function request(): Request
@@ -270,6 +310,24 @@ final readonly class LogEntry
     public function fingerprint(): Fingerprint
     {
         return $this->fingerprint;
+    }
+
+    /**
+     * Retourne les warnings ingestion.
+     *
+     * @return list<IngestionWarning>
+     */
+    public function ingestionWarnings(): array
+    {
+        return $this->ingestionWarnings;
+    }
+
+    /**
+     * Vérifie la présence de warnings ingestion.
+     */
+    public function hasIngestionWarnings(): bool
+    {
+        return $this->ingestionWarnings !== [];
     }
 
     /**
@@ -335,22 +393,46 @@ final readonly class LogEntry
     {
         return [
             'id' => $this->id,
+
             'message' => $this->message,
+
             'level' => $this->level->value,
+
             'domain' => $this->domain,
+
             'environment' => $this->environment->value,
+
             'httpStatus' => $this->httpStatus->value(),
+
             'client' => $this->client->value(),
-            'method' => $this->request->method(),
-            'uri' => $this->request->uri()->value(),
-            'userAgent' => $this->request->userAgent(),
+
+            'requestId' => $this->requestId->value(),
+
+            'request' => [
+                'method' => $this->request->method(),
+                'uri' => $this->request->uri()->value(),
+                'userAgent' => $this->request->userAgent(),
+            ],
+
             'ip' => $this->ipAddress->value(),
+
             'fingerprint' => $this->fingerprint->value(),
+
+            'ingestionWarnings' => array_map(
+                static fn (
+                    IngestionWarning $warning,
+                ): array => $warning->toArray(),
+                $this->ingestionWarnings,
+            ),
+
             'context' => $this->context,
+
             'extra' => $this->extra,
+
             'createdAt' => $this->createdAt->format(
                 DATE_ATOM,
             ),
+
             'clientDate' => $this->clientDate?->format(
                 DATE_ATOM,
             ),
@@ -419,12 +501,34 @@ final readonly class LogEntry
     }
 
     /**
+     * Vérifie les warnings ingestion.
+     *
+     * @param list<mixed> $warnings
+     *
+     * @throws InvalidLogEntryException
+     */
+    private function guardWarnings(
+        array $warnings,
+    ): void {
+        foreach ($warnings as $warning) {
+            if (
+                $warning instanceof IngestionWarning
+                === false
+            ) {
+                throw InvalidLogEntryException::invalidContext();
+            }
+        }
+    }
+
+    /**
      * Normalise le message.
      */
     private function normalizeMessage(
         string $message,
     ): string {
-        return trim($message);
+        return trim(
+            $message,
+        );
     }
 
     /**
