@@ -225,10 +225,6 @@ final readonly class IpAddress
             strtolower($value),
         );
 
-        if ($value === '') {
-            return self::FALLBACK_IP;
-        }
-
         /**
          * Protection longueur IPv6.
          */
@@ -255,10 +251,6 @@ final readonly class IpAddress
         $value = trim(
             $value,
         );
-
-        if ($value === '') {
-            return self::FALLBACK_IP;
-        }
 
         return $value;
     }

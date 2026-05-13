@@ -379,6 +379,10 @@ final class LogEntryToRecordMapper
         $normalized = [];
 
         foreach ($warnings as $warning) {
+            if ($warning instanceof \App\Log\Domain\ValueObject\IngestionWarning) {
+                $warning = $warning->toArray();
+            }
+
             if (
                 !is_array($warning)
             ) {

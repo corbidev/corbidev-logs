@@ -85,6 +85,10 @@ final class CorruptedQueueFileManagerCrashTest extends TestCase
 
     public function test_it_fails_when_corrupted_directory_is_not_writable(): void
     {
+        if (PHP_OS_FAMILY === 'Windows') {
+            $this->markTestSkipped('Les permissions Unix (chmod) ne sont pas supportées sur Windows.');
+        }
+
         $sourceFile = $this->createQueueFile(
             'broken.json',
             'broken',

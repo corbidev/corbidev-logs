@@ -223,7 +223,7 @@ final readonly class QueueConfiguration
             );
         }
 
-        if (!str_starts_with($this->baseDirectory, '/')) {
+        if (!$this->isAbsolutePath($this->baseDirectory)) {
             throw new \InvalidArgumentException(
                 'Queue base directory must be absolute.',
             );
@@ -328,5 +328,23 @@ final readonly class QueueConfiguration
                 'File permissions must be valid.',
             );
         }
+    }
+
+    /**
+     * Vérifie si un chemin est absolu (Unix ou Windows).
+     */
+    private function isAbsolutePath(string $path): bool
+    {
+        // Unix : /path/to/dir
+        if (str_starts_with($path, '/')) {
+            return true;
+        }
+
+        // Windows : C:\path ou C:/path
+        if (preg_match('/^[a-zA-Z]:[\\\\\/]/', $path) === 1) {
+            return true;
+        }
+
+        return false;
     }
 }

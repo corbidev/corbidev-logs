@@ -55,6 +55,10 @@ final class FileQueueWriterCrashTest extends TestCase
 
     public function test_it_fails_when_base_directory_is_not_writable(): void
     {
+        if (PHP_OS_FAMILY === 'Windows') {
+            $this->markTestSkipped('Les permissions Unix (chmod) ne sont pas supportées sur Windows.');
+        }
+
         mkdir($this->baseDirectory, 0555, true);
 
         $writer = new FileQueueWriter(
@@ -91,6 +95,10 @@ final class FileQueueWriterCrashTest extends TestCase
 
     public function test_it_never_creates_partial_final_file_on_failure(): void
     {
+        if (PHP_OS_FAMILY === 'Windows') {
+            $this->markTestSkipped('Les permissions Unix (chmod) ne sont pas supportées sur Windows.');
+        }
+
         mkdir($this->baseDirectory, 0555, true);
 
         $writer = new FileQueueWriter(

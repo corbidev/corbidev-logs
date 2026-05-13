@@ -167,7 +167,7 @@ final readonly class IngestionWarning implements JsonSerializable
         }
 
         if (is_resource($value)) {
-            return '[resource]';
+            return '[unsupported]';
         }
 
         if (is_object($value)) {

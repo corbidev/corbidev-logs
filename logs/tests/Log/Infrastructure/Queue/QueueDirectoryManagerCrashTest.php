@@ -74,11 +74,20 @@ final class QueueDirectoryManagerCrashTest extends TestCase
 
     public function testEnsureDirectoryExistsFailsOnSymlink(): void
     {
+        if (PHP_OS_FAMILY === 'Windows') {
+            $this->markTestSkipped('Les liens symboliques ne sont pas fiables sous Windows sans privilèges élevés.');
+        }
+
         $target = sys_get_temp_dir() . '/queue_target_' . uniqid();
 
         mkdir($target);
 
-        symlink($target, $this->baseDirectory);
+        $created = symlink($target, $this->baseDirectory);
+
+        if (!$created) {
+            @rmdir($target);
+            $this->markTestSkipped('Impossible de créer un lien symbolique sur cet environnement.');
+        }
 
         $manager = new QueueDirectoryManager();
 

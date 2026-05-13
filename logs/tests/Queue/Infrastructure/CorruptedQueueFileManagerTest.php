@@ -142,6 +142,10 @@ final class CorruptedQueueFileManagerTest extends TestCase
 
     public function test_it_applies_file_permissions(): void
     {
+        if (PHP_OS_FAMILY === 'Windows') {
+            $this->markTestSkipped('Les permissions Unix (chmod) ne sont pas fiables sur Windows.');
+        }
+
         $manager = $this->createManager();
 
         $sourceFile = $this->createQueueFile(

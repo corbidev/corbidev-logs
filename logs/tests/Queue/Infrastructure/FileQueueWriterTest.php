@@ -135,6 +135,10 @@ final class FileQueueWriterTest extends TestCase
 
     public function test_it_applies_file_permissions(): void
     {
+        if (PHP_OS_FAMILY === 'Windows') {
+            $this->markTestSkipped('Les permissions Unix (chmod) ne sont pas fiables sur Windows.');
+        }
+
         $writer = $this->createWriter();
 
         $path = $writer->write([

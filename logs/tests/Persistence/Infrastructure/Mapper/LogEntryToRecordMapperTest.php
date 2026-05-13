@@ -354,8 +354,8 @@ final class LogEntryToRecordMapperTest extends TestCase
                 new IngestionWarning(
                     type: IngestionWarningType::INVALID_MESSAGE,
                     field: 'message',
-                    originalValue: null,
-                    correctedValue: 'unknown error',
+                    original: null,
+                    fallback: 'unknown error',
                 ),
             ],
         );

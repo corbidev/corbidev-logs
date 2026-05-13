@@ -80,82 +80,39 @@ final readonly class LogEntryFactory implements LogEntryFactoryInterface
     ): LogEntry {
         $warnings = [];
 
+        $id          = $this->createId($payload);
+        $message     = $this->createMessage($payload, $warnings);
+        $level       = $this->createLevel($payload, $warnings);
+        $domain      = $this->createDomain($payload, $warnings);
+        $environment = $this->createEnvironment($payload, $warnings);
+        $httpStatus  = $this->createHttpStatus($payload, $warnings);
+        $client      = $this->createClient($payload, $warnings);
+        $request     = $this->createRequest($payload, $warnings);
+        $ipAddress   = $this->createIpAddress($payload, $warnings);
+        $fingerprint = $this->createFingerprint($payload, $warnings);
+        $requestId   = $this->createRequestId($payload, $warnings);
+        $context     = $this->createArray($payload['context'] ?? []);
+        $extra       = $this->createArray($payload['extra'] ?? []);
+        $createdAt   = $this->createNullableDate($payload['createdAt'] ?? null, 'createdAt', $warnings);
+        $clientDate  = $this->createNullableDate($payload['clientDate'] ?? null, 'clientDate', $warnings);
+
         return new LogEntry(
-            id: $this->createId(
-                $payload,
-            ),
-
-            message: $this->createMessage(
-                $payload,
-                $warnings,
-            ),
-
-            level: $this->createLevel(
-                $payload,
-                $warnings,
-            ),
-
-            domain: $this->createDomain(
-                $payload,
-                $warnings,
-            ),
-
-            environment: $this->createEnvironment(
-                $payload,
-                $warnings,
-            ),
-
-            httpStatus: $this->createHttpStatus(
-                $payload,
-                $warnings,
-            ),
-
-            client: $this->createClient(
-                $payload,
-                $warnings,
-            ),
-
-            request: $this->createRequest(
-                $payload,
-                $warnings,
-            ),
-
-            ipAddress: $this->createIpAddress(
-                $payload,
-                $warnings,
-            ),
-
-            fingerprint: $this->createFingerprint(
-                $payload,
-                $warnings,
-            ),
-
-            requestId: $this->createRequestId(
-                $payload,
-                $warnings,
-            ),
-
+            id: $id,
+            message: $message,
+            level: $level,
+            domain: $domain,
+            environment: $environment,
+            httpStatus: $httpStatus,
+            client: $client,
+            request: $request,
+            ipAddress: $ipAddress,
+            fingerprint: $fingerprint,
+            requestId: $requestId,
             ingestionWarnings: $warnings,
-
-            context: $this->createArray(
-                $payload['context'] ?? [],
-            ),
-
-            extra: $this->createArray(
-                $payload['extra'] ?? [],
-            ),
-
-            createdAt: $this->createNullableDate(
-                $payload['createdAt'] ?? null,
-                'createdAt',
-                $warnings,
-            ),
-
-            clientDate: $this->createNullableDate(
-                $payload['clientDate'] ?? null,
-                'clientDate',
-                $warnings,
-            ),
+            context: $context,
+            extra: $extra,
+            createdAt: $createdAt,
+            clientDate: $clientDate,
         );
     }
 
@@ -292,11 +249,14 @@ final readonly class LogEntryFactory implements LogEntryFactoryInterface
     ): LogLevel {
         $value = $payload['level'] ?? null;
 
-        try {
-            return LogLevel::fromExternal(
-                $value,
-            );
-        } catch (\Throwable) {
+        if ($value === null) {
+            return LogLevel::default();
+        }
+
+        $normalized = is_string($value) ? strtolower(trim($value)) : null;
+        $level = $normalized !== null ? LogLevel::tryFrom($normalized) : null;
+
+        if ($level === null) {
             $this->addWarning(
                 warnings: $warnings,
                 field: 'level',
@@ -307,6 +267,8 @@ final readonly class LogEntryFactory implements LogEntryFactoryInterface
 
             return LogLevel::ERROR;
         }
+
+        return $level;
     }
 
     /**
@@ -320,11 +282,13 @@ final readonly class LogEntryFactory implements LogEntryFactoryInterface
     ): Environment {
         $value = $payload['env'] ?? null;
 
-        try {
-            return Environment::fromExternal(
-                $value,
-            );
-        } catch (\Throwable) {
+        if ($value === null) {
+            return Environment::Production;
+        }
+
+        $env = Environment::tryFromExternal($value);
+
+        if ($env === null) {
             $this->addWarning(
                 warnings: $warnings,
                 field: 'env',
@@ -335,6 +299,8 @@ final readonly class LogEntryFactory implements LogEntryFactoryInterface
 
             return Environment::Production;
         }
+
+        return $env;
     }
 
     /**
@@ -447,10 +413,12 @@ final readonly class LogEntryFactory implements LogEntryFactoryInterface
             ?? $payload['uri']
             ?? '/';
 
+        if (!is_string($value)) {
+            return new Uri('/');
+        }
+
         try {
-            return Uri::fromExternal(
-                $value,
-            );
+            return new Uri($value);
         } catch (\Throwable) {
             $this->addWarning(
                 warnings: $warnings,
@@ -460,9 +428,7 @@ final readonly class LogEntryFactory implements LogEntryFactoryInterface
                 fallback: '/',
             );
 
-            return new Uri(
-                '/',
-            );
+            return new Uri('/');
         }
     }
 
@@ -604,22 +570,22 @@ final readonly class LogEntryFactory implements LogEntryFactoryInterface
     ): IpAddress {
         $value = $payload['ip'] ?? null;
 
+        if (!is_string($value)) {
+            return new IpAddress('127.0.0.1');
+        }
+
         try {
-            return IpAddress::fromExternal(
-                $value,
-            );
+            return new IpAddress($value);
         } catch (\Throwable) {
             $this->addWarning(
                 warnings: $warnings,
                 field: 'ip',
                 type: IngestionWarningType::INVALID_IP,
                 original: $value,
-                fallback: '0.0.0.0',
+                fallback: '127.0.0.1',
             );
 
-            return new IpAddress(
-                '0.0.0.0',
-            );
+            return new IpAddress('127.0.0.1');
         }
     }
 
@@ -634,17 +600,23 @@ final readonly class LogEntryFactory implements LogEntryFactoryInterface
     ): Fingerprint {
         $value = $payload['fingerprint'] ?? null;
 
+        if (!is_string($value) || trim($value) === '') {
+            $value = null;
+        }
+
         try {
-            return Fingerprint::fromExternal(
-                $value,
-            );
+            if ($value === null) {
+                throw new \InvalidArgumentException('No fingerprint provided.');
+            }
+
+            return new Fingerprint($value);
         } catch (\Throwable) {
             $generated = substr(
                 sha1(
                     sprintf(
                         '%s|%s|%s',
-                        (string) ($payload['message'] ?? ''),
-                        (string) ($payload['domain'] ?? ''),
+                        is_string($payload['message'] ?? null) ? $payload['message'] : '',
+                        is_string($payload['domain'] ?? null) ? $payload['domain'] : '',
                         microtime(true),
                     ),
                 ),

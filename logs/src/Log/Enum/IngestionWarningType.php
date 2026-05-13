@@ -139,4 +139,9 @@ enum IngestionWarningType: string
      * UTF-8 invalide supprimé.
      */
     case INVALID_UTF8_REMOVED = 'invalid_utf8_removed';
+
+    /**
+     * Message invalide remplacé.
+     */
+    case INVALID_MESSAGE = 'invalid_message';
 }
