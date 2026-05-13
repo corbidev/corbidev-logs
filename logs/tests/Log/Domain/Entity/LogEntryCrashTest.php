@@ -59,6 +59,12 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(LogEntry::class)]
 final class LogEntryCrashTest extends TestCase
 {
+    /**
+     * But : Vérifier que LogEntry accepte un contexte de 10 000 entrées sans crash.
+     *
+     * Entrée : Tableau context avec 10 000 clés 'key_{i}'
+     * Résultat attendu : Instance LogEntry créée, contexte de 10 000 entrées
+     */
     public function testItHandlesHugeContextWithoutCrash(): void
     {
         $context = [];
@@ -80,6 +86,12 @@ final class LogEntryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntry accepte un extra de 10 000 entrées sans crash.
+     *
+     * Entrée : Tableau extra avec 10 000 clés 'key_{i}'
+     * Résultat attendu : Instance LogEntry créée, extra de 10 000 entrées
+     */
     public function testItHandlesHugeExtraWithoutCrash(): void
     {
         $extra = [];
@@ -101,6 +113,12 @@ final class LogEntryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntry accepte un contexte imbriqué sur 5 niveaux sans crash.
+     *
+     * Entrée : Contexte imbriqué ['a' => ['b' => ['c' => ['d' => ['e' => 'deep']]]]]
+     * Résultat attendu : Instance LogEntry créée, imbrication conservée
+     */
     public function testItHandlesDeepNestedPayloadWithoutCrash(): void
     {
         $payload = [
@@ -127,6 +145,12 @@ final class LogEntryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntry accepte une string de 5 Mo dans le contexte sans crash.
+     *
+     * Entrée : context = ['data' => str_repeat('X', 5 * 1024 * 1024)]
+     * Résultat attendu : Instance LogEntry créée sans exception
+     */
     public function testItHandlesHugeStringPayloadWithoutCrash(): void
     {
         $payload = str_repeat(
@@ -146,6 +170,12 @@ final class LogEntryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntry accepte des octets binaires dans context et extra sans crash.
+     *
+     * Entrée : context = ["\x00\x01\x02"], extra = ["\x00\x01\x02"]
+     * Résultat attendu : Instance LogEntry créée sans exception
+     */
     public function testItHandlesBinaryPayloads(): void
     {
         $entry = $this->createEntry(
@@ -163,6 +193,12 @@ final class LogEntryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntry accepte de l'UTF-8 invalide dans context et extra sans crash.
+     *
+     * Entrée : context = [hex2bin('b131')], extra = [hex2bin('b131')]
+     * Résultat attendu : Instance LogEntry créée sans exception
+     */
     public function testItHandlesInvalidUtf8Payloads(): void
     {
         $payload = hex2bin(
@@ -188,6 +224,12 @@ final class LogEntryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntry accepte des octets nuls dans le contexte sans crash.
+     *
+     * Entrée : context = ["abc\0def" => "value\0null"]
+     * Résultat attendu : Instance LogEntry créée sans exception
+     */
     public function testItHandlesNullBytesWithoutCrash(): void
     {
         $payload = "abc\0def";
@@ -204,6 +246,12 @@ final class LogEntryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntry accepte des payloads hostiles (XSS, SQL, path traversal, shell) sans crash.
+     *
+     * Entrée : context avec injections XSS, SQL, path traversal et shell
+     * Résultat attendu : Instance LogEntry créée sans exception
+     */
     public function testItHandlesHostilePayloads(): void
     {
         $entry = $this->createEntry(
@@ -222,6 +270,12 @@ final class LogEntryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntry accepte du JSON encodé dans le contexte sans crash.
+     *
+     * Entrée : context = ['data' => '{"key":"value"}']
+     * Résultat attendu : Instance LogEntry créée, contexte conservé
+     */
     public function testItHandlesJsonPayloads(): void
     {
         $entry = $this->createEntry(
@@ -239,6 +293,12 @@ final class LogEntryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntry accepte des emoji et du texte multilingue sans crash.
+     *
+     * Entrée : context = ['text' => 'Hello 🌍 Héllo Мир 日本語']
+     * Résultat attendu : Instance LogEntry créée, contexte conservé
+     */
     public function testItHandlesUnicodePayloads(): void
     {
         $entry = $this->createEntry(
@@ -253,6 +313,12 @@ final class LogEntryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que toArray() est stable avec un contexte de 5 000 entrées.
+     *
+     * Entrée : context avec 5 000 clés 'key_{i}'
+     * Résultat attendu : toArray() retourne un tableau sans crash
+     */
     public function testItHandlesLargeSerializationWithoutCrash(): void
     {
         $context = [];
@@ -278,6 +344,12 @@ final class LogEntryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la création de 1 000 instances de LogEntry ne provoque pas de crash.
+     *
+     * Entrée : 1 000 instanciations avec message 'entry-{i}'
+     * Résultat attendu : Chaque instance a un id non vide, aucune exception
+     */
     public function testItHandlesManyInstancesWithoutCrash(): void
     {
         $entries = [];
@@ -296,6 +368,12 @@ final class LogEntryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que toArray() peut être appelé 1 000 fois de suite sans crash.
+     *
+     * Entrée : 1 instance, 1 000 appels à toArray()
+     * Résultat attendu : Résultat identique à chaque appel, aucune exception
+     */
     public function testItHandlesRepeatedSerializationWithoutCrash(): void
     {
         $entry = $this->createEntry();
@@ -307,6 +385,12 @@ final class LogEntryCrashTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que LogEntry accepte 5 000 IngestionWarnings sans crash.
+     *
+     * Entrée : Tableau de 5 000 IngestionWarning
+     * Résultat attendu : hasIngestionWarnings() = true, count = 5 000
+     */
     public function testItHandlesHugeIngestionWarningsWithoutCrash(): void
     {
         $warnings = [];
@@ -333,6 +417,12 @@ final class LogEntryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que toArray() avec 1 000 warnings est stable.
+     *
+     * Entrée : 1 000 IngestionWarning
+     * Résultat attendu : toArray() contient la clé 'ingestionWarnings' avec 1 000 éléments
+     */
     public function testItSerializesHugeWarningsWithoutCrash(): void
     {
         $warnings = [];
@@ -358,6 +448,12 @@ final class LogEntryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntry rejette des warnings invalides (non-IngestionWarning).
+     *
+     * Entrée : Tableau de warnings contenant une stdClass
+     * Résultat attendu : InvalidLogEntryException est levée
+     */
     public function testItRejectsInvalidWarnings(): void
     {
         $this->expectException(
@@ -371,6 +467,12 @@ final class LogEntryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntry rejette un message dépassant la longueur maximale.
+     *
+     * Entrée : Message de 1 001 caractères
+     * Résultat attendu : InvalidLogEntryException est levée
+     */
     public function testItRejectsHugeMessage(): void
     {
         $this->expectException(
@@ -385,6 +487,12 @@ final class LogEntryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntry rejette un domaine dépassant la longueur maximale.
+     *
+     * Entrée : Domaine de 101 caractères
+     * Résultat attendu : InvalidLogEntryException est levée
+     */
     public function testItRejectsHugeDomain(): void
     {
         $this->expectException(

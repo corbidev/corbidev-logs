@@ -35,6 +35,12 @@ use RuntimeException;
  */
 final class PersistLogBatchHandlerCrashTest extends TestCase
 {
+    /**
+     * But : Vérifier que le handler capture une RuntimeException lancée par le writer.
+     *
+     * Entrée : Writer qui lance RuntimeException('DB connection lost')
+     * Résultat attendu : result.isSuccess() = false, aucune exception propagée
+     */
     public function testItSurvivesRuntimeException(): void
     {
         $writer = $this->createMock(
@@ -65,6 +71,12 @@ final class PersistLogBatchHandlerCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le handler capture une Error lancée par le writer.
+     *
+     * Entrée : Writer qui lance Error('fatal')
+     * Résultat attendu : result.isSuccess() = false, aucune exception propagée
+     */
     public function testItSurvivesError(): void
     {
         $writer = $this->createMock(
@@ -93,6 +105,12 @@ final class PersistLogBatchHandlerCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le handler traite un lot de 10 000 entrées sans crash.
+     *
+     * Entrée : PersistLogBatchRequest avec 10 000 LogEntry
+     * Résultat attendu : result.isSuccess() = true
+     */
     public function testItSurvivesMassiveBatch(): void
     {
         $entries = [];
@@ -133,6 +151,12 @@ final class PersistLogBatchHandlerCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le handler retourne failure quand le writer retourne PersistenceResult::failure.
+     *
+     * Entrée : Writer retournant PersistenceResult::failure()
+     * Résultat attendu : result.isSuccess() = false
+     */
     public function testItSurvivesWriterReturningFailure(): void
     {
         $writer = $this->createMock(
@@ -166,6 +190,12 @@ final class PersistLogBatchHandlerCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le handler gère 1 000 appels consécutifs avec des lots vides.
+     *
+     * Entrée : 1 000 PersistLogBatchRequest vides
+     * Résultat attendu : PersistenceResult retourné à chaque appel, aucune exception
+     */
     public function testItSurvivesEmptyRequestRepeatedly(): void
     {
         $writer = $this->createStub(
@@ -190,6 +220,12 @@ final class PersistLogBatchHandlerCrashTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que le handler résiste à 100 échecs consécutifs du writer.
+     *
+     * Entrée : 100 appels avec writer lançant RuntimeException à chaque fois
+     * Résultat attendu : result.isSuccess() = false à chaque appel, aucune exception propagée
+     */
     public function testItSurvivesMultipleFailures(): void
     {
         $writer = $this->createMock(

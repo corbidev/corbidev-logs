@@ -36,6 +36,12 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(RequestId::class)]
 final class RequestIdTest extends TestCase
 {
+    /**
+     * But : Vérifier que RequestId est créé correctement depuis une valeur valide.
+     *
+     * Entrée : 'req_8f5c1a'
+     * Résultat attendu : value() = 'req_8f5c1a'
+     */
     public function testItCreatesValidRequestId(): void
     {
         $requestId = new RequestId(
@@ -48,6 +54,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que RequestId est normalisé en minuscules avec trim.
+     *
+     * Entrée : '   REQ_ABC_123   '
+     * Résultat attendu : 'req_abc_123'
+     */
     public function testItNormalizesRequestId(): void
     {
         $requestId = new RequestId(
@@ -60,6 +72,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la conversion en string retourne la valeur du RequestId.
+     *
+     * Entrée : new RequestId('req_test')
+     * Résultat attendu : (string) RequestId = 'req_test'
+     */
     public function testItConvertsToString(): void
     {
         $requestId = new RequestId(
@@ -72,6 +90,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que equals() retourne true pour des RequestId identiques après normalisation.
+     *
+     * Entrée : 'req_same' vs 'REQ_SAME' (normalisés identiques)
+     * Résultat attendu : equals() = true
+     */
     public function testItComparesEquals(): void
     {
         $a = new RequestId(
@@ -87,6 +111,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que equals() retourne false pour des RequestId différents.
+     *
+     * Entrée : 'req_a' vs 'req_b'
+     * Résultat attendu : equals() = false
+     */
     public function testItDetectsDifferentRequestIds(): void
     {
         $a = new RequestId(
@@ -102,6 +132,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que generate() produit un RequestId avec préfixe 'req_' et longueur ≥ 10.
+     *
+     * Entrée : Appel à RequestId::generate()
+     * Résultat attendu : Commence par 'req_', longueur ≥ 10
+     */
     public function testItGeneratesRequestId(): void
     {
         $requestId = RequestId::generate();
@@ -119,6 +155,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que deux appels à generate() produisent des valeurs différentes.
+     *
+     * Entrée : Deux appels successifs à RequestId::generate()
+     * Résultat attendu : Les deux valeurs sont distinctes
+     */
     public function testItGeneratesDifferentValues(): void
     {
         $a = RequestId::generate();
@@ -130,6 +172,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromNullable() génère un RequestId si null est passé.
+     *
+     * Entrée : null
+     * Résultat attendu : RequestId valide commençant par 'req_'
+     */
     public function testFromNullableGeneratesValueWhenNull(): void
     {
         $requestId = RequestId::fromNullable(
@@ -142,6 +190,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromNullable() génère un RequestId si une chaîne vide est passée.
+     *
+     * Entrée : ''
+     * Résultat attendu : RequestId valide commençant par 'req_'
+     */
     public function testFromNullableGeneratesValueWhenEmpty(): void
     {
         $requestId = RequestId::fromNullable(
@@ -154,6 +208,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromNullable() génère un RequestId si seuls des espaces sont passés.
+     *
+     * Entrée : '   '
+     * Résultat attendu : RequestId valide commençant par 'req_'
+     */
     public function testFromNullableGeneratesValueWhenWhitespace(): void
     {
         $requestId = RequestId::fromNullable(
@@ -166,6 +226,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que RequestId accepte la longueur minimale (3 caractères).
+     *
+     * Entrée : 'abc'
+     * Résultat attendu : RequestId créé sans exception
+     */
     public function testItAcceptsMinimumLength(): void
     {
         $requestId = new RequestId(
@@ -178,6 +244,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que RequestId accepte la longueur maximale (100 caractères).
+     *
+     * Entrée : str_repeat('a', 100)
+     * Résultat attendu : RequestId créé sans exception
+     */
     public function testItAcceptsMaximumLength(): void
     {
         $value = str_repeat(
@@ -195,6 +267,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que RequestId rejette une chaîne vide.
+     *
+     * Entrée : ''
+     * Résultat attendu : InvalidRequestIdException est levée
+     */
     public function testItRejectsEmptyString(): void
     {
         $this->expectException(
@@ -204,6 +282,12 @@ final class RequestIdTest extends TestCase
         new RequestId('');
     }
 
+    /**
+     * But : Vérifier que RequestId rejette une chaîne composée uniquement d'espaces.
+     *
+     * Entrée : '   '
+     * Résultat attendu : InvalidRequestIdException est levée
+     */
     public function testItRejectsWhitespaceOnly(): void
     {
         $this->expectException(
@@ -213,6 +297,12 @@ final class RequestIdTest extends TestCase
         new RequestId('     ');
     }
 
+    /**
+     * But : Vérifier que RequestId rejette une valeur de moins de 3 caractères.
+     *
+     * Entrée : 'ab'
+     * Résultat attendu : InvalidRequestIdException est levée
+     */
     public function testItRejectsTooShortValue(): void
     {
         $this->expectException(
@@ -222,6 +312,12 @@ final class RequestIdTest extends TestCase
         new RequestId('ab');
     }
 
+    /**
+     * But : Vérifier que RequestId rejette une valeur de plus de 100 caractères.
+     *
+     * Entrée : str_repeat('a', 101)
+     * Résultat attendu : InvalidRequestIdException est levée
+     */
     public function testItRejectsTooLongValue(): void
     {
         $this->expectException(
@@ -236,6 +332,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que RequestId rejette une valeur contenant des espaces.
+     *
+     * Entrée : 'req test'
+     * Résultat attendu : InvalidRequestIdException est levée
+     */
     public function testItRejectsSpaces(): void
     {
         $this->expectException(
@@ -247,6 +349,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que RequestId rejette une valeur contenant un slash.
+     *
+     * Entrée : 'req/test'
+     * Résultat attendu : InvalidRequestIdException est levée
+     */
     public function testItRejectsSlash(): void
     {
         $this->expectException(
@@ -258,6 +366,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que RequestId rejette une valeur contenant un backslash.
+     *
+     * Entrée : 'req\test'
+     * Résultat attendu : InvalidRequestIdException est levée
+     */
     public function testItRejectsBackslash(): void
     {
         $this->expectException(
@@ -269,6 +383,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que RequestId rejette une injection HTML.
+     *
+     * Entrée : '<script>alert(1)</script>'
+     * Résultat attendu : InvalidRequestIdException est levée
+     */
     public function testItRejectsHtmlInjection(): void
     {
         $this->expectException(
@@ -280,6 +400,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que RequestId rejette une injection SQL.
+     *
+     * Entrée : "' OR 1=1 --"
+     * Résultat attendu : InvalidRequestIdException est levée
+     */
     public function testItRejectsSqlInjectionPayload(): void
     {
         $this->expectException(
@@ -291,6 +417,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que RequestId rejette les caractères Unicode non-ASCII.
+     *
+     * Entrée : 'réq_test'
+     * Résultat attendu : InvalidRequestIdException est levée
+     */
     public function testItRejectsUnicodeCharacters(): void
     {
         $this->expectException(
@@ -302,6 +434,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que RequestId rejette les emoji.
+     *
+     * Entrée : 'req_🔥'
+     * Résultat attendu : InvalidRequestIdException est levée
+     */
     public function testItRejectsEmoji(): void
     {
         $this->expectException(
@@ -313,6 +451,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que RequestId rejette les caractères de contrôle (newline).
+     *
+     * Entrée : "req_\n_test"
+     * Résultat attendu : InvalidRequestIdException est levée
+     */
     public function testItRejectsControlCharacters(): void
     {
         $this->expectException(
@@ -324,6 +468,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que RequestId rejette les tabulations.
+     *
+     * Entrée : "req_\t_test"
+     * Résultat attendu : InvalidRequestIdException est levée
+     */
     public function testItRejectsTabulation(): void
     {
         $this->expectException(
@@ -335,6 +485,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que RequestId rejette les octets nuls.
+     *
+     * Entrée : "req_\0_test"
+     * Résultat attendu : InvalidRequestIdException est levée
+     */
     public function testItRejectsNullByte(): void
     {
         $this->expectException(
@@ -346,6 +502,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que RequestId rejette un payload JSON.
+     *
+     * Entrée : '{"id":"test"}'
+     * Résultat attendu : InvalidRequestIdException est levée
+     */
     public function testItRejectsJsonPayload(): void
     {
         $this->expectException(
@@ -357,6 +519,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que RequestId rejette un payload ressemblant à un tableau.
+     *
+     * Entrée : '[]'
+     * Résultat attendu : InvalidRequestIdException est levée
+     */
     public function testItRejectsArrayLikePayload(): void
     {
         $this->expectException(
@@ -368,6 +536,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que RequestId rejette un payload encodé en URL.
+     *
+     * Entrée : '%3Cscript%3E'
+     * Résultat attendu : InvalidRequestIdException est levée
+     */
     public function testItRejectsUrlEncodedPayload(): void
     {
         $this->expectException(
@@ -379,6 +553,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que RequestId accepte le caractère tiret.
+     *
+     * Entrée : 'req-api-prod'
+     * Résultat attendu : value() = 'req-api-prod'
+     */
     public function testItAcceptsDashCharacter(): void
     {
         $requestId = new RequestId(
@@ -391,6 +571,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que RequestId accepte le caractère underscore.
+     *
+     * Entrée : 'req_api_prod'
+     * Résultat attendu : value() = 'req_api_prod'
+     */
     public function testItAcceptsUnderscoreCharacter(): void
     {
         $requestId = new RequestId(

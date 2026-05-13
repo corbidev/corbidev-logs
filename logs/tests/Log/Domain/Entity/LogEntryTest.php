@@ -47,6 +47,12 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(LogEntry::class)]
 final class LogEntryTest extends TestCase
 {
+    /**
+     * But : Vérifier que LogEntry est correctement créé avec des paramètres valides.
+     *
+     * Entrée : message='Payment failed', domain='billing', level=ERROR, env=Production
+     * Résultat attendu : message, domain, level, environment corrects dans l'instance
+     */
     public function testItCreatesValidLogEntry(): void
     {
         $entry = $this->createEntry();
@@ -72,6 +78,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le domaine est normalisé en minuscules avec trim.
+     *
+     * Entrée : domain = ' BILLING '
+     * Résultat attendu : domain = 'billing'
+     */
     public function testItNormalizesDomain(): void
     {
         $entry = $this->createEntry(
@@ -84,6 +96,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le message est normalisé (trim des espaces).
+     *
+     * Entrée : message = '  Payment failed  '
+     * Résultat attendu : message = 'Payment failed'
+     */
     public function testItNormalizesMessage(): void
     {
         $entry = $this->createEntry(
@@ -96,6 +114,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntry rejette un message vide.
+     *
+     * Entrée : message = ''
+     * Résultat attendu : InvalidLogEntryException est levée
+     */
     public function testItRejectsEmptyMessage(): void
     {
         $this->expectException(
@@ -107,6 +131,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntry rejette un message composé uniquement d'espaces.
+     *
+     * Entrée : message = '   '
+     * Résultat attendu : InvalidLogEntryException est levée
+     */
     public function testItRejectsWhitespaceMessage(): void
     {
         $this->expectException(
@@ -118,6 +148,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntry rejette un domaine vide.
+     *
+     * Entrée : domain = ''
+     * Résultat attendu : InvalidLogEntryException est levée
+     */
     public function testItRejectsEmptyDomain(): void
     {
         $this->expectException(
@@ -129,6 +165,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntry rejette un domaine composé uniquement d'espaces.
+     *
+     * Entrée : domain = '   '
+     * Résultat attendu : InvalidLogEntryException est levée
+     */
     public function testItRejectsWhitespaceDomain(): void
     {
         $this->expectException(
@@ -140,6 +182,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntry rejette un message dépassant 1 000 caractères.
+     *
+     * Entrée : message de 1 001 caractères
+     * Résultat attendu : InvalidLogEntryException est levée
+     */
     public function testItRejectsTooLongMessage(): void
     {
         $this->expectException(
@@ -154,6 +202,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntry rejette un domaine dépassant 100 caractères.
+     *
+     * Entrée : domain de 101 caractères
+     * Résultat attendu : InvalidLogEntryException est levée
+     */
     public function testItRejectsTooLongDomain(): void
     {
         $this->expectException(
@@ -168,6 +222,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que l'identifiant est non vide et stable.
+     *
+     * Entrée : Création d'une LogEntry valide
+     * Résultat attendu : id() non vide
+     */
     public function testItReturnsStableId(): void
     {
         $entry = $this->createEntry();
@@ -177,6 +237,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que deux instances de LogEntry génèrent des identifiants différents.
+     *
+     * Entrée : Deux instances avec les mêmes paramètres
+     * Résultat attendu : id() différents
+     */
     public function testItGeneratesDifferentIds(): void
     {
         $left = $this->createEntry();
@@ -188,6 +254,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier qu'un identifiant fourni est conservé.
+     *
+     * Entrée : id = 'custom-uuid-1234'
+     * Résultat attendu : id() = 'custom-uuid-1234'
+     */
     public function testItUsesProvidedId(): void
     {
         $entry = $this->createEntry(
@@ -200,6 +272,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que toArray() retourne un tableau contenant les clés attendues.
+     *
+     * Entrée : LogEntry valide avec message, fingerprint, ingestionWarnings
+     * Résultat attendu : toArray() contient 'id', 'message', 'fingerprint', 'ingestionWarnings'
+     */
     public function testItReturnsStableSerialization(): void
     {
         $entry = $this->createEntry();
@@ -227,6 +305,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que toArray() sérialise correctement la requête (POST /checkout).
+     *
+     * Entrée : Request POST /checkout, userAgent='PHPUnit'
+     * Résultat attendu : toArray()['request'] contient method, uri, userAgent corrects
+     */
     public function testItReturnsStableRequestSerialization(): void
     {
         $entry = $this->createEntry();
@@ -249,6 +333,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isError() retourne true pour un niveau ERROR.
+     *
+     * Entrée : level = LogLevel::ERROR
+     * Résultat attendu : isError() = true
+     */
     public function testItDetectsErrorLog(): void
     {
         $entry = $this->createEntry(
@@ -260,6 +350,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isError() retourne true pour un httpStatus 500.
+     *
+     * Entrée : httpStatus = 500
+     * Résultat attendu : isError() = true
+     */
     public function testItDetectsHttpError(): void
     {
         $entry = $this->createEntry(
@@ -273,6 +369,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que equals() retourne true pour deux entrées avec le même id.
+     *
+     * Entrée : Deux instances avec id = 'same-id'
+     * Résultat attendu : equals() = true
+     */
     public function testItComparesEntriesById(): void
     {
         $entry = $this->createEntry(
@@ -290,6 +392,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que equals() retourne false pour deux entrées avec des ids différents.
+     *
+     * Entrée : Deux instances avec ids 'id-1' et 'id-2'
+     * Résultat attendu : equals() = false
+     */
     public function testItDetectsDifferentEntries(): void
     {
         $left = $this->createEntry(
@@ -307,6 +415,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le contexte est bien stocké dans la LogEntry.
+     *
+     * Entrée : context = ['userId' => 42]
+     * Résultat attendu : context() = ['userId' => 42]
+     */
     public function testItStoresContext(): void
     {
         $entry = $this->createEntry(
@@ -322,6 +436,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le champ extra est bien stocké dans la LogEntry.
+     *
+     * Entrée : extra = ['memory' => '128MB']
+     * Résultat attendu : extra() = ['memory' => '128MB']
+     */
     public function testItStoresExtra(): void
     {
         $entry = $this->createEntry(
@@ -337,6 +457,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la date client est bien stockée dans la LogEntry.
+     *
+     * Entrée : clientDate = DateTimeImmutable('2025-01-01')
+     * Résultat attendu : clientDate() retourne la date fournie
+     */
     public function testItStoresClientDate(): void
     {
         $date = new DateTimeImmutable();
@@ -351,6 +477,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les warnings d'ingestion sont bien stockés.
+     *
+     * Entrée : 1 IngestionWarning de type INVALID_LEVEL
+     * Résultat attendu : hasIngestionWarnings() = true, count = 1
+     */
     public function testItStoresIngestionWarnings(): void
     {
         $warnings = [
@@ -376,6 +508,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que hasIngestionWarnings() retourne false quand il n'y a pas de warnings.
+     *
+     * Entrée : LogEntry créée sans warnings
+     * Résultat attendu : hasIngestionWarnings() = false
+     */
     public function testItReturnsFalseWithoutWarnings(): void
     {
         $entry = $this->createEntry();
@@ -385,6 +523,12 @@ final class LogEntryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntry rejette des warnings de type invalide.
+     *
+     * Entrée : Tableau warnings contenant 'not-a-warning'
+     * Résultat attendu : InvalidLogEntryException est levée
+     */
     public function testItRejectsInvalidWarnings(): void
     {
         $this->expectException(

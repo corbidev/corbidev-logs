@@ -23,6 +23,12 @@ use stdClass;
 final class EnvironmentTest extends TestCase
 {
     #[DataProvider('provideProductionValues')]
+    /**
+     * But : Vérifier que les valeurs production sont correctement reconnues.
+     *
+     * Entrée : Cas fournis par le DataProvider `provideProductionValues()`
+     * Résultat attendu : Environment::Production retourné pour chaque cas
+     */
     public function testItCreatesProductionEnvironment(
         string|null $input,
     ): void {
@@ -35,6 +41,12 @@ final class EnvironmentTest extends TestCase
     }
 
     #[DataProvider('provideStagingValues')]
+    /**
+     * But : Vérifier que les valeurs staging sont correctement reconnues.
+     *
+     * Entrée : Cas fournis par le DataProvider `provideStagingValues()`
+     * Résultat attendu : Environment::Staging retourné pour chaque cas
+     */
     public function testItCreatesStagingEnvironment(
         string $input,
     ): void {
@@ -47,6 +59,12 @@ final class EnvironmentTest extends TestCase
     }
 
     #[DataProvider('provideDevelopmentValues')]
+    /**
+     * But : Vérifier que les valeurs development sont correctement reconnues.
+     *
+     * Entrée : Cas fournis par le DataProvider `provideDevelopmentValues()`
+     * Résultat attendu : Environment::Development retourné pour chaque cas
+     */
     public function testItCreatesDevelopmentEnvironment(
         string $input,
     ): void {
@@ -59,6 +77,12 @@ final class EnvironmentTest extends TestCase
     }
 
     #[DataProvider('provideTestValues')]
+    /**
+     * But : Vérifier que les valeurs test sont correctement reconnues.
+     *
+     * Entrée : Cas fournis par le DataProvider `provideTestValues()`
+     * Résultat attendu : Environment::Test retourné pour chaque cas
+     */
     public function testItCreatesTestEnvironment(
         string $input,
     ): void {
@@ -70,6 +94,12 @@ final class EnvironmentTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory retourne Production pour une valeur inconnue.
+     *
+     * Entrée : 'totally-unknown-environment'
+     * Résultat attendu : Environment::Production
+     */
     public function testItFallsBackToProductionForUnknownValue(): void
     {
         $environment = Environment::fromExternal(
@@ -82,6 +112,12 @@ final class EnvironmentTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory retourne Production pour une chaîne vide.
+     *
+     * Entrée : ''
+     * Résultat attendu : Environment::Production
+     */
     public function testItFallsBackToProductionForEmptyString(): void
     {
         $environment = Environment::fromExternal('');
@@ -92,6 +128,12 @@ final class EnvironmentTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory normalise les espaces et la casse.
+     *
+     * Entrée : '   PROD   '
+     * Résultat attendu : Environment::Production
+     */
     public function testItNormalizesTrimAndCase(): void
     {
         $environment = Environment::fromExternal(
@@ -104,6 +146,12 @@ final class EnvironmentTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isProduction() retourne true pour Production, false pour les autres.
+     *
+     * Entrée : Environment::Production et Environment::Staging
+     * Résultat attendu : isProduction() = true / false selon l'environnement
+     */
     public function testItDetectsProductionEnvironment(): void
     {
         self::assertTrue(
@@ -115,6 +163,12 @@ final class EnvironmentTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isDevelopment() retourne true pour Development, false pour les autres.
+     *
+     * Entrée : Environment::Development et Environment::Production
+     * Résultat attendu : isDevelopment() = true / false selon l'environnement
+     */
     public function testItDetectsDevelopmentEnvironment(): void
     {
         self::assertTrue(
@@ -126,6 +180,12 @@ final class EnvironmentTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isStaging() retourne true pour Staging, false pour les autres.
+     *
+     * Entrée : Environment::Staging et Environment::Production
+     * Résultat attendu : isStaging() = true / false selon l'environnement
+     */
     public function testItDetectsStagingEnvironment(): void
     {
         self::assertTrue(
@@ -137,6 +197,12 @@ final class EnvironmentTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isTest() retourne true pour Test, false pour les autres.
+     *
+     * Entrée : Environment::Test et Environment::Production
+     * Résultat attendu : isTest() = true / false selon l'environnement
+     */
     public function testItDetectsTestEnvironment(): void
     {
         self::assertTrue(
@@ -148,6 +214,12 @@ final class EnvironmentTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que getSupportedValues() retourne toutes les valeurs supportées.
+     *
+     * Entrée : Appel statique sans paramètre
+     * Résultat attendu : ['prod', 'staging', 'dev', 'test']
+     */
     public function testItReturnsSupportedValues(): void
     {
         self::assertSame(
@@ -168,6 +240,12 @@ final class EnvironmentTest extends TestCase
      * - aucun crash
      * - aucune exception
      * - toujours un enum valide
+     */
+    /**
+     * But : Vérifier que la factory ne lève jamais d'exception avec des inputs hostiles.
+     *
+     * Entrée : 18 inputs hostiles variés (XSS, SQL injection, null, tableaux, etc.)
+     * Résultat attendu : Aucune exception levée, retour toujours Environment::Production
      */
     public function testItNeverThrowsForHostileInputs(): void
     {

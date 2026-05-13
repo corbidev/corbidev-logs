@@ -33,6 +33,12 @@ use PHPUnit\Framework\TestCase;
  */
 final class LogEntryFactoryTest extends TestCase
 {
+    /**
+     * But : Vérifier que la factory crée une entrée de log avec toutes les valeurs par défaut correctes.
+     *
+     * Entrée : Appel à LogEntryFactory::create() sans paramètres
+     * Résultat attendu : Instance LogEntry avec message, domain, level, env, httpStatus, client, requestId, request, ip et fingerprint corrects
+     */
     public function testItCreatesValidLogEntry(): void
     {
         $entry = LogEntryFactory::create();
@@ -124,6 +130,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory accepte un message personnalisé.
+     *
+     * Entrée : message = 'Database failure'
+     * Résultat attendu : entry->message() = 'Database failure'
+     */
     public function testItCreatesCustomMessage(): void
     {
         $entry = LogEntryFactory::create(
@@ -136,6 +148,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les messages trop longs sont tronqués à 1 000 caractères.
+     *
+     * Entrée : message = 5 000 caractères 'A'
+     * Résultat attendu : mb_strlen(message) = 1000, warning IngestionWarningType::MESSAGE_TRUNCATED présent
+     */
     public function testItTruncatesHugeMessage(): void
     {
         $entry = LogEntryFactory::create(
@@ -162,6 +180,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntryFactory::error() crée un log de niveau ERROR.
+     *
+     * Entrée : Appel à LogEntryFactory::error()
+     * Résultat attendu : level = LogLevel::ERROR, isError() = true
+     */
     public function testItCreatesErrorLog(): void
     {
         $entry = LogEntryFactory::error();
@@ -176,6 +200,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntryFactory::warning() crée un log de niveau WARNING.
+     *
+     * Entrée : Appel à LogEntryFactory::warning()
+     * Résultat attendu : level = LogLevel::WARNING
+     */
     public function testItCreatesWarningLog(): void
     {
         $entry = LogEntryFactory::warning();
@@ -186,6 +216,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogEntryFactory::info() crée un log de niveau INFO.
+     *
+     * Entrée : Appel à LogEntryFactory::info()
+     * Résultat attendu : level = LogLevel::INFO
+     */
     public function testItCreatesInfoLog(): void
     {
         $entry = LogEntryFactory::info();
@@ -196,6 +232,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que many(5) crée exactement 5 entrées.
+     *
+     * Entrée : LogEntryFactory::many(5)
+     * Résultat attendu : count = 5
+     */
     public function testItCreatesManyEntries(): void
     {
         $entries = LogEntryFactory::many(5);
@@ -206,6 +248,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que deux appels consécutifs génèrent des IDs distincts.
+     *
+     * Entrée : Deux appels à LogEntryFactory::create()
+     * Résultat attendu : entry1->id() !== entry2->id()
+     */
     public function testItCreatesUniqueIds(): void
     {
         $entry1 = LogEntryFactory::create();
@@ -217,6 +265,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que deux messages différents génèrent des fingerprints distincts.
+     *
+     * Entrée : create(message='message-1') et create(message='message-2')
+     * Résultat attendu : fingerprints différents
+     */
     public function testItCreatesUniqueFingerprints(): void
     {
         $entry1 = LogEntryFactory::create(
@@ -238,6 +292,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que l'ID fourni est utilisé tel quel.
+     *
+     * Entrée : id = 'custom-id'
+     * Résultat attendu : entry->id() = 'custom-id'
+     */
     public function testItUsesProvidedId(): void
     {
         $entry = LogEntryFactory::create(
@@ -250,6 +310,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le requestId fourni est utilisé tel quel.
+     *
+     * Entrée : requestId = 'req_checkout_42'
+     * Résultat attendu : requestId()->value() = 'req_checkout_42'
+     */
     public function testItUsesProvidedRequestId(): void
     {
         $entry = LogEntryFactory::create(
@@ -264,6 +330,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le fingerprint fourni est utilisé tel quel.
+     *
+     * Entrée : fingerprint = 'abcdef1234567890'
+     * Résultat attendu : fingerprint()->value() = 'abcdef1234567890'
+     */
     public function testItUsesProvidedFingerprint(): void
     {
         $entry = LogEntryFactory::create(
@@ -278,6 +350,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le context fourni est stocké correctement.
+     *
+     * Entrée : context = ['userId' => 42]
+     * Résultat attendu : context() = ['userId' => 42]
+     */
     public function testItStoresContext(): void
     {
         $entry = LogEntryFactory::create(
@@ -294,6 +372,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les données extra sont stockées correctement.
+     *
+     * Entrée : extra = ['memory' => '128MB']
+     * Résultat attendu : extra() = ['memory' => '128MB']
+     */
     public function testItStoresExtra(): void
     {
         $entry = LogEntryFactory::create(
@@ -310,6 +394,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que l'environnement personnalisé est stocké.
+     *
+     * Entrée : environment = Environment::Production
+     * Résultat attendu : environment() = Environment::Production
+     */
     public function testItCreatesCustomEnvironment(): void
     {
         $entry = LogEntryFactory::create(
@@ -322,6 +412,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le domaine personnalisé est stocké.
+     *
+     * Entrée : domain = 'billing'
+     * Résultat attendu : domain() = 'billing'
+     */
     public function testItCreatesCustomDomain(): void
     {
         $entry = LogEntryFactory::create(
@@ -334,6 +430,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les informations de requête personnalisées sont stockées.
+     *
+     * Entrée : method='POST', uri='/api/logs', userAgent='Symfony HttpClient'
+     * Résultat attendu : request()->method()='POST', uri='/api/logs', userAgent='Symfony HttpClient'
+     */
     public function testItCreatesCustomRequest(): void
     {
         $entry = LogEntryFactory::create(
@@ -365,6 +467,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier qu'une méthode HTTP invalide (trop longue) est normalisée.
+     *
+     * Entrée : method = str_repeat('POST', 50)
+     * Résultat attendu : request()->method() est une méthode HTTP valide (GET, POST, PUT, etc.)
+     */
     public function testItNormalizesHugeMethod(): void
     {
         $entry = LogEntryFactory::create(
@@ -390,6 +498,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les User-Agent trop longs sont tronqués à 500 caractères.
+     *
+     * Entrée : userAgent = str_repeat('Mozilla', 500)
+     * Résultat attendu : mb_strlen(userAgent) = 500, warning USER_AGENT_TRUNCATED présent
+     */
     public function testItTruncatesHugeUserAgent(): void
     {
         $entry = LogEntryFactory::create(
@@ -414,6 +528,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que l'IP personnalisée est stockée.
+     *
+     * Entrée : ip = '192.168.1.10'
+     * Résultat attendu : ipAddress()->value() = '192.168.1.10'
+     */
     public function testItCreatesCustomIp(): void
     {
         $entry = LogEntryFactory::create(
@@ -428,6 +548,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que many() retourne [] quand le count est négatif.
+     *
+     * Entrée : LogEntryFactory::many(-5)
+     * Résultat attendu : []
+     */
     public function testManyReturnsEmptyArrayWhenNegative(): void
     {
         self::assertSame(
@@ -436,6 +562,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que many() retourne [] quand le count est zéro.
+     *
+     * Entrée : LogEntryFactory::many(0)
+     * Résultat attendu : []
+     */
     public function testManyReturnsEmptyArrayWhenZero(): void
     {
         self::assertSame(
@@ -444,6 +576,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que many(250) retourne exactement 250 entrées.
+     *
+     * Entrée : LogEntryFactory::many(250)
+     * Résultat attendu : count = 250
+     */
     public function testManyCreatesRequestedAmount(): void
     {
         self::assertCount(
@@ -452,6 +590,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que many() génère des requestIds uniques pour chaque entrée.
+     *
+     * Entrée : LogEntryFactory::many(50)
+     * Résultat attendu : 50 requestIds distincts
+     */
     public function testManyCreatesUniqueRequestIds(): void
     {
         $entries = LogEntryFactory::many(
@@ -473,6 +617,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les warnings d'ingestion sont stockés.
+     *
+     * Entrée : ingestionWarnings = [warningMessageTruncated(), warningInvalidIp()]
+     * Résultat attendu : count(ingestionWarnings) = 2, hasIngestionWarnings() = true
+     */
     public function testItStoresIngestionWarnings(): void
     {
         $entry = LogEntryFactory::create(
@@ -492,6 +642,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les warnings sont inclus dans la sérialisation toArray().
+     *
+     * Entrée : ingestionWarnings = [warningMessageTruncated()]
+     * Résultat attendu : toArray()['ingestionWarnings'] est un tableau non vide
+     */
     public function testItSerializesWarnings(): void
     {
         $entry = LogEntryFactory::create(

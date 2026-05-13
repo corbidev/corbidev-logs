@@ -34,6 +34,12 @@ use PHPUnit\Framework\TestCase;
  */
 final class PersistLogBatchHandlerTest extends TestCase
 {
+    /**
+     * But : Vérifier que le handler persiste correctement un lot de LogEntry.
+     *
+     * Entrée : PersistLogBatchRequest avec 2 LogEntry valides, writer retournant success
+     * Résultat attendu : writer.persist() appelé 1 fois, result.isSuccess() = true
+     */
     public function testItPersistsBatch(): void
     {
         $entries = [
@@ -75,6 +81,12 @@ final class PersistLogBatchHandlerTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le handler ne persiste pas un lot vide.
+     *
+     * Entrée : PersistLogBatchRequest vide ([])
+     * Résultat attendu : Writer jamais appelé, hasPersistedLogs() = false
+     */
     public function testItDoesNotPersistEmptyBatch(): void
     {
         $writer = $this->createMock(
@@ -100,6 +112,12 @@ final class PersistLogBatchHandlerTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le handler retourne failure quand le writer échoue.
+     *
+     * Entrée : PersistLogBatchRequest valide, writer retournant failure
+     * Résultat attendu : result.isSuccess() = false
+     */
     public function testItReturnsFailureWhenWriterFails(): void
     {
         $writer = $this->createMock(
@@ -133,6 +151,12 @@ final class PersistLogBatchHandlerTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le handler retourne toujours un PersistenceResult même pour un lot vide.
+     *
+     * Entrée : PersistLogBatchRequest vide
+     * Résultat attendu : Instance de PersistenceResult retournée
+     */
     public function testItAlwaysReturnsPersistenceResult(): void
     {
         $writer = $this->createMock(
@@ -159,6 +183,12 @@ final class PersistLogBatchHandlerTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que l'ordre des entrées est préservé lors de la persistance.
+     *
+     * Entrée : Deux LogEntry avec messages 'first' et 'second'
+     * Résultat attendu : Les messages sont persistés dans l'ordre 'first', 'second'
+     */
     public function testItPreservesEntriesOrder(): void
     {
         $entries = [
@@ -213,6 +243,12 @@ final class PersistLogBatchHandlerTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le handler gère correctement un lot d'une seule entrée.
+     *
+     * Entrée : PersistLogBatchRequest avec 1 LogEntry
+     * Résultat attendu : result.isSuccess() = true
+     */
     public function testItHandlesSingleEntry(): void
     {
         $entries = [
@@ -248,6 +284,12 @@ final class PersistLogBatchHandlerTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les requestIds des entrées sont préservés dans l'ordre.
+     *
+     * Entrée : Deux LogEntry avec requestIds 'req_checkout_1' et 'req_checkout_2'
+     * Résultat attendu : Les requestIds sont présents dans l'ordre dans les entrées persistées
+     */
     public function testItPreservesRequestIds(): void
     {
         $entries = [

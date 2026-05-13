@@ -55,6 +55,12 @@ final class LogEntryFactoryCrashTest extends TestCase
         $this->factory = new LogEntryFactory();
     }
 
+    /**
+     * But : Vérifier que la factory ne lève jamais d'exception avec des payloads hostiles.
+     *
+     * Entrée : Payloads variés (null, stdClass, binaire, UTF-8 invalide, ressource PHP, XSS, SQL injection)
+     * Résultat attendu : Instance LogEntry valide retournée pour chaque payload, aucune exception
+     */
     public function testItNeverThrowsWithHostilePayloads(): void
     {
         $resource = fopen(
@@ -189,6 +195,12 @@ final class LogEntryFactoryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory gère un contexte de 10 000 entrées sans crash.
+     *
+     * Entrée : Payload avec context contenant 10 000 clés 'key-{i}'
+     * Résultat attendu : LogEntry créée avec context().count() = 10 000
+     */
     public function testItHandlesHugeContext(): void
     {
         $context = [];
@@ -210,6 +222,12 @@ final class LogEntryFactoryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory gère un extra de 10 000 entrées sans crash.
+     *
+     * Entrée : Payload avec extra contenant 10 000 clés 'key-{i}'
+     * Résultat attendu : LogEntry créée avec extra().count() = 10 000
+     */
     public function testItHandlesHugeExtra(): void
     {
         $extra = [];
@@ -231,6 +249,12 @@ final class LogEntryFactoryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory normalise correctement une requête imbriquée avec des valeurs énormes.
+     *
+     * Entrée : method = str_repeat('POST', 1000), uri = str_repeat('/orders', 1000), userAgent = str_repeat('Mozilla/5.0 ', 10000)
+     * Résultat attendu : méthode valide, userAgent tronqué ≤ 500, hasIngestionWarnings() = true
+     */
     public function testItHandlesHugeNestedRequestPayload(): void
     {
         $entry = $this->factory->create([
@@ -286,6 +310,12 @@ final class LogEntryFactoryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le warning MESSAGE_TRUNCATED est bien enregistré lors d'une troncature.
+     *
+     * Entrée : message de 60 000 caractères (str_repeat('ERROR ', 10000))
+     * Résultat attendu : message tronqué ≤ 1 000, warning MESSAGE_TRUNCATED présent
+     */
     public function testItTracksMessageTruncationWarning(): void
     {
         $entry = $this->factory->create([
@@ -319,6 +349,12 @@ final class LogEntryFactoryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le warning USER_AGENT_TRUNCATED est bien enregistré lors d'une troncature.
+     *
+     * Entrée : userAgent = str_repeat('Mozilla/5.0 ', 10000) dans request
+     * Résultat attendu : userAgent tronqué ≤ 500, warning USER_AGENT_TRUNCATED présent
+     */
     public function testItTracksUserAgentTruncationWarning(): void
     {
         $entry = $this->factory->create([
@@ -352,6 +388,12 @@ final class LogEntryFactoryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le warning INVALID_IP est bien enregistré lors d'une IP invalide.
+     *
+     * Entrée : ip = '999.999.999.999'
+     * Résultat attendu : ip = '127.0.0.1' (fallback), warning INVALID_IP présent
+     */
     public function testItTracksInvalidIpWarning(): void
     {
         $entry = $this->factory->create([
@@ -378,6 +420,12 @@ final class LogEntryFactoryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le warning INVALID_REQUEST_ID est bien enregistré pour un requestId invalide.
+     *
+     * Entrée : requestId = [] (tableau)
+     * Résultat attendu : requestId non vide régénéré, warning INVALID_REQUEST_ID présent
+     */
     public function testItTracksInvalidRequestIdWarning(): void
     {
         $entry = $this->factory->create([

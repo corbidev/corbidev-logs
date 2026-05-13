@@ -25,6 +25,12 @@ use stdClass;
 final class HttpStatusTest extends TestCase
 {
     #[DataProvider('provideValidStatuses')]
+    /**
+     * But : Vérifier que HttpStatus accepte les codes HTTP valides.
+     *
+     * Entrée : Cas fournis par le DataProvider `provideValidStatuses()`
+     * Résultat attendu : HttpStatus créé sans exception
+     */
     public function testItCreatesValidHttpStatus(
         int $value,
     ): void {
@@ -37,6 +43,12 @@ final class HttpStatusTest extends TestCase
     }
 
     #[DataProvider('provideInvalidStatuses')]
+    /**
+     * But : Vérifier que HttpStatus rejette les codes HTTP invalides.
+     *
+     * Entrée : Cas fournis par le DataProvider `provideInvalidStatuses()`
+     * Résultat attendu : InvalidHttpStatusException est levée
+     */
     public function testItRejectsInvalidHttpStatus(
         int $value,
     ): void {
@@ -47,6 +59,12 @@ final class HttpStatusTest extends TestCase
         new HttpStatus($value);
     }
 
+    /**
+     * But : Vérifier que fromExternal() accepte un entier valide.
+     *
+     * Entrée : 404
+     * Résultat attendu : HttpStatus avec valeur 404
+     */
     public function testItCreatesFromExternalInteger(): void
     {
         $status = HttpStatus::fromExternal(404);
@@ -57,6 +75,12 @@ final class HttpStatusTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() accepte une string numérique valide.
+     *
+     * Entrée : '500'
+     * Résultat attendu : HttpStatus avec valeur 500
+     */
     public function testItCreatesFromExternalNumericString(): void
     {
         $status = HttpStatus::fromExternal('500');
@@ -67,6 +91,12 @@ final class HttpStatusTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne 500 pour une string invalide.
+     *
+     * Entrée : 'invalid-status'
+     * Résultat attendu : HttpStatus avec valeur 500
+     */
     public function testItFallsBackTo500ForInvalidString(): void
     {
         $status = HttpStatus::fromExternal(
@@ -79,6 +109,12 @@ final class HttpStatusTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne 500 pour null.
+     *
+     * Entrée : null
+     * Résultat attendu : HttpStatus avec valeur 500
+     */
     public function testItFallsBackTo500ForNull(): void
     {
         $status = HttpStatus::fromExternal(null);
@@ -89,6 +125,12 @@ final class HttpStatusTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne 500 pour un status trop petit (< 100).
+     *
+     * Entrée : 99
+     * Résultat attendu : HttpStatus avec valeur 500
+     */
     public function testItFallsBackTo500ForTooSmallStatus(): void
     {
         $status = HttpStatus::fromExternal(99);
@@ -99,6 +141,12 @@ final class HttpStatusTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne 500 pour un status trop grand (> 599).
+     *
+     * Entrée : 600
+     * Résultat attendu : HttpStatus avec valeur 500
+     */
     public function testItFallsBackTo500ForTooLargeStatus(): void
     {
         $status = HttpStatus::fromExternal(600);
@@ -109,6 +157,12 @@ final class HttpStatusTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isInformational() retourne true pour les codes 1xx.
+     *
+     * Entrée : HttpStatus(102)
+     * Résultat attendu : isInformational() = true
+     */
     public function testItDetectsInformationalStatus(): void
     {
         $status = new HttpStatus(102);
@@ -122,6 +176,12 @@ final class HttpStatusTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isSuccess() retourne true pour les codes 2xx.
+     *
+     * Entrée : HttpStatus(200)
+     * Résultat attendu : isSuccess() = true
+     */
     public function testItDetectsSuccessStatus(): void
     {
         $status = new HttpStatus(200);
@@ -135,6 +195,12 @@ final class HttpStatusTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isRedirection() retourne true pour les codes 3xx.
+     *
+     * Entrée : HttpStatus(302)
+     * Résultat attendu : isRedirection() = true
+     */
     public function testItDetectsRedirectionStatus(): void
     {
         $status = new HttpStatus(302);
@@ -148,6 +214,12 @@ final class HttpStatusTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isClientError() et isError() retournent true pour les codes 4xx.
+     *
+     * Entrée : HttpStatus(404)
+     * Résultat attendu : isClientError() = true, isError() = true
+     */
     public function testItDetectsClientErrorStatus(): void
     {
         $status = new HttpStatus(404);
@@ -161,6 +233,12 @@ final class HttpStatusTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isServerError() et isError() retournent true pour les codes 5xx.
+     *
+     * Entrée : HttpStatus(500)
+     * Résultat attendu : isServerError() = true, isError() = true
+     */
     public function testItDetectsServerErrorStatus(): void
     {
         $status = new HttpStatus(500);
@@ -174,6 +252,12 @@ final class HttpStatusTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que getFamily() retourne la famille correcte du code HTTP.
+     *
+     * Entrée : 200, 404, 500
+     * Résultat attendu : '2xx', '4xx', '5xx' respectivement
+     */
     public function testItReturnsCorrectFamily(): void
     {
         self::assertSame(
@@ -192,6 +276,12 @@ final class HttpStatusTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que equals() compare correctement deux HttpStatus.
+     *
+     * Entrée : HttpStatus(200) vs HttpStatus(200), puis HttpStatus(200) vs HttpStatus(404)
+     * Résultat attendu : equals() = true / false
+     */
     public function testItComparesTwoStatuses(): void
     {
         $left = new HttpStatus(404);
@@ -207,6 +297,12 @@ final class HttpStatusTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la conversion en string retourne le code HTTP sous forme de string.
+     *
+     * Entrée : HttpStatus(404)
+     * Résultat attendu : (string) HttpStatus = '404'
+     */
     public function testItReturnsStableStringRepresentation(): void
     {
         $status = new HttpStatus(404);
@@ -224,6 +320,12 @@ final class HttpStatusTest extends TestCase
      * - aucun crash
      * - aucune exception
      * - toujours un HttpStatus valide
+     */
+    /**
+     * But : Vérifier que fromExternal() ne lève jamais d'exception avec des inputs hostiles.
+     *
+     * Entrée : 18 inputs hostiles variés
+     * Résultat attendu : Aucune exception levée
      */
     public function testItNeverThrowsFromExternal(): void
     {
@@ -266,6 +368,12 @@ final class HttpStatusTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne toujours un code HTTP valide (100-599).
+     *
+     * Entrée : 12 inputs variés
+     * Résultat attendu : Valeur entre 100 et 599 inclus
+     */
     public function testFromExternalAlwaysReturnsValidHttpStatus(): void
     {
         $resource = fopen('php://memory', 'r');
@@ -305,6 +413,12 @@ final class HttpStatusTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne 500 pour les payloads hostiles.
+     *
+     * Entrée : 7 inputs hostiles (injections, binaire, etc.)
+     * Résultat attendu : HttpStatus avec valeur 500
+     */
     public function testItFallsBackTo500ForHostilePayloads(): void
     {
         $inputs = [
@@ -327,6 +441,12 @@ final class HttpStatusTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que fromExternal() ne crashe pas avec un payload de 1 000 000 caractères.
+     *
+     * Entrée : str_repeat('9', 1000000)
+     * Résultat attendu : HttpStatus avec valeur 500, aucune exception
+     */
     public function testItHandlesHugePayloadWithoutCrash(): void
     {
         $payload = str_repeat('9', 1000000);
@@ -339,6 +459,12 @@ final class HttpStatusTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() accepte un payload binaire sans crash.
+     *
+     * Entrée : "\x00\x01\x02"
+     * Résultat attendu : Instance HttpStatus créée ou fallback, aucune exception
+     */
     public function testItHandlesBinaryPayload(): void
     {
         $status = HttpStatus::fromExternal(
@@ -351,6 +477,12 @@ final class HttpStatusTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() accepte de l'UTF-8 invalide sans crash.
+     *
+     * Entrée : hex2bin('b131') (UTF-8 invalide)
+     * Résultat attendu : Instance HttpStatus créée ou fallback, aucune exception
+     */
     public function testItHandlesInvalidUtf8Payload(): void
     {
         $status = HttpStatus::fromExternal(

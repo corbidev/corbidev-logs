@@ -39,6 +39,12 @@ final class FileQueueWriterTest extends TestCase
         @rmdir($this->directory);
     }
 
+    /**
+     * But : Vérifier que write() crée bien un fichier de queue sur le disque.
+     *
+     * Entrée : Payload JSON valide '{"message":"test"}'
+     * Résultat attendu : Le fichier existe après l'écriture
+     */
     public function testWriteCreatesQueueFile(): void
     {
         $writer = $this->createWriter();
@@ -51,6 +57,12 @@ final class FileQueueWriterTest extends TestCase
         self::assertFileExists($path);
     }
 
+    /**
+     * But : Vérifier que le contenu du fichier correspond exactement au payload fourni.
+     *
+     * Entrée : Payload '{"message":"hello"}'
+     * Résultat attendu : file_get_contents() retourne le payload identique
+     */
     public function testWriteStoresExpectedContent(): void
     {
         $writer = $this->createWriter();
@@ -68,6 +80,12 @@ final class FileQueueWriterTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le fichier créé a l'extension '.json'.
+     *
+     * Entrée : Payload JSON valide
+     * Résultat attendu : Le chemin retourné se termine par '.json'
+     */
     public function testWriteCreatesJsonFile(): void
     {
         $writer = $this->createWriter();
@@ -80,6 +98,12 @@ final class FileQueueWriterTest extends TestCase
         self::assertStringEndsWith('.json', $path);
     }
 
+    /**
+     * But : Vérifier qu'aucun fichier temporaire '.tmp' n'est laissé après une écriture réussie.
+     *
+     * Entrée : Payload JSON valide
+     * Résultat attendu : Aucun fichier *.tmp dans le répertoire de queue
+     */
     public function testWriteNeverLeavesTemporaryFile(): void
     {
         $writer = $this->createWriter();

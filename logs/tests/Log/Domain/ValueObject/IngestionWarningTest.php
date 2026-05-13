@@ -32,6 +32,12 @@ use PHPUnit\Framework\TestCase;
  */
 final class IngestionWarningTest extends TestCase
 {
+    /**
+     * But : Vérifier qu'un IngestionWarning valide est correctement créé.
+     *
+     * Entrée : field='level', type=INVALID_LEVEL, original='LOL', fallback='error'
+     * Résultat attendu : Chaque accesseur retourne la valeur fournie
+     */
     public function testItCreatesValidWarning(): void
     {
         $warning = new IngestionWarning(
@@ -62,6 +68,12 @@ final class IngestionWarningTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que toArray() retourne le format de tableau attendu.
+     *
+     * Entrée : Warning avec field, type, original, fallback
+     * Résultat attendu : tableau avec clés 'field', 'type', 'original', 'fallback'
+     */
     public function testItSerializesToArray(): void
     {
         $warning = new IngestionWarning(
@@ -82,6 +94,12 @@ final class IngestionWarningTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que IngestionWarning implémente JsonSerializable et produit un JSON valide.
+     *
+     * Entrée : Warning valide
+     * Résultat attendu : json_encode() produit un JSON valide
+     */
     public function testItImplementsJsonSerializable(): void
     {
         $warning = new IngestionWarning(
@@ -106,6 +124,12 @@ final class IngestionWarningTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que original=null est accepté dans IngestionWarning.
+     *
+     * Entrée : original = null
+     * Résultat attendu : original() retourne null, toArray() valide
+     */
     public function testItSupportsNullValues(): void
     {
         $warning = new IngestionWarning(
@@ -125,6 +149,12 @@ final class IngestionWarningTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que IngestionWarning accepte des booléens pour original et fallback.
+     *
+     * Entrée : original = true, fallback = false
+     * Résultat attendu : toArray() retourne les valeurs correctes
+     */
     public function testItSupportsBooleanValues(): void
     {
         $warning = new IngestionWarning(
@@ -143,6 +173,12 @@ final class IngestionWarningTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que IngestionWarning accepte des valeurs numériques pour original et fallback.
+     *
+     * Entrée : original = 999999, fallback = 500
+     * Résultat attendu : toArray() retourne les valeurs numériques correctes
+     */
     public function testItSupportsNumericValues(): void
     {
         $warning = new IngestionWarning(
@@ -163,6 +199,12 @@ final class IngestionWarningTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que original est tronqué si sa représentation dépasse 500 caractères.
+     *
+     * Entrée : original = str_repeat('A', 5000)
+     * Résultat attendu : original tronqué à ≤ 500 caractères
+     */
     public function testItTruncatesHugeOriginalString(): void
     {
         $warning = new IngestionWarning(
@@ -185,6 +227,12 @@ final class IngestionWarningTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fallback est tronqué si sa représentation dépasse 500 caractères.
+     *
+     * Entrée : fallback = str_repeat('B', 9000)
+     * Résultat attendu : fallback tronqué à ≤ 500 caractères
+     */
     public function testItTruncatesHugeFallbackString(): void
     {
         $warning = new IngestionWarning(
@@ -207,6 +255,12 @@ final class IngestionWarningTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les tableaux sont normalisés en '[array]' dans le warning.
+     *
+     * Entrée : original = [1, 2, 3]
+     * Résultat attendu : original dans toArray() = '[array]'
+     */
     public function testItNormalizesArrays(): void
     {
         $warning = new IngestionWarning(
@@ -231,6 +285,12 @@ final class IngestionWarningTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les objets sont normalisés en '[object:ClassName]' dans le warning.
+     *
+     * Entrée : original = new stdClass()
+     * Résultat attendu : original dans toArray() = '[object:stdClass]'
+     */
     public function testItNormalizesObjects(): void
     {
         $object = new \stdClass();
@@ -249,6 +309,12 @@ final class IngestionWarningTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les caractères Unicode et emoji sont acceptés sans crash.
+     *
+     * Entrée : original = 'Erreur 漢字 🚀'
+     * Résultat attendu : JSON encodé sans erreur
+     */
     public function testItSupportsUnicode(): void
     {
         $warning = new IngestionWarning(
@@ -268,6 +334,12 @@ final class IngestionWarningTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que 2 000 instances avec payloads hostiles ne lèvent jamais d'exception.
+     *
+     * Entrée : 2 000 IngestionWarning avec values hostiles (SQL injection, XSS, binaire, etc.)
+     * Résultat attendu : Toutes les instances créées sans exception
+     */
     public function testItNeverThrowsWithHostilePayloads(): void
     {
         for ($i = 0; $i < 2000; ++$i) {

@@ -45,6 +45,12 @@ final class LogEntryFactoryTest extends TestCase
         $this->factory = new LogEntryFactory();
     }
 
+    /**
+     * But : Vérifier que la factory crée une LogEntry complète depuis un payload valide.
+     *
+     * Entrée : Payload complet avec message, domain, level, environment, requestId, request, ip
+     * Résultat attendu : Tous les champs de la LogEntry correspondent aux valeurs du payload
+     */
     public function testItCreatesLogEntry(): void
     {
         $entry = $this->factory->create([
@@ -78,6 +84,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le requestId est normalisé en minuscules.
+     *
+     * Entrée : requestId = 'REQ_ABC_123'
+     * Résultat attendu : requestId() = 'req_abc_123'
+     */
     public function testItCreatesRequestId(): void
     {
         $entry = $this->factory->create([
@@ -92,6 +104,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory génère un requestId si absent du payload.
+     *
+     * Entrée : Payload sans requestId
+     * Résultat attendu : requestId non vide généré automatiquement
+     */
     public function testItGeneratesRequestIdWhenMissing(): void
     {
         $entry = $this->factory->create([]);
@@ -104,6 +122,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory régénère un requestId si la valeur est invalide.
+     *
+     * Entrée : requestId = '<script>alert(1)</script>'
+     * Résultat attendu : Nouveau requestId généré, warning INVALID_REQUEST_ID ajouté
+     */
     public function testItGeneratesRequestIdWhenInvalid(): void
     {
         $entry = $this->factory->create([
@@ -127,6 +151,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory normalise le message (trim des espaces).
+     *
+     * Entrée : message = '  Payment failed  '
+     * Résultat attendu : message = 'Payment failed'
+     */
     public function testItNormalizesMessage(): void
     {
         $entry = $this->factory->create([
@@ -139,6 +169,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory retourne 'unknown error' pour un message null.
+     *
+     * Entrée : message = null
+     * Résultat attendu : message = 'unknown error'
+     */
     public function testItFallsBackForInvalidMessage(): void
     {
         $entry = $this->factory->create([
@@ -151,6 +187,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory tronque les messages dépassant 1 000 caractères.
+     *
+     * Entrée : message de 2 000 caractères
+     * Résultat attendu : message tronqué à 1 000, warning MESSAGE_TRUNCATED ajouté
+     */
     public function testItTruncatesHugeMessage(): void
     {
         $entry = $this->factory->create([
@@ -173,6 +215,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory normalise le domaine en minuscules.
+     *
+     * Entrée : domain = 'BILLING'
+     * Résultat attendu : domain = 'billing'
+     */
     public function testItNormalizesDomain(): void
     {
         $entry = $this->factory->create([
@@ -185,6 +233,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory retourne 'unknown' pour un domaine null.
+     *
+     * Entrée : domain = null
+     * Résultat attendu : domain = 'unknown'
+     */
     public function testItFallsBackForInvalidDomain(): void
     {
         $entry = $this->factory->create([
@@ -197,6 +251,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory crée correctement un LogLevel depuis une string.
+     *
+     * Entrée : level = 'critical'
+     * Résultat attendu : LogLevel::CRITICAL
+     */
     public function testItCreatesLogLevel(): void
     {
         $entry = $this->factory->create([
@@ -209,6 +269,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory retourne ERROR si le level est invalide.
+     *
+     * Entrée : level = 'invalid-level'
+     * Résultat attendu : LogLevel::ERROR, warning INVALID_LEVEL ajouté
+     */
     public function testItFallsBackLogLevel(): void
     {
         $entry = $this->factory->create([
@@ -226,6 +292,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory crée correctement un environnement depuis une string.
+     *
+     * Entrée : environment = 'staging'
+     * Résultat attendu : Environment::Staging
+     */
     public function testItCreatesEnvironment(): void
     {
         $entry = $this->factory->create([
@@ -238,6 +310,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory retourne Production si l'environnement est invalide.
+     *
+     * Entrée : environment = 'invalid-env'
+     * Résultat attendu : Environment::Production, warning INVALID_ENVIRONMENT ajouté
+     */
     public function testItFallsBackEnvironment(): void
     {
         $entry = $this->factory->create([
@@ -255,6 +333,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory crée une Request depuis le payload imbriqué 'request'.
+     *
+     * Entrée : payload['request'] = ['method' => 'POST', 'uri' => '/orders', 'userAgent' => 'Mozilla/5.0']
+     * Résultat attendu : request() avec method='POST', uri='/orders', userAgent='Mozilla/5.0'
+     */
     public function testItCreatesRequest(): void
     {
         $entry = $this->factory->create([
@@ -288,6 +372,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory supporte l'ancien format avec uri/method/userAgent au niveau racine.
+     *
+     * Entrée : payload['uri'] = '/orders', payload['method'] = 'POST', payload['userAgent'] = 'Mozilla/5.0'
+     * Résultat attendu : request() avec les valeurs legacy correctes
+     */
     public function testItSupportsLegacyRequestPayload(): void
     {
         $entry = $this->factory->create([
@@ -319,6 +409,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory retourne 'GET' si la méthode HTTP est null.
+     *
+     * Entrée : request['method'] = null
+     * Résultat attendu : method = 'GET'
+     */
     public function testItFallsBackRequestMethod(): void
     {
         $entry = $this->factory->create([
@@ -335,6 +431,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory tronque les user agents dépassant 500 caractères.
+     *
+     * Entrée : userAgent de 600 caractères
+     * Résultat attendu : userAgent tronqué à 500, warning USER_AGENT_TRUNCATED ajouté
+     */
     public function testItTruncatesHugeUserAgent(): void
     {
         $entry = $this->factory->create([
@@ -361,6 +463,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory retourne '' pour un user agent null.
+     *
+     * Entrée : userAgent = null
+     * Résultat attendu : userAgent = ''
+     */
     public function testItFallsBackUserAgent(): void
     {
         $entry = $this->factory->create([
@@ -377,6 +485,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le contexte est bien stocké depuis le payload.
+     *
+     * Entrée : context = ['userId' => 42]
+     * Résultat attendu : context() = ['userId' => 42]
+     */
     public function testItCreatesContext(): void
     {
         $entry = $this->factory->create([
@@ -393,6 +507,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le champ extra est bien stocké depuis le payload.
+     *
+     * Entrée : extra = ['memory' => '128MB']
+     * Résultat attendu : extra() = ['memory' => '128MB']
+     */
     public function testItCreatesExtra(): void
     {
         $entry = $this->factory->create([
@@ -409,6 +529,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory retourne [] pour un context invalide.
+     *
+     * Entrée : context = 'invalid' (string)
+     * Résultat attendu : context() = []
+     */
     public function testItFallsBackInvalidContext(): void
     {
         $entry = $this->factory->create([
@@ -421,6 +547,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory retourne [] pour un extra invalide.
+     *
+     * Entrée : extra = 'invalid' (string)
+     * Résultat attendu : extra() = []
+     */
     public function testItFallsBackInvalidExtra(): void
     {
         $entry = $this->factory->create([
@@ -433,6 +565,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory retourne l'IP fallback pour une IP invalide.
+     *
+     * Entrée : ip = '999.999.999.999'
+     * Résultat attendu : ip = '127.0.0.1', warning INVALID_IP ajouté
+     */
     public function testItFallsBackInvalidIp(): void
     {
         $entry = $this->factory->create([
@@ -452,6 +590,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory régénère le fingerprint si la valeur est invalide.
+     *
+     * Entrée : fingerprint = 'INVALID'
+     * Résultat attendu : Nouveau fingerprint généré, warning FINGERPRINT_REGENERATED ajouté
+     */
     public function testItFallsBackInvalidFingerprint(): void
     {
         $entry = $this->factory->create([
@@ -471,6 +615,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory retourne '/' pour une URI invalide (trop longue).
+     *
+     * Entrée : request['uri'] de 5 000 caractères
+     * Résultat attendu : uri = '/', warning INVALID_URI ajouté
+     */
     public function testItFallsBackInvalidUri(): void
     {
         $entry = $this->factory->create([
@@ -504,6 +654,12 @@ final class LogEntryFactoryTest extends TestCase
      *
      * La factory doit l'ignorer sans crash.
      */
+    /**
+     * But : Vérifier que le champ 'tags' legacy est ignoré sans provoquer de crash.
+     *
+     * Entrée : payload['tags'] = ['api', 'v2']
+     * Résultat attendu : LogEntry créée sans exception, champ 'tags' ignoré
+     */
     public function testItIgnoresLegacyTagsPayload(): void
     {
         $entry = $this->factory->create([
@@ -519,6 +675,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory génère un UUID si le champ 'id' est absent du payload.
+     *
+     * Entrée : Payload sans champ 'id'
+     * Résultat attendu : id() non vide généré automatiquement
+     */
     public function testItCreatesGeneratedUuid(): void
     {
         $entry = $this->factory->create([]);
@@ -528,6 +690,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory conserve l'UUID fourni dans le payload.
+     *
+     * Entrée : id = 'existing-uuid-1234'
+     * Résultat attendu : id() = 'existing-uuid-1234'
+     */
     public function testItKeepsExistingUuid(): void
     {
         $id = '018f0d9b-fe16-7cb2-b40c-3c4f1e8b6f21';
@@ -542,6 +710,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory parse correctement une date createdAt depuis une string.
+     *
+     * Entrée : createdAt = '2025-01-01 10:00:00'
+     * Résultat attendu : createdAt() retourne la date correspondante
+     */
     public function testItCreatesDates(): void
     {
         $entry = $this->factory->create([
@@ -556,6 +730,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory retourne la date courante si la date est invalide.
+     *
+     * Entrée : createdAt = 'not-a-date'
+     * Résultat attendu : createdAt() retourne une date proche de now(), warning INVALID_CREATED_AT ajouté
+     */
     public function testItHandlesInvalidDate(): void
     {
         $entry = $this->factory->create([
@@ -572,6 +752,12 @@ final class LogEntryFactoryTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory ne crashe jamais avec un payload totalement invalide.
+     *
+     * Entrée : Payload ne contenant que des valeurs invalides (null, empty, hostile)
+     * Résultat attendu : Instance LogEntry valide retournée sans exception
+     */
     public function testItNeverCrashesWithHostilePayload(): void
     {
         $entry = $this->factory->create([
