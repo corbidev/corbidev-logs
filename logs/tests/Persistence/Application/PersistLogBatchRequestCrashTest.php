@@ -13,6 +13,12 @@ use PHPUnit\Framework\TestCase;
  */
 final class PersistLogBatchRequestCrashTest extends TestCase
 {
+    /**
+     * But : Vérifier que PersistLogBatchRequest accepte 10 000 LogEntry sans crash.
+     *
+     * Entrée : LogEntryFactory::many(10000)
+     * Résultat attendu : count() = 10000
+     */
     public function testItSurvivesHugeArray(): void
     {
         $request = new PersistLogBatchRequest(
@@ -25,6 +31,12 @@ final class PersistLogBatchRequestCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les valeurs hostiles mixtes sont filtrées et seul le LogEntry conservé.
+     *
+     * Entrée : [null, false, true, 123, 12.5, '', [], stdClass, LogEntry]
+     * Résultat attendu : count() = 1
+     */
     public function testItSurvivesMixedHostilePayload(): void
     {
         $payload = [
@@ -49,6 +61,12 @@ final class PersistLogBatchRequestCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que PersistLogBatchRequest accepte un générateur PHP comme entrée.
+     *
+     * Entrée : Generator yielding stdClass, 'invalid', 123, null, LogEntry
+     * Résultat attendu : count() = 1 (seul le LogEntry est retenu)
+     */
     public function testItSurvivesGeneratorInput(): void
     {
         $entry = LogEntryFactory::create();
@@ -73,6 +91,12 @@ final class PersistLogBatchRequestCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les clés non-standard (PHP_INT_MAX, -500, 'foo') sont normalisées.
+     *
+     * Entrée : [PHP_INT_MAX => entry, -500 => entry, 'foo' => entry]
+     * Résultat attendu : count() = 3
+     */
     public function testItSurvivesCorruptedKeys(): void
     {
         $entry = LogEntryFactory::create();
@@ -89,6 +113,12 @@ final class PersistLogBatchRequestCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les tableaux imbriqués sont filtrés et le résultat est vide.
+     *
+     * Entrée : [[['invalid']]]
+     * Résultat attendu : isEmpty() = true
+     */
     public function testItSurvivesNestedArrays(): void
     {
         $request = new PersistLogBatchRequest([
@@ -106,6 +136,12 @@ final class PersistLogBatchRequestCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que 5 000 stdClass ne causent pas de crash et sont tous filtrés.
+     *
+     * Entrée : 5 000 instances de stdClass
+     * Résultat attendu : isEmpty() = true
+     */
     public function testItSurvivesMassiveInvalidPayload(): void
     {
         $payload = [];
@@ -123,6 +159,12 @@ final class PersistLogBatchRequestCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la même instance de LogEntry peut être dupliquée dans le batch.
+     *
+     * Entrée : [entry, entry, entry]
+     * Résultat attendu : count() = 3
+     */
     public function testItSurvivesDuplicatedEntries(): void
     {
         $entry = LogEntryFactory::create();

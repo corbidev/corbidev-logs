@@ -32,6 +32,12 @@ use PHPUnit\Framework\TestCase;
  */
 final class PersistenceResultTest extends TestCase
 {
+    /**
+     * But : Vérifier que PersistenceResult::success() crée un résultat complet avec taux 100%.
+     *
+     * Entrée : persistedCount=15
+     * Résultat attendu : isSuccess()=true, successRate=100.0, pas d'erreurs
+     */
     public function testItCreatesSuccessResult(): void
     {
         $result = PersistenceResult::success(
@@ -92,6 +98,12 @@ final class PersistenceResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que PersistenceResult::failure() crée un résultat d'échec avec erreurs.
+     *
+     * Entrée : failedCount=8, errors=['sql error', 'deadlock']
+     * Résultat attendu : isFailure()=true, successRate=0.0, hasErrors()=true
+     */
     public function testItCreatesFailureResult(): void
     {
         $result = PersistenceResult::failure(
@@ -159,6 +171,12 @@ final class PersistenceResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que PersistenceResult::partial() crée un résultat mixte avec taux partiel.
+     *
+     * Entrée : persistedCount=7, failedCount=3, errors=['one failure']
+     * Résultat attendu : isPartial()=true, successRate=70.0, totalCount=10
+     */
     public function testItCreatesPartialResult(): void
     {
         $result = PersistenceResult::partial(
@@ -218,6 +236,12 @@ final class PersistenceResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que PersistenceResult::nothingToPersist() crée un résultat neutre.
+     *
+     * Entrée : Aucune
+     * Résultat attendu : isNothingToPersist()=true, tous les compteurs à 0
+     */
     public function testItCreatesNothingToPersistResult(): void
     {
         $result = PersistenceResult::nothingToPersist();
@@ -276,6 +300,12 @@ final class PersistenceResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que merge() additionne correctement deux PersistenceResult.
+     *
+     * Entrée : Deux résultats partiels (10+2 et 5+3 avec erreurs distinctes)
+     * Résultat attendu : persistedCount=15, failedCount=5, errors fusionnés, isPartial()=true
+     */
     public function testItMergesResults(): void
     {
         $first = PersistenceResult::partial(
@@ -333,6 +363,12 @@ final class PersistenceResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que getSuccessRate() retourne 0.0 quand persistedCount et failedCount sont à 0.
+     *
+     * Entrée : new PersistenceResult(persistedCount:0, failedCount:0)
+     * Résultat attendu : getSuccessRate() = 0.0, isNothingToPersist() = true
+     */
     public function testItReturnsZeroSuccessRateWhenEmpty(): void
     {
         $result = new PersistenceResult(
@@ -350,6 +386,12 @@ final class PersistenceResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que toArray() exporte toutes les propriétés dans un tableau structuré.
+     *
+     * Entrée : PersistenceResult::partial(persistedCount:8, failedCount:2, errors:['timeout'])
+     * Résultat attendu : Tableau avec 9 clés correspondant aux propriétés attendues
+     */
     public function testItExportsArray(): void
     {
         $result = PersistenceResult::partial(
@@ -378,6 +420,12 @@ final class PersistenceResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les erreurs dupliquées sont dédupliquées dans getErrors().
+     *
+     * Entrée : errors=['duplicate', 'duplicate', 'duplicate']
+     * Résultat attendu : getErrors() = ['duplicate']
+     */
     public function testItDeduplicatesErrors(): void
     {
         $result = PersistenceResult::failure(
@@ -397,6 +445,12 @@ final class PersistenceResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les messages d'erreur sont nettoyés des espaces superflus.
+     *
+     * Entrée : errors=['   sql error   ']
+     * Résultat attendu : getErrors() = ['sql error']
+     */
     public function testItTrimsErrorMessages(): void
     {
         $result = PersistenceResult::failure(
@@ -414,6 +468,12 @@ final class PersistenceResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les chaînes vides ou de blancs sont retirées de la liste d'erreurs.
+     *
+     * Entrée : errors=['', '   ', "\n", 'valid']
+     * Résultat attendu : getErrors() = ['valid']
+     */
     public function testItRemovesEmptyErrors(): void
     {
         $result = PersistenceResult::failure(
@@ -434,6 +494,12 @@ final class PersistenceResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les erreurs non-scalaires (objets, tableaux, ressources) sont ignorées.
+     *
+     * Entrée : errors=[new \stdClass(), [], fopen(...), 'valid']
+     * Résultat attendu : getErrors() = ['valid']
+     */
     public function testItIgnoresNonScalarErrors(): void
     {
         $result = PersistenceResult::failure(
@@ -454,6 +520,12 @@ final class PersistenceResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que PersistenceResult est une instance valide et immuable.
+     *
+     * Entrée : PersistenceResult::success(persistedCount:1)
+     * Résultat attendu : instance de PersistenceResult retournée
+     */
     public function testItKeepsResultImmutable(): void
     {
         $result = PersistenceResult::success(
@@ -466,6 +538,12 @@ final class PersistenceResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que modifier le tableau retourné par getErrors() n'affecte pas l'état interne.
+     *
+     * Entrée : errors=['error'], modification externe du tableau récupéré
+     * Résultat attendu : getErrors() retourne toujours ['error']
+     */
     public function testItReturnsIndependentErrorsArray(): void
     {
         $result = PersistenceResult::failure(
@@ -487,6 +565,12 @@ final class PersistenceResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le taux de succès est calculé correctement avec des valeurs arrondies.
+     *
+     * Entrée : persistedCount=1, failedCount=3
+     * Résultat attendu : getSuccessRate() = 25.0
+     */
     public function testItHandlesRoundedSuccessRate(): void
     {
         $result = PersistenceResult::partial(
@@ -500,6 +584,12 @@ final class PersistenceResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que partial() avec failedCount=0 produit un résultat de succès.
+     *
+     * Entrée : PersistenceResult::partial(persistedCount:10, failedCount:0)
+     * Résultat attendu : isSuccess()=true, isPartial()=false
+     */
     public function testItHandlesZeroFailureSuccessCase(): void
     {
         $result = PersistenceResult::partial(
@@ -520,6 +610,12 @@ final class PersistenceResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que partial() avec persistedCount=0 produit un résultat d'échec.
+     *
+     * Entrée : PersistenceResult::partial(persistedCount:0, failedCount:10)
+     * Résultat attendu : isFailure()=true, isPartial()=false
+     */
     public function testItHandlesZeroPersistedFailureCase(): void
     {
         $result = PersistenceResult::partial(
@@ -540,6 +636,12 @@ final class PersistenceResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que failure() avec un tableau d'erreurs vide produit hasErrors()=false.
+     *
+     * Entrée : PersistenceResult::failure(failedCount:1, errors:[])
+     * Résultat attendu : hasErrors()=false, getErrors()=[]
+     */
     public function testItHandlesEmptyErrorsArray(): void
     {
         $result = PersistenceResult::failure(
@@ -557,6 +659,12 @@ final class PersistenceResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que getTotalCount() retourne PHP_INT_MAX en cas d'overflow entier.
+     *
+     * Entrée : persistedCount=PHP_INT_MAX, failedCount=PHP_INT_MAX
+     * Résultat attendu : getTotalCount() = PHP_INT_MAX (protection overflow)
+     */
     public function testItHandlesOverflowProtection(): void
     {
         $result = PersistenceResult::partial(

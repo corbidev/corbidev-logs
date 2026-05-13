@@ -40,6 +40,12 @@ final class FileQueueReaderTest extends TestCase
         $this->removeDirectory($this->baseDirectory);
     }
 
+    /**
+     * But : Vérifier que readBatch() lit et retourne les fichiers de la queue dans l'ordre.
+     *
+     * Entrée : Deux fichiers JSON dans le répertoire de queue
+     * Résultat attendu : 2 résultats avec les messages 'A' et 'B'
+     */
     public function test_it_reads_queue_batch(): void
     {
         $this->createQueueFile(
@@ -71,6 +77,12 @@ final class FileQueueReaderTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que readBatch() limite le nombre de fichiers lus au paramètre donné.
+     *
+     * Entrée : 10 fichiers dans la queue, readBatch(3)
+     * Résultat attendu : 3 résultats retournés
+     */
     public function test_it_limits_batch_size(): void
     {
         for ($i = 0; $i < 10; ++$i) {
@@ -92,6 +104,12 @@ final class FileQueueReaderTest extends TestCase
         self::assertCount(3, $results);
     }
 
+    /**
+     * But : Vérifier que readBatch() retourne un tableau vide si la queue est vide.
+     *
+     * Entrée : Aucun fichier dans le répertoire de queue
+     * Résultat attendu : []
+     */
     public function test_it_returns_empty_batch_when_queue_is_empty(): void
     {
         $reader = $this->createReader();
@@ -103,6 +121,12 @@ final class FileQueueReaderTest extends TestCase
         self::assertSame([], $results);
     }
 
+    /**
+     * But : Vérifier que readBatch() déplace les fichiers vers le répertoire 'processing'.
+     *
+     * Entrée : Un fichier JSON dans la queue
+     * Résultat attendu : Le fichier source n'existe plus, le chemin retourné contient '/processing/'
+     */
     public function test_it_moves_files_to_processing(): void
     {
         $file = $this->createQueueFile(
@@ -128,6 +152,12 @@ final class FileQueueReaderTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que delete() supprime bien le fichier du répertoire 'processing'.
+     *
+     * Entrée : Un fichier dans le répertoire 'processing'
+     * Résultat attendu : Le fichier n'existe plus
+     */
     public function test_it_deletes_processed_file(): void
     {
         $file = $this->createProcessingFile(
@@ -142,6 +172,12 @@ final class FileQueueReaderTest extends TestCase
         self::assertFileDoesNotExist($file);
     }
 
+    /**
+     * But : Vérifier que moveToFailed() déplace un fichier vers le répertoire 'failed'.
+     *
+     * Entrée : Un fichier dans 'processing'
+     * Résultat attendu : Le fichier source supprimé, destination contient '/failed/'
+     */
     public function test_it_moves_file_to_failed(): void
     {
         $file = $this->createProcessingFile(
@@ -163,6 +199,12 @@ final class FileQueueReaderTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que readBatch() respecte l'ordre FIFO approximatif par nom de fichier.
+     *
+     * Entrée : Fichiers '_000001_a.json' et '_000002_b.json'
+     * Résultat attendu : Premier résultat='first', deuxième='second'
+     */
     public function test_it_reads_files_in_fifo_approximate_order(): void
     {
         $this->createQueueFile(
@@ -192,6 +234,12 @@ final class FileQueueReaderTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que readBatch() retourne un Generator (lecture lazy) pour 100 fichiers.
+     *
+     * Entrée : 100 fichiers JSON dans la queue
+     * Résultat attendu : readBatch() retourne une instance de \Generator
+     */
     public function test_it_uses_generator_for_memory_bounded_reads(): void
     {
         for ($i = 0; $i < 100; ++$i) {
@@ -214,6 +262,12 @@ final class FileQueueReaderTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que readBatch() crée le répertoire 'processing' s'il n'existe pas.
+     *
+     * Entrée : Un fichier dans la queue, répertoire 'processing' absent
+     * Résultat attendu : Le répertoire 'processing' existe après l'appel
+     */
     public function test_it_creates_processing_directory(): void
     {
         $this->createQueueFile(

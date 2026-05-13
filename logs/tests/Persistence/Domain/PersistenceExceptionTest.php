@@ -22,6 +22,12 @@ use RuntimeException;
  */
 final class PersistenceExceptionTest extends TestCase
 {
+    /**
+     * But : Vérifier que databaseConnectionFailed() crée une exception avec le bon code et message.
+     *
+     * Entrée : context=['host', 'driver'], previous=RuntimeException('mysql down')
+     * Résultat attendu : Code DATABASE_CONNECTION_FAILED, message 'Database connection failed.'
+     */
     public function testDatabaseConnectionFailedCreatesExpectedException(): void
     {
         $previous = new RuntimeException(
@@ -65,6 +71,12 @@ final class PersistenceExceptionTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que queryExecutionFailed() crée une exception avec le bon code et message.
+     *
+     * Entrée : context=['table' => 'log_entry']
+     * Résultat attendu : Code QUERY_EXECUTION_FAILED, message 'SQL query execution failed.'
+     */
     public function testQueryExecutionFailedCreatesExpectedException(): void
     {
         $exception = PersistenceException::queryExecutionFailed(
@@ -96,6 +108,12 @@ final class PersistenceExceptionTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que emptyBatch() crée une exception avec le bon code et un contexte vide.
+     *
+     * Entrée : Aucune
+     * Résultat attendu : Code EMPTY_BATCH, message 'Persistence batch is empty.', context=[]
+     */
     public function testEmptyBatchCreatesExpectedException(): void
     {
         $exception = PersistenceException::emptyBatch();
@@ -121,6 +139,12 @@ final class PersistenceExceptionTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que batchTooLarge() crée une exception avec le bon code et contexte.
+     *
+     * Entrée : context=['batchSize' => 5000]
+     * Résultat attendu : Code BATCH_TOO_LARGE, message 'Persistence batch exceeds allowed limit.'
+     */
     public function testBatchTooLargeCreatesExpectedException(): void
     {
         $exception = PersistenceException::batchTooLarge(
@@ -152,6 +176,12 @@ final class PersistenceExceptionTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que invalidPayload() crée une exception avec le bon code et contexte.
+     *
+     * Entrée : context=['reason' => 'missing message']
+     * Résultat attendu : Code INVALID_PAYLOAD, message 'Persistence payload is invalid.'
+     */
     public function testInvalidPayloadCreatesExpectedException(): void
     {
         $exception = PersistenceException::invalidPayload(
@@ -183,6 +213,12 @@ final class PersistenceExceptionTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que timeout() crée une exception avec le bon code et message.
+     *
+     * Entrée : Aucune
+     * Résultat attendu : Code TIMEOUT, message 'Persistence operation timed out.'
+     */
     public function testTimeoutCreatesExpectedException(): void
     {
         $exception = PersistenceException::timeout();
@@ -203,6 +239,12 @@ final class PersistenceExceptionTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que deadlock() crée une exception avec le bon code et message.
+     *
+     * Entrée : Aucune
+     * Résultat attendu : Code DEADLOCK, message 'Database deadlock detected.'
+     */
     public function testDeadlockCreatesExpectedException(): void
     {
         $exception = PersistenceException::deadlock();
@@ -223,6 +265,12 @@ final class PersistenceExceptionTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que transactionFailed() crée une exception avec le bon code et message.
+     *
+     * Entrée : Aucune
+     * Résultat attendu : Code TRANSACTION_FAILED, message 'Database transaction failed.'
+     */
     public function testTransactionFailedCreatesExpectedException(): void
     {
         $exception = PersistenceException::transactionFailed();
@@ -243,6 +291,12 @@ final class PersistenceExceptionTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que PersistenceException hérite bien de RuntimeException.
+     *
+     * Entrée : PersistenceException::timeout()
+     * Résultat attendu : assertInstanceOf(RuntimeException::class)
+     */
     public function testExceptionIsRuntimeException(): void
     {
         $exception = PersistenceException::timeout();
@@ -253,6 +307,12 @@ final class PersistenceExceptionTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que modifier le tableau original après création ne mute pas le contexte de l'exception.
+     *
+     * Entrée : context=['table' => 'logs'], modification après création
+     * Résultat attendu : getContext() retourne toujours ['table' => 'logs']
+     */
     public function testContextIsImmutable(): void
     {
         $context = [
@@ -273,6 +333,12 @@ final class PersistenceExceptionTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les valeurs de contexte avec espaces superflus sont nettoyées.
+     *
+     * Entrée : context=['table' => '   logs   ']
+     * Résultat attendu : getContext() = ['table' => 'logs']
+     */
     public function testWhitespaceValuesAreTrimmed(): void
     {
         $exception = PersistenceException::queryExecutionFailed(
@@ -289,6 +355,12 @@ final class PersistenceExceptionTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le constructeur de PersistenceException existe et est accessible.
+     *
+     * Entrée : Reflection sur PersistenceException
+     * Résultat attendu : getConstructor() retourne non-null
+     */
     public function testEmptyMessageFallsBackToDefaultMessage(): void
     {
         $reflection = new \ReflectionClass(
@@ -300,6 +372,12 @@ final class PersistenceExceptionTest extends TestCase
         self::assertNotNull($constructor);
     }
 
+    /**
+     * But : Vérifier que le tableau retourné par getContext() est indépendant de l'état interne.
+     *
+     * Entrée : context=['host' => 'db'], modification du tableau retourné
+     * Résultat attendu : getContext() retourne toujours ['host' => 'db']
+     */
     public function testExceptionContextIsIndependentFromOriginalArray(): void
     {
         $context = [
@@ -322,6 +400,12 @@ final class PersistenceExceptionTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que l'exception précédente est correctement transmise et récupérable.
+     *
+     * Entrée : previous=RuntimeException('sql crashed')
+     * Résultat attendu : getPrevious() retourne la même instance
+     */
     public function testPreviousThrowableIsPreserved(): void
     {
         $previous = new RuntimeException(

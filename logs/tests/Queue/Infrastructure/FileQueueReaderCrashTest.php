@@ -46,6 +46,12 @@ final class FileQueueReaderCrashTest extends TestCase
         $this->removeDirectory($this->baseDirectory);
     }
 
+    /**
+     * But : Vérifier que les fichiers JSON malformés sont déplacés vers 'corrupted'.
+     *
+     * Entrée : Un fichier avec contenu '{"invalid":}' dans la queue
+     * Résultat attendu : 0 résultats, 1 fichier dans '/corrupted/'
+     */
     public function test_it_moves_invalid_json_to_corrupted(): void
     {
         $directory = $this->baseDirectory . '/logs';
@@ -75,6 +81,12 @@ final class FileQueueReaderCrashTest extends TestCase
         self::assertCount(1, $corruptedFiles);
     }
 
+    /**
+     * But : Vérifier que les fichiers vides sont déplacés vers 'corrupted'.
+     *
+     * Entrée : Un fichier vide dans la queue
+     * Résultat attendu : 1 fichier dans '/corrupted/'
+     */
     public function test_it_moves_empty_file_to_corrupted(): void
     {
         $directory = $this->baseDirectory . '/logs';
@@ -102,6 +114,12 @@ final class FileQueueReaderCrashTest extends TestCase
         self::assertCount(1, $corruptedFiles);
     }
 
+    /**
+     * But : Vérifier que readBatch() continue après un fichier corrompu et lit les fichiers valides.
+     *
+     * Entrée : Un fichier invalide suivi d'un fichier valide ['message' => 'valid']
+     * Résultat attendu : 1 résultat avec message='valid'
+     */
     public function test_it_continues_batch_after_corrupted_file(): void
     {
         $directory = $this->baseDirectory . '/logs';
@@ -135,6 +153,12 @@ final class FileQueueReaderCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que readBatch(0) lève une InvalidArgumentException.
+     *
+     * Entrée : readBatch(0)
+     * Résultat attendu : \InvalidArgumentException lancée
+     */
     public function test_it_rejects_invalid_batch_limit(): void
     {
         $reader = $this->createReader();
@@ -148,6 +172,12 @@ final class FileQueueReaderCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que delete('') lève une InvalidArgumentException.
+     *
+     * Entrée : delete('')
+     * Résultat attendu : \InvalidArgumentException lancée
+     */
     public function test_it_rejects_empty_delete_path(): void
     {
         $reader = $this->createReader();
@@ -159,6 +189,12 @@ final class FileQueueReaderCrashTest extends TestCase
         $reader->delete('');
     }
 
+    /**
+     * But : Vérifier que moveToFailed('') lève une InvalidArgumentException.
+     *
+     * Entrée : moveToFailed('')
+     * Résultat attendu : \InvalidArgumentException lancée
+     */
     public function test_it_rejects_empty_failed_path(): void
     {
         $reader = $this->createReader();
@@ -170,6 +206,12 @@ final class FileQueueReaderCrashTest extends TestCase
         $reader->moveToFailed('');
     }
 
+    /**
+     * But : Vérifier que markAsProcessing('') lève une InvalidArgumentException.
+     *
+     * Entrée : markAsProcessing('')
+     * Résultat attendu : \InvalidArgumentException lancée
+     */
     public function test_it_rejects_empty_processing_path(): void
     {
         $reader = $this->createReader();
@@ -181,6 +223,12 @@ final class FileQueueReaderCrashTest extends TestCase
         $reader->markAsProcessing('');
     }
 
+    /**
+     * But : Vérifier que 100 fichiers JSON corrompus sont tous isolés sans crash.
+     *
+     * Entrée : 100 fichiers '{"broken":}' dans la queue
+     * Résultat attendu : 0 résultats, 100 fichiers dans '/corrupted/'
+     */
     public function test_it_survives_massive_corrupted_queue(): void
     {
         $directory = $this->baseDirectory . '/logs';
@@ -216,6 +264,12 @@ final class FileQueueReaderCrashTest extends TestCase
         self::assertCount(100, $corruptedFiles);
     }
 
+    /**
+     * But : Vérifier qu'un fichier avec du UTF-8 invalide est déplacé vers 'corrupted'.
+     *
+     * Entrée : Fichier avec contenu "\xB1\x31"
+     * Résultat attendu : 1 fichier dans '/corrupted/'
+     */
     public function test_it_handles_invalid_utf8(): void
     {
         $directory = $this->baseDirectory . '/logs';

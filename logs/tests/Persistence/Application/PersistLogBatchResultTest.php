@@ -27,6 +27,12 @@ use PHPUnit\Framework\TestCase;
  */
 final class PersistLogBatchResultTest extends TestCase
 {
+    /**
+     * But : Vérifier que PersistLogBatchResult::empty() crée un résultat entièrement vide.
+     *
+     * Entrée : Aucune
+     * Résultat attendu : persistedCount=0, failedCount=0, errors=[], hasPersistedLogs()=false
+     */
     public function testItCreatesEmptyResult(): void
     {
         $result = PersistLogBatchResult::empty();
@@ -42,6 +48,12 @@ final class PersistLogBatchResultTest extends TestCase
         self::assertSame([], $result->getErrors());
     }
 
+    /**
+     * But : Vérifier que PersistLogBatchResult::success() crée un résultat avec des logs persistés.
+     *
+     * Entrée : 42
+     * Résultat attendu : persistedCount=42, failedCount=0, hasPersistedLogs()=true
+     */
     public function testItCreatesSuccessResult(): void
     {
         $result = PersistLogBatchResult::success(42);
@@ -55,6 +67,12 @@ final class PersistLogBatchResultTest extends TestCase
         self::assertTrue($result->hasNoFailures());
     }
 
+    /**
+     * But : Vérifier que PersistLogBatchResult::failure() crée un résultat d'échec avec erreurs.
+     *
+     * Entrée : failedCount=12, errors=['SQL error', 'Deadlock']
+     * Résultat attendu : persistedCount=0, failedCount=12, count(errors)=2
+     */
     public function testItCreatesFailureResult(): void
     {
         $result = PersistLogBatchResult::failure(
@@ -75,6 +93,12 @@ final class PersistLogBatchResultTest extends TestCase
         self::assertCount(2, $result->getErrors());
     }
 
+    /**
+     * But : Vérifier que toArray() retourne la structure attendue avec toutes les propriétés.
+     *
+     * Entrée : new PersistLogBatchResult(persistedCount:10, failedCount:2, errors:['error'])
+     * Résultat attendu : Tableau avec persisted_count, failed_count, total_count, errors
+     */
     public function testItReturnsStableArrayRepresentation(): void
     {
         $result = new PersistLogBatchResult(
@@ -94,6 +118,12 @@ final class PersistLogBatchResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que merge() additionne correctement plusieurs résultats.
+     *
+     * Entrée : Deux résultats (10+1+'error-1' et 20+2+'error-2')
+     * Résultat attendu : persistedCount=30, failedCount=3, errors=['error-1', 'error-2']
+     */
     public function testItMergesMultipleResults(): void
     {
         $result = PersistLogBatchResult::merge([
@@ -122,6 +152,12 @@ final class PersistLogBatchResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier qu'un persistedCount négatif lève une InvalidArgumentException.
+     *
+     * Entrée : new PersistLogBatchResult(persistedCount:-1, failedCount:0)
+     * Résultat attendu : \InvalidArgumentException lancée
+     */
     public function testItRejectsNegativePersistedCount(): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -132,6 +168,12 @@ final class PersistLogBatchResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier qu'un failedCount négatif lève une InvalidArgumentException.
+     *
+     * Entrée : new PersistLogBatchResult(persistedCount:0, failedCount:-1)
+     * Résultat attendu : \InvalidArgumentException lancée
+     */
     public function testItRejectsNegativeFailedCount(): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -142,6 +184,12 @@ final class PersistLogBatchResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les erreurs dupliquées sont dédupliquées dans getErrors().
+     *
+     * Entrée : errors=['duplicate', 'duplicate', 'duplicate']
+     * Résultat attendu : getErrors() = ['duplicate']
+     */
     public function testItRemovesDuplicateErrors(): void
     {
         $result = new PersistLogBatchResult(
@@ -160,6 +208,12 @@ final class PersistLogBatchResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les erreurs vides ou de blancs sont filtrées.
+     *
+     * Entrée : errors=['', ' ', "\n", "\t", 'valid']
+     * Résultat attendu : getErrors() = ['valid']
+     */
     public function testItIgnoresEmptyErrors(): void
     {
         $result = new PersistLogBatchResult(
@@ -180,6 +234,12 @@ final class PersistLogBatchResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les objets Stringable sont acceptés et convertis en string.
+     *
+     * Entrée : errors=[objet Stringable retournant 'stringable-error']
+     * Résultat attendu : getErrors() = ['stringable-error']
+     */
     public function testItSupportsStringableErrors(): void
     {
         $error = new class implements \Stringable {
@@ -201,6 +261,12 @@ final class PersistLogBatchResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les types invalides (tableau, stdClass, ressource) sont ignorés.
+     *
+     * Entrée : errors=[[], stdClass, resource, 'valid']
+     * Résultat attendu : getErrors() = ['valid']
+     */
     public function testItIgnoresInvalidErrorTypes(): void
     {
         $result = new PersistLogBatchResult(
@@ -220,6 +286,12 @@ final class PersistLogBatchResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les erreurs trop longues sont tronquées à 1 000 caractères.
+     *
+     * Entrée : errors=[str_repeat('A', 5000)]
+     * Résultat attendu : mb_strlen(getErrors()[0]) = 1000
+     */
     public function testItTruncatesVeryLargeErrors(): void
     {
         $huge = str_repeat('A', 5000);
@@ -236,6 +308,12 @@ final class PersistLogBatchResultTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la fusion de 1 000 résultats produit les compteurs corrects.
+     *
+     * Entrée : 1 000 résultats de succès avec persistedCount=1
+     * Résultat attendu : persistedCount=1000, failedCount=0
+     */
     public function testItHandlesLargeMerge(): void
     {
         $results = [];

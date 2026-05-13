@@ -41,6 +41,12 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(LogRecord::class)]
 final class LogRecordCrashTest extends TestCase
 {
+    /**
+     * But : Vérifier que LogRecord accepte un message de 600 000 caractères sans crash.
+     *
+     * Entrée : str_repeat('ERROR ', 100000)
+     * Résultat attendu : getMessage() retourne la valeur complète sans troncature
+     */
     public function testItHandlesHugeMessage(): void
     {
         $record = new LogRecord();
@@ -60,6 +66,12 @@ final class LogRecordCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogRecord stocke un contexte JSON avec 10 000 clés sans crash.
+     *
+     * Entrée : Tableau de 10 000 entrées de 1 000 caractères chacune
+     * Résultat attendu : getContextJson() retourne 10 000 éléments
+     */
     public function testItHandlesHugeContextJson(): void
     {
         $context = [];
@@ -83,6 +95,12 @@ final class LogRecordCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogRecord stocke un extra JSON avec 10 000 clés sans crash.
+     *
+     * Entrée : Tableau de 10 000 entrées de 1 000 caractères chacune
+     * Résultat attendu : getExtraJson() retourne 10 000 éléments
+     */
     public function testItHandlesHugeExtraJson(): void
     {
         $extra = [];
@@ -106,6 +124,12 @@ final class LogRecordCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogRecord stocke 5 000 warnings d'ingestion sans crash.
+     *
+     * Entrée : Tableau de 5 000 warnings
+     * Résultat attendu : getIngestionWarningsJson() retourne 5 000 éléments
+     */
     public function testItHandlesHugeIngestionWarningsJson(): void
     {
         $warnings = [];
@@ -133,6 +157,12 @@ final class LogRecordCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogRecord accepte les octets binaires dans message, userAgent et context.
+     *
+     * Entrée : "\x00\x01\x02" pour plusieurs champs
+     * Résultat attendu : getMessage() retourne la valeur binaire telle quelle
+     */
     public function testItHandlesBinaryPayloads(): void
     {
         $record = new LogRecord();
@@ -155,6 +185,12 @@ final class LogRecordCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogRecord accepte un payload UTF-8 invalide sans crash.
+     *
+     * Entrée : hex2bin('b131') pour plusieurs champs
+     * Résultat attendu : getMessage() retourne la valeur telle quelle
+     */
     public function testItHandlesInvalidUtf8Payloads(): void
     {
         $payload = hex2bin(
@@ -185,6 +221,12 @@ final class LogRecordCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que LogRecord stocke sans modification les payloads XSS, traversal et injection SQL.
+     *
+     * Entrée : '<script>alert(1)</script>', '../../../../../etc/passwd', "'; DROP TABLE logs; --"
+     * Résultat attendu : Les valeurs sont stockées telles quelles (pas de sanitization dans l'entity)
+     */
     public function testItHandlesHostilePayloads(): void
     {
         $record = new LogRecord();
@@ -217,6 +259,12 @@ final class LogRecordCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setRequestId() accepte un requestId de grande taille sans crash.
+     *
+     * Entrée : str_repeat('req_', 10000)
+     * Résultat attendu : getRequestId() retourne la valeur complète
+     */
     public function testItHandlesHugeRequestId(): void
     {
         $record = new LogRecord();
@@ -236,6 +284,12 @@ final class LogRecordCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setUserAgent() accepte un user-agent de très grande taille sans crash.
+     *
+     * Entrée : str_repeat('Mozilla/5.0 ', 100000)
+     * Résultat attendu : getUserAgent() retourne la valeur complète
+     */
     public function testItHandlesHugeUserAgent(): void
     {
         $record = new LogRecord();
@@ -255,6 +309,12 @@ final class LogRecordCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setUri() accepte une URI de très grande taille sans crash.
+     *
+     * Entrée : '/' . str_repeat('segment/', 10000)
+     * Résultat attendu : getUri() retourne la valeur complète
+     */
     public function testItHandlesHugeUri(): void
     {
         $record = new LogRecord();
@@ -275,6 +335,12 @@ final class LogRecordCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setFingerprint() accepte un fingerprint de grande taille sans crash.
+     *
+     * Entrée : str_repeat('abcdef1234567890', 1000)
+     * Résultat attendu : getFingerprint() retourne la valeur complète
+     */
     public function testItHandlesHugeFingerprint(): void
     {
         $record = new LogRecord();
@@ -294,6 +360,12 @@ final class LogRecordCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que 5 000 hydrations successives de LogRecord n'entraînent pas de crash mémoire.
+     *
+     * Entrée : 5 000 itérations avec hydration complète
+     * Résultat attendu : requestId et ip corrects à chaque itération, aucun crash
+     */
     public function testItHandlesRepeatedHydrationWithoutCrash(): void
     {
         for ($i = 0; $i < 5000; ++$i) {
@@ -390,6 +462,12 @@ final class LogRecordCrashTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que 10 000 appels successifs aux getters ne causent pas de crash.
+     *
+     * Entrée : LogRecord hydraté, 10 000 itérations de lecture
+     * Résultat attendu : Les valeurs restent stables, aucun crash
+     */
     public function testItHandlesRepeatedGetterCallsWithoutCrash(): void
     {
         $record = $this->createRecord();

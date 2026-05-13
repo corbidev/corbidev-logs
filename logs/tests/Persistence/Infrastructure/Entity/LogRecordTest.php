@@ -41,6 +41,12 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(LogRecord::class)]
 final class LogRecordTest extends TestCase
 {
+    /**
+     * But : Vérifier que setExternalId()/getExternalId() stocke et retourne la valeur.
+     *
+     * Entrée : UUID '018f0d9b-fe16-7cb2-b40c-3c4f1e8b6f21'
+     * Résultat attendu : getExternalId() retourne la valeur définie
+     */
     public function testItStoresExternalId(): void
     {
         $record = new LogRecord();
@@ -55,6 +61,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setProjectId()/getProjectId() stocke et retourne la valeur.
+     *
+     * Entrée : '42'
+     * Résultat attendu : getProjectId() = '42'
+     */
     public function testItStoresProjectId(): void
     {
         $record = new LogRecord();
@@ -69,6 +81,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setFingerprint()/getFingerprint() stocke et retourne la valeur.
+     *
+     * Entrée : 'abcdef1234567890'
+     * Résultat attendu : getFingerprint() = 'abcdef1234567890'
+     */
     public function testItStoresFingerprint(): void
     {
         $record = new LogRecord();
@@ -83,6 +101,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setRequestId()/getRequestId() stocke et retourne la valeur.
+     *
+     * Entrée : 'req_checkout_123'
+     * Résultat attendu : getRequestId() = 'req_checkout_123'
+     */
     public function testItStoresRequestId(): void
     {
         $record = new LogRecord();
@@ -97,6 +121,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setLevel()/getLevel() stocke et retourne la valeur.
+     *
+     * Entrée : 'error'
+     * Résultat attendu : getLevel() = 'error'
+     */
     public function testItStoresLevel(): void
     {
         $record = new LogRecord();
@@ -111,6 +141,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setHttpStatus()/getHttpStatus() stocke et retourne la valeur entière.
+     *
+     * Entrée : 500
+     * Résultat attendu : getHttpStatus() = 500
+     */
     public function testItStoresHttpStatus(): void
     {
         $record = new LogRecord();
@@ -125,6 +161,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setDomain()/getDomain() stocke et retourne la valeur.
+     *
+     * Entrée : 'billing'
+     * Résultat attendu : getDomain() = 'billing'
+     */
     public function testItStoresDomain(): void
     {
         $record = new LogRecord();
@@ -139,6 +181,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setUri()/getUri() stocke et retourne la valeur.
+     *
+     * Entrée : '/orders'
+     * Résultat attendu : getUri() = '/orders'
+     */
     public function testItStoresUri(): void
     {
         $record = new LogRecord();
@@ -153,6 +201,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setMethod()/getMethod() stocke et retourne la valeur.
+     *
+     * Entrée : 'POST'
+     * Résultat attendu : getMethod() = 'POST'
+     */
     public function testItStoresMethod(): void
     {
         $record = new LogRecord();
@@ -167,6 +221,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setMethod(null) est accepté et getMethod() retourne null.
+     *
+     * Entrée : null
+     * Résultat attendu : getMethod() = null
+     */
     public function testItStoresNullableMethod(): void
     {
         $record = new LogRecord();
@@ -180,6 +240,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setUserAgent()/getUserAgent() stocke et retourne la valeur.
+     *
+     * Entrée : 'Mozilla/5.0'
+     * Résultat attendu : getUserAgent() = 'Mozilla/5.0'
+     */
     public function testItStoresUserAgent(): void
     {
         $record = new LogRecord();
@@ -194,6 +260,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setUserAgent(null) est accepté et getUserAgent() retourne null.
+     *
+     * Entrée : null
+     * Résultat attendu : getUserAgent() = null
+     */
     public function testItStoresNullableUserAgent(): void
     {
         $record = new LogRecord();
@@ -207,6 +279,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setEnv()/getEnv() stocke et retourne la valeur.
+     *
+     * Entrée : 'prod'
+     * Résultat attendu : getEnv() = 'prod'
+     */
     public function testItStoresEnvironment(): void
     {
         $record = new LogRecord();
@@ -221,6 +299,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setClient()/getClient() stocke et retourne la valeur.
+     *
+     * Entrée : 'checkout-app'
+     * Résultat attendu : getClient() = 'checkout-app'
+     */
     public function testItStoresClient(): void
     {
         $record = new LogRecord();
@@ -235,6 +319,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setMessage()/getMessage() stocke et retourne la valeur.
+     *
+     * Entrée : 'Payment failed'
+     * Résultat attendu : getMessage() = 'Payment failed'
+     */
     public function testItStoresMessage(): void
     {
         $record = new LogRecord();
@@ -249,6 +339,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setContextJson()/getContextJson() stocke et retourne le tableau.
+     *
+     * Entrée : ['userId' => 42]
+     * Résultat attendu : getContextJson() retourne le même tableau
+     */
     public function testItStoresContextJson(): void
     {
         $context = [
@@ -267,6 +363,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setContextJson([]) est accepté et getContextJson() retourne [].
+     *
+     * Entrée : []
+     * Résultat attendu : getContextJson() = []
+     */
     public function testItStoresEmptyContextJson(): void
     {
         $record = new LogRecord();
@@ -281,6 +383,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setExtraJson()/getExtraJson() stocke et retourne le tableau.
+     *
+     * Entrée : ['memory' => 123]
+     * Résultat attendu : getExtraJson() retourne le même tableau
+     */
     public function testItStoresExtraJson(): void
     {
         $extra = [
@@ -299,6 +407,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setExtraJson([]) est accepté et getExtraJson() retourne [].
+     *
+     * Entrée : []
+     * Résultat attendu : getExtraJson() = []
+     */
     public function testItStoresEmptyExtraJson(): void
     {
         $record = new LogRecord();
@@ -313,6 +427,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setIngestionWarningsJson()/getIngestionWarningsJson() stocke et retourne le tableau.
+     *
+     * Entrée : Tableau avec un warning de type 'message_truncated'
+     * Résultat attendu : getIngestionWarningsJson() retourne le même tableau
+     */
     public function testItStoresIngestionWarningsJson(): void
     {
         $warnings = [
@@ -335,6 +455,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setIngestionWarningsJson([]) est accepté et la liste retourne [].
+     *
+     * Entrée : []
+     * Résultat attendu : getIngestionWarningsJson() = []
+     */
     public function testItStoresEmptyIngestionWarningsJson(): void
     {
         $record = new LogRecord();
@@ -349,6 +475,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setCreatedAt()/getCreatedAt() stocke et retourne la date.
+     *
+     * Entrée : new DateTimeImmutable()
+     * Résultat attendu : getCreatedAt() retourne la même instance
+     */
     public function testItStoresCreatedAt(): void
     {
         $date = new DateTimeImmutable();
@@ -365,6 +497,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setClientDate()/getClientDate() stocke et retourne la date.
+     *
+     * Entrée : new DateTimeImmutable()
+     * Résultat attendu : getClientDate() retourne la même instance
+     */
     public function testItStoresClientDate(): void
     {
         $date = new DateTimeImmutable();
@@ -381,6 +519,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setClientDate(null) est accepté et getClientDate() retourne null.
+     *
+     * Entrée : null
+     * Résultat attendu : getClientDate() = null
+     */
     public function testItStoresNullableClientDate(): void
     {
         $record = new LogRecord();
@@ -394,6 +538,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setIp()/getIp() stocke et retourne l'adresse IP.
+     *
+     * Entrée : '127.0.0.1'
+     * Résultat attendu : getIp() = '127.0.0.1'
+     */
     public function testItStoresIp(): void
     {
         $record = new LogRecord();
@@ -408,6 +558,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que setIp(null) est accepté et getIp() retourne null.
+     *
+     * Entrée : null
+     * Résultat attendu : getIp() = null
+     */
     public function testItStoresNullableIp(): void
     {
         $record = new LogRecord();
@@ -421,6 +577,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que getId() retourne null avant toute persistance Doctrine.
+     *
+     * Entrée : new LogRecord() sans persistance
+     * Résultat attendu : getId() = null
+     */
     public function testItStoresNullableIdBeforePersistence(): void
     {
         $record = new LogRecord();
@@ -430,6 +592,12 @@ final class LogRecordTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les getters restent stables lors de 1000 appels successifs.
+     *
+     * Entrée : LogRecord hydraté, 1000 itérations
+     * Résultat attendu : Les valeurs retournées sont identiques à chaque appel
+     */
     public function testItSupportsRepeatedGetterCalls(): void
     {
         $record = $this->createRecord();

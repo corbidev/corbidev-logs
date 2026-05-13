@@ -69,6 +69,12 @@ final class LogEntryToRecordMapperCrashTest extends TestCase
         $this->mapper = new LogEntryToRecordMapper();
     }
 
+    /**
+     * But : Vérifier que le mapper borne le contexte à 50 éléments même avec 10 000 clés.
+     *
+     * Entrée : context avec 10 000 clés de 1 000 caractères chacune
+     * Résultat attendu : LogRecord valide, count(contextJson) ≤ 51, '__truncated__' présent
+     */
     public function testItHandlesHugeContext(): void
     {
         $context = [];
@@ -108,6 +114,12 @@ final class LogEntryToRecordMapperCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le mapper borne l'extra à 50 éléments même avec 10 000 clés.
+     *
+     * Entrée : extra avec 10 000 clés de 1 000 caractères chacune
+     * Résultat attendu : LogRecord valide, count(extraJson) ≤ 51
+     */
     public function testItHandlesHugeExtra(): void
     {
         $extra = [];
@@ -139,6 +151,12 @@ final class LogEntryToRecordMapperCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le mapper ne crash pas sur des valeurs binaires dans le contexte.
+     *
+     * Entrée : context=['binary' => "\x00\x01\x02"]
+     * Résultat attendu : LogRecord valide, contextJson est un tableau
+     */
     public function testItHandlesBinaryPayloads(): void
     {
         $record = $this->mapper->map(
@@ -160,6 +178,12 @@ final class LogEntryToRecordMapperCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le mapper ne crash pas sur du UTF-8 invalide dans le contexte.
+     *
+     * Entrée : context=['invalid' => hex2bin('b131')]
+     * Résultat attendu : LogRecord valide
+     */
     public function testItHandlesInvalidUtf8Payloads(): void
     {
         $payload = hex2bin(
@@ -185,6 +209,12 @@ final class LogEntryToRecordMapperCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le mapper ne crash pas sur des payloads XSS, SQL injection, path traversal.
+     *
+     * Entrée : context avec XSS, injection SQL, traversal, shell injection, code PHP
+     * Résultat attendu : LogRecord valide, contextJson est un tableau
+     */
     public function testItHandlesHostilePayloads(): void
     {
         $record = $this->mapper->map(
@@ -210,6 +240,12 @@ final class LogEntryToRecordMapperCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le Domain rejette les messages trop longs avant d'atteindre le mapper.
+     *
+     * Entrée : message=str_repeat('ERROR ', 100000)
+     * Résultat attendu : \Throwable lancé lors de la création du LogEntry
+     */
     public function testItRejectsHugeStringsAtDomainLevel(): void
     {
         /**
@@ -234,6 +270,12 @@ final class LogEntryToRecordMapperCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le mapper gère les tableaux imbriqués à 50 niveaux sans crash.
+     *
+     * Entrée : Tableau imbriqué à 50 niveaux
+     * Résultat attendu : LogRecord valide, contextJson est un tableau
+     */
     public function testItHandlesHugeNestedArrays(): void
     {
         $payload = [];
@@ -263,6 +305,12 @@ final class LogEntryToRecordMapperCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la profondeur maximale est bien limité à 5 niveaux.
+     *
+     * Entrée : Tableau imbriqué à 7 niveaux
+     * Résultat attendu : '__truncated__' = 'max_depth_reached' au niveau 5
+     */
     public function testItLimitsMaxDepth(): void
     {
         $payload = [
@@ -295,6 +343,12 @@ final class LogEntryToRecordMapperCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les ressources PHP dans le contexte sont converties en '[resource]'.
+     *
+     * Entrée : context=['resource' => fopen('php://memory', 'r')]
+     * Résultat attendu : getContextJson()['resource'] = '[resource]'
+     */
     public function testItHandlesResources(): void
     {
         $resource = fopen(
@@ -331,6 +385,12 @@ final class LogEntryToRecordMapperCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les objets PHP dans le contexte sont convertis en '[object:ClassName]'.
+     *
+     * Entrée : context=['object' => new stdClass()]
+     * Résultat attendu : getContextJson()['object'] = '[object:stdClass]'
+     */
     public function testItHandlesObjects(): void
     {
         $record = $this->mapper->map(
@@ -354,6 +414,12 @@ final class LogEntryToRecordMapperCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les caractères nuls dans les clés/valeurs de contexte sont supprimés.
+     *
+     * Entrée : context=["bad\0key" => "value\0with\0null"]
+     * Résultat attendu : Clé 'badkey' avec valeur 'valuewithnull'
+     */
     public function testItSanitizesControlCharacters(): void
     {
         $record = $this->mapper->map(
@@ -377,6 +443,12 @@ final class LogEntryToRecordMapperCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les valeurs de contexte trop longues sont tronquées à 1 000 caractères.
+     *
+     * Entrée : context=['huge' => str_repeat('A', 10000)]
+     * Résultat attendu : mb_strlen(getContextJson()['huge']) = 1000
+     */
     public function testItTruncatesHugeStrings(): void
     {
         $record = $this->mapper->map(
@@ -400,6 +472,12 @@ final class LogEntryToRecordMapperCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les objets DateTimeImmutable dans le contexte sont convertis en string ATOM.
+     *
+     * Entrée : context=['date' => new \DateTimeImmutable()]
+     * Résultat attendu : getContextJson()['date'] = $date->format(DateTimeInterface::ATOM)
+     */
     public function testItHandlesDateTimeObjects(): void
     {
         $date = new \DateTimeImmutable();
@@ -422,6 +500,12 @@ final class LogEntryToRecordMapperCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le mapper produit un LogRecord valide même avec des avertissements d'ingestion.
+     *
+     * Entrée : Un IngestionWarning de type INVALID_MESSAGE
+     * Résultat attendu : count(getIngestionWarningsJson()) = 1
+     */
     public function testItHandlesIngestionWarnings(): void
     {
         $record = $this->mapper->map(
@@ -444,6 +528,12 @@ final class LogEntryToRecordMapperCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que 5 000 mappings successifs ne causent pas de crash mémoire.
+     *
+     * Entrée : 5 000 itérations avec un LogEntry différent (contexte['iteration'] = $i)
+     * Résultat attendu : LogRecord valide à chaque itération
+     */
     public function testItHandlesRepeatedMappings(): void
     {
         for ($i = 0; $i < 5000; ++$i) {
