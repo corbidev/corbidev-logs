@@ -478,6 +478,12 @@ final class FingerprintTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() gère une séquence binaire sans exception.
+     *
+     * Entrée : "\x00\x01\x02"
+     * Résultat attendu : Instance de Fingerprint créée (fallback ou valide)
+     */
     public function testItHandlesBinaryPayload(): void
     {
         $fingerprint = Fingerprint::fromExternal(
@@ -490,6 +496,12 @@ final class FingerprintTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() gère une valeur UTF-8 invalide sans exception.
+     *
+     * Entrée : hex2bin('b131')
+     * Résultat attendu : Instance de Fingerprint créée (fallback ou valide)
+     */
     public function testItHandlesInvalidUtf8Payload(): void
     {
         $fingerprint = Fingerprint::fromExternal(

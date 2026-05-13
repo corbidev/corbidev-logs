@@ -227,7 +227,7 @@ final class LogEntryFactory
             createdAt: $createdAt
                 ?? new DateTimeImmutable(),
 
-            id: self::normalizeId(
+            externalId: self::normalizeId(
                 $id,
             ),
         );

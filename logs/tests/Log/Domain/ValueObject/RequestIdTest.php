@@ -589,6 +589,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que RequestId accepte les caractères numériques.
+     *
+     * Entrée : 'req_123456'
+     * Résultat attendu : value() = 'req_123456'
+     */
     public function testItAcceptsNumericCharacters(): void
     {
         $requestId = new RequestId(
@@ -601,6 +607,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que equals() utilise les valeurs normalisées pour la comparaison.
+     *
+     * Entrée : 'REQ_TEST' vs 'req_test'
+     * Résultat attendu : equals() = true
+     */
     public function testEqualsUsesNormalizedValues(): void
     {
         $a = new RequestId(
@@ -616,6 +628,12 @@ final class RequestIdTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que 100 RequestId générés sont tous valides (format /^req_[a-z0-9]+$/).
+     *
+     * Entrée : 100 appels à RequestId::generate()
+     * Résultat attendu : Chaque valeur correspond au pattern /^req_[a-z0-9]+$/
+     */
     public function testGeneratedRequestIdIsAlwaysValid(): void
     {
         for ($i = 0; $i < 100; ++$i) {

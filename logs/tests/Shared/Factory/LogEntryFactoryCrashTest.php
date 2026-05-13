@@ -77,7 +77,7 @@ final class LogEntryFactoryCrashTest extends TestCase
         self::assertSame(
             1000,
             mb_strlen(
-                $entry->message(),
+                $entry->getMessage(),
             ),
         );
 
@@ -162,7 +162,7 @@ final class LogEntryFactoryCrashTest extends TestCase
 
         self::assertCount(
             5000,
-            $entry->context(),
+            $entry->getContext(),
         );
     }
 
@@ -186,7 +186,7 @@ final class LogEntryFactoryCrashTest extends TestCase
 
         self::assertCount(
             5000,
-            $entry->extra(),
+            $entry->getExtra(),
         );
     }
 
@@ -204,7 +204,7 @@ final class LogEntryFactoryCrashTest extends TestCase
 
         self::assertSame(
             'Erreur 漢字 🚀 éàç',
-            $entry->message(),
+            $entry->getMessage(),
         );
     }
 
@@ -220,7 +220,7 @@ final class LogEntryFactoryCrashTest extends TestCase
             $entry = LogEntryFactory::create();
 
             self::assertNotEmpty(
-                $entry->id(),
+                $entry->getExternalId(),
             );
         }
     }
@@ -241,7 +241,7 @@ final class LogEntryFactoryCrashTest extends TestCase
             self::assertMatchesRegularExpression(
                 '/^[a-f0-9]{16}$/',
                 $entry
-                    ->fingerprint()
+                    ->getFingerprint()
                     ->value(),
             );
         }
@@ -287,7 +287,7 @@ final class LogEntryFactoryCrashTest extends TestCase
             500,
             mb_strlen(
                 $entry
-                    ->request()
+                    ->getRequest()
                     ->userAgent(),
             ),
         );
@@ -335,7 +335,7 @@ final class LogEntryFactoryCrashTest extends TestCase
 
         self::assertContains(
             $entry
-                ->request()
+                ->getRequest()
                 ->method(),
             [
                 'GET',
@@ -413,7 +413,7 @@ final class LogEntryFactoryCrashTest extends TestCase
         );
 
         $warnings = $entry
-            ->ingestionWarnings();
+            ->getIngestionWarnings();
 
         self::assertNotEmpty(
             $warnings,

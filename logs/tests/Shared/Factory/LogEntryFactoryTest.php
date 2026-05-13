@@ -50,49 +50,49 @@ final class LogEntryFactoryTest extends TestCase
 
         self::assertSame(
             'Test log entry',
-            $entry->message(),
+            $entry->getMessage(),
         );
 
         self::assertSame(
             'app',
-            $entry->domain(),
+            $entry->getDomain(),
         );
 
         self::assertSame(
             LogLevel::ERROR,
-            $entry->level(),
+            $entry->getLevel(),
         );
 
         self::assertSame(
             Environment::Test,
-            $entry->environment(),
+            $entry->getEnvironment(),
         );
 
         self::assertSame(
             500,
             $entry
-                ->httpStatus()
+                ->getHttpStatus()
                 ->value(),
         );
 
         self::assertSame(
             'phpunit',
             $entry
-                ->client()
+                ->getClient()
                 ->value(),
         );
 
         self::assertSame(
             'req_phpunit_test',
             $entry
-                ->requestId()
+                ->getRequestId()
                 ->value(),
         );
 
         self::assertSame(
             '/test',
             $entry
-                ->request()
+                ->getRequest()
                 ->uri()
                 ->value(),
         );
@@ -100,28 +100,28 @@ final class LogEntryFactoryTest extends TestCase
         self::assertSame(
             'GET',
             $entry
-                ->request()
+                ->getRequest()
                 ->method(),
         );
 
         self::assertSame(
             'PHPUnit',
             $entry
-                ->request()
+                ->getRequest()
                 ->userAgent(),
         );
 
         self::assertSame(
             '127.0.0.1',
             $entry
-                ->ipAddress()
+                ->getIpAddress()
                 ->value(),
         );
 
         self::assertMatchesRegularExpression(
             '/^[a-f0-9]{16}$/',
             $entry
-                ->fingerprint()
+                ->getFingerprint()
                 ->value(),
         );
 
@@ -144,7 +144,7 @@ final class LogEntryFactoryTest extends TestCase
 
         self::assertSame(
             'Database failure',
-            $entry->message(),
+            $entry->getMessage(),
         );
     }
 
@@ -166,7 +166,7 @@ final class LogEntryFactoryTest extends TestCase
         self::assertSame(
             1000,
             mb_strlen(
-                $entry->message(),
+                $entry->getMessage(),
             ),
         );
 
@@ -192,7 +192,7 @@ final class LogEntryFactoryTest extends TestCase
 
         self::assertSame(
             LogLevel::ERROR,
-            $entry->level(),
+            $entry->getLevel(),
         );
 
         self::assertTrue(
@@ -212,7 +212,7 @@ final class LogEntryFactoryTest extends TestCase
 
         self::assertSame(
             LogLevel::WARNING,
-            $entry->level(),
+            $entry->getLevel(),
         );
     }
 
@@ -228,7 +228,7 @@ final class LogEntryFactoryTest extends TestCase
 
         self::assertSame(
             LogLevel::INFO,
-            $entry->level(),
+            $entry->getLevel(),
         );
     }
 
@@ -260,8 +260,8 @@ final class LogEntryFactoryTest extends TestCase
         $entry2 = LogEntryFactory::create();
 
         self::assertNotSame(
-            $entry1->id(),
-            $entry2->id(),
+            $entry1->getExternalId(),
+            $entry2->getExternalId(),
         );
     }
 
@@ -283,11 +283,11 @@ final class LogEntryFactoryTest extends TestCase
 
         self::assertNotSame(
             $entry1
-                ->fingerprint()
+                ->getFingerprint()
                 ->value(),
 
             $entry2
-                ->fingerprint()
+                ->getFingerprint()
                 ->value(),
         );
     }
@@ -306,7 +306,7 @@ final class LogEntryFactoryTest extends TestCase
 
         self::assertSame(
             'custom-id',
-            $entry->id(),
+            $entry->getExternalId(),
         );
     }
 
@@ -325,7 +325,7 @@ final class LogEntryFactoryTest extends TestCase
         self::assertSame(
             'req_checkout_42',
             $entry
-                ->requestId()
+                ->getRequestId()
                 ->value(),
         );
     }
@@ -345,7 +345,7 @@ final class LogEntryFactoryTest extends TestCase
         self::assertSame(
             'abcdef1234567890',
             $entry
-                ->fingerprint()
+                ->getFingerprint()
                 ->value(),
         );
     }
@@ -368,7 +368,7 @@ final class LogEntryFactoryTest extends TestCase
             [
                 'userId' => 42,
             ],
-            $entry->context(),
+            $entry->getContext(),
         );
     }
 
@@ -390,7 +390,7 @@ final class LogEntryFactoryTest extends TestCase
             [
                 'memory' => '128MB',
             ],
-            $entry->extra(),
+            $entry->getExtra(),
         );
     }
 
@@ -408,7 +408,7 @@ final class LogEntryFactoryTest extends TestCase
 
         self::assertSame(
             Environment::Production,
-            $entry->environment(),
+            $entry->getEnvironment(),
         );
     }
 
@@ -426,7 +426,7 @@ final class LogEntryFactoryTest extends TestCase
 
         self::assertSame(
             'billing',
-            $entry->domain(),
+            $entry->getDomain(),
         );
     }
 
@@ -447,14 +447,14 @@ final class LogEntryFactoryTest extends TestCase
         self::assertSame(
             'POST',
             $entry
-                ->request()
+                ->getRequest()
                 ->method(),
         );
 
         self::assertSame(
             '/api/logs',
             $entry
-                ->request()
+                ->getRequest()
                 ->uri()
                 ->value(),
         );
@@ -462,7 +462,7 @@ final class LogEntryFactoryTest extends TestCase
         self::assertSame(
             'Symfony HttpClient',
             $entry
-                ->request()
+                ->getRequest()
                 ->userAgent(),
         );
     }
@@ -484,7 +484,7 @@ final class LogEntryFactoryTest extends TestCase
 
         self::assertContains(
             $entry
-                ->request()
+                ->getRequest()
                 ->method(),
             [
                 'GET',
@@ -517,7 +517,7 @@ final class LogEntryFactoryTest extends TestCase
             500,
             mb_strlen(
                 $entry
-                    ->request()
+                    ->getRequest()
                     ->userAgent(),
             ),
         );
@@ -543,7 +543,7 @@ final class LogEntryFactoryTest extends TestCase
         self::assertSame(
             '192.168.1.10',
             $entry
-                ->ipAddress()
+                ->getIpAddress()
                 ->value(),
         );
     }
@@ -604,7 +604,7 @@ final class LogEntryFactoryTest extends TestCase
 
         $requestIds = array_map(
             static fn (LogEntry $entry): string => $entry
-                ->requestId()
+                ->getRequestId()
                 ->value(),
             $entries,
         );
@@ -634,7 +634,7 @@ final class LogEntryFactoryTest extends TestCase
 
         self::assertCount(
             2,
-            $entry->ingestionWarnings(),
+            $entry->getIngestionWarnings(),
         );
 
         self::assertTrue(
@@ -682,7 +682,7 @@ final class LogEntryFactoryTest extends TestCase
             static fn ($warning): string => $warning
                 ->type()
                 ->value,
-            $entry->ingestionWarnings(),
+            $entry->getIngestionWarnings(),
         );
 
         self::assertContains(

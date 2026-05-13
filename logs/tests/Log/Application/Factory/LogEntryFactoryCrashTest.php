@@ -218,7 +218,7 @@ final class LogEntryFactoryCrashTest extends TestCase
 
         self::assertCount(
             10000,
-            $entry->context(),
+            $entry->getContext(),
         );
     }
 
@@ -245,7 +245,7 @@ final class LogEntryFactoryCrashTest extends TestCase
 
         self::assertCount(
             10000,
-            $entry->extra(),
+            $entry->getExtra(),
         );
     }
 
@@ -284,7 +284,7 @@ final class LogEntryFactoryCrashTest extends TestCase
         );
 
         self::assertContains(
-            $entry->request()->method(),
+            $entry->getRequest()->method(),
             [
                 'GET',
                 'POST',
@@ -300,7 +300,7 @@ final class LogEntryFactoryCrashTest extends TestCase
             500,
             mb_strlen(
                 $entry
-                    ->request()
+                    ->getRequest()
                     ->userAgent(),
             ),
         );
@@ -328,7 +328,7 @@ final class LogEntryFactoryCrashTest extends TestCase
         self::assertLessThanOrEqual(
             1000,
             mb_strlen(
-                $entry->message(),
+                $entry->getMessage(),
             ),
         );
 
@@ -340,7 +340,7 @@ final class LogEntryFactoryCrashTest extends TestCase
             static fn ($warning): string => $warning
                 ->type()
                 ->value,
-            $entry->ingestionWarnings(),
+            $entry->getIngestionWarnings(),
         );
 
         self::assertContains(
@@ -370,7 +370,7 @@ final class LogEntryFactoryCrashTest extends TestCase
             500,
             mb_strlen(
                 $entry
-                    ->request()
+                    ->getRequest()
                     ->userAgent(),
             ),
         );
@@ -379,7 +379,7 @@ final class LogEntryFactoryCrashTest extends TestCase
             static fn ($warning): string => $warning
                 ->type()
                 ->value,
-            $entry->ingestionWarnings(),
+            $entry->getIngestionWarnings(),
         );
 
         self::assertContains(
@@ -403,7 +403,7 @@ final class LogEntryFactoryCrashTest extends TestCase
         self::assertSame(
             '127.0.0.1',
             $entry
-                ->ipAddress()
+                ->getIpAddress()
                 ->value(),
         );
 
@@ -411,7 +411,7 @@ final class LogEntryFactoryCrashTest extends TestCase
             static fn ($warning): string => $warning
                 ->type()
                 ->value,
-            $entry->ingestionWarnings(),
+            $entry->getIngestionWarnings(),
         );
 
         self::assertContains(
@@ -434,7 +434,7 @@ final class LogEntryFactoryCrashTest extends TestCase
 
         self::assertNotEmpty(
             $entry
-                ->requestId()
+                ->getRequestId()
                 ->value(),
         );
 
@@ -442,7 +442,7 @@ final class LogEntryFactoryCrashTest extends TestCase
             static fn ($warning): string => $warning
                 ->type()
                 ->value,
-            $entry->ingestionWarnings(),
+            $entry->getIngestionWarnings(),
         );
 
         self::assertContains(
@@ -452,13 +452,10 @@ final class LogEntryFactoryCrashTest extends TestCase
     }
 
     /**
-     * IMPORTANT :
-     * ------------
-     * Les tags ont été supprimés du domaine.
+     * But : Vérifier que la factory gère les payloads "tags" hérités sans crash.
      *
-     * Ce test vérifie qu'un payload hostile
-     * contenant encore "tags" ne provoque
-     * aucun crash.
+     * Entrée : payload avec 1 000 tags de 100 caractères chacun
+     * Résultat attendu : LogEntry créée sans exception
      */
     public function testItIgnoresLegacyTagsPayload(): void
     {
@@ -481,6 +478,12 @@ final class LogEntryFactoryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory tronque et normalise un payload extêmement volumineux.
+     *
+     * Entrée : message/requestId/userAgent/context/extra de 600 000 à 1 000 000 caractères
+     * Résultat attendu : message ≤ 1000, userAgent ≤ 500, requestId non vide, hasIngestionWarnings()=true
+     */
     public function testItHandlesHugePayloadWithoutCrash(): void
     {
         $payload = [
@@ -523,7 +526,7 @@ final class LogEntryFactoryCrashTest extends TestCase
         self::assertLessThanOrEqual(
             1000,
             mb_strlen(
-                $entry->message(),
+                $entry->getMessage(),
             ),
         );
 
@@ -531,14 +534,14 @@ final class LogEntryFactoryCrashTest extends TestCase
             500,
             mb_strlen(
                 $entry
-                    ->request()
+                    ->getRequest()
                     ->userAgent(),
             ),
         );
 
         self::assertNotEmpty(
             $entry
-                ->requestId()
+                ->getRequestId()
                 ->value(),
         );
 
@@ -547,6 +550,12 @@ final class LogEntryFactoryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory gère des valeurs UTF-8 invalides sans exception.
+     *
+     * Entrée : message/requestId/userAgent/context contenant hex2bin('b131')
+     * Résultat attendu : LogEntry valide créée
+     */
     public function testItHandlesInvalidUtf8Payloads(): void
     {
         $payload = hex2bin(
@@ -577,6 +586,12 @@ final class LogEntryFactoryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory gère des séquences binaires sans exception.
+     *
+     * Entrée : message/requestId/userAgent/context/extra contenant "\x00\x01\x02"
+     * Résultat attendu : LogEntry valide créée
+     */
     public function testItHandlesBinaryPayloads(): void
     {
         $entry = $this->factory->create([
@@ -603,6 +618,12 @@ final class LogEntryFactoryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que 5 000 appels successifs à create() ne causent pas de crash ou de fuite mémoire.
+     *
+     * Entrée : 5 000 appels avec 'requestId' = 'req_{i}' et context['iteration'] = $i
+     * Résultat attendu : Chaque appel retourne une LogEntry valide
+     */
     public function testItHandlesRepeatedFactoryCalls(): void
     {
         for ($i = 0; $i < 5000; ++$i) {
@@ -623,6 +644,12 @@ final class LogEntryFactoryCrashTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que chaque IngestionWarning a la structure toArray() attendue.
+     *
+     * Entrée : message de 10 000 caractères + ip='999.999.999.999'
+     * Résultat attendu : Chaque warning a les clés 'field', 'type', 'original', 'fallback'
+     */
     public function testItProducesStableWarningsStructure(): void
     {
         $entry = $this->factory->create([
@@ -635,7 +662,7 @@ final class LogEntryFactoryCrashTest extends TestCase
         ]);
 
         foreach (
-            $entry->ingestionWarnings()
+            $entry->getIngestionWarnings()
             as $warning
         ) {
             $data = $warning->toArray();

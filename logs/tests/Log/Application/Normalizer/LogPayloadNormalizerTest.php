@@ -48,23 +48,23 @@ final class LogPayloadNormalizerTest extends TestCase
     }
 
     /**
-     * Vérifie qu'un payload entièrement valide
-     * conserve correctement toutes ses valeurs.
+     * But : Vérifier que normalize() conserve tous les champs d'un payload complet et valide.
      *
-     * Vérifie également :
-     * - la génération du fingerprint,
-     * - la génération du createdAt,
-     * - la suppression des query strings,
-     * - la stabilité des données.
+     * Entrée : Payload complet avec message, level, domain, env, requestId, externalId, request, context
+     * Résultat attendu : Tous les champs conservés, query string supprimée, createdAt='2026-01-01T00:00:00+00:00'
      */
     public function testNormalizeCompletePayload(): void
-    /**
-     * But : Vérifier que toutes les valeurs d'un payload valide sont conservées après normalisation.
-     *
-     * Entrée : Payload complet avec message, level, domain, env, httpStatus, client, requestId, externalId, request, context
-     * Résultat attendu : Toutes les valeurs correctement normalisées, uri sans query string, createdAt = horloge serveur
-     */
-    public function testNormalizeCompletePayload(): void
+    {
+        $payload = [
+            'message' => 'Paiement refusé',
+
+            'level' => 'error',
+
+            'domain' => 'billing',
+
+            'env' => 'prod',
+
+            'httpStatus' => 500,
 
             'client' => 'symfony-api',
 
@@ -148,15 +148,15 @@ final class LogPayloadNormalizerTest extends TestCase
     }
 
     /**
-     * Vérifie qu'un requestId est automatiquement généré
-     * lorsqu'il est absent du payload.
-    /**
-     * But : Vérifier qu'un requestId est généré automatiquement lorsqu'absent du payload.
+     * But : Vérifier qu'un requestId est généré automatiquement s'il est absent.
      *
-     * Entrée : Payload sans champ requestId
-     * Résultat attendu : requestId non vide commençant par 'req_'
+     * Entrée : Payload sans requestId
+     * Résultat attendu : normalized['requestId'] non vide, commence par 'req_'
      */
     public function testGenerateRequestIdWhenMissing(): void
+    {
+        $payload = [
+            'message' => 'Erreur',
 
             'level' => 'error',
 
@@ -189,15 +189,15 @@ final class LogPayloadNormalizerTest extends TestCase
     }
 
     /**
-     * Vérifie qu'un externalId est automatiquement généré
-     * lorsqu'il est absent.
-    /**
-     * But : Vérifier qu'un externalId est généré automatiquement lorsqu'absent du payload.
+     * But : Vérifier qu'un externalId UUID v7 est généré automatiquement s'il est absent.
      *
-     * Entrée : Payload sans champ externalId
-     * Résultat attendu : externalId valide au format UUID (/^[0-9a-fA-F-]{36}$/)
+     * Entrée : Payload sans externalId
+     * Résultat attendu : normalized['externalId'] correspond à /^[0-9a-fA-F-]{36}$/
      */
     public function testGenerateExternalIdWhenMissing(): void
+    {
+        $payload = [
+            'message' => 'Erreur',
 
             'level' => 'error',
 
@@ -226,21 +226,21 @@ final class LogPayloadNormalizerTest extends TestCase
     }
 
     /**
-     * Vérifie que la date serveur createdAt
-     * est toujours générée.
+     * But : Vérifier que createdAt est toujours fourni par l'horloge serveur injectée.
      *
-     * Cette valeur :
-     * - ne dépend jamais du client,
-     * - dépend uniquement de l'horloge serveur.
+     * Entrée : Payload quelconque, MockClock fixée au 2026-01-01T00:00:00+00:00
+     * Résultat attendu : normalized['createdAt'] = '2026-01-01T00:00:00+00:00'
      */
     public function testGenerateCreatedAt(): void
-    /**
-     * But : Vérifier que createdAt est toujours la date serveur (horloge injectée).
-     *
-     * Entrée : Normaliseur avec horloge fixée à '2026-01-01T00:00:00+00:00'
-     * Résultat attendu : createdAt = '2026-01-01T00:00:00+00:00'
-     */
-    public function testGenerateCreatedAt(): void
+    {
+        $payload = [
+            'message' => 'Erreur',
+
+            'level' => 'error',
+
+            'domain' => 'api',
+
+            'env' => 'prod',
 
             'httpStatus' => 500,
 
@@ -263,22 +263,22 @@ final class LogPayloadNormalizerTest extends TestCase
     }
 
     /**
-     * Vérifie que le fingerprint
-     * est correctement généré.
+     * But : Vérifier que le fingerprint généré fait exactement 16 caractères.
      *
-     * Le fingerprint permet :
-     * - le regroupement d'erreurs,
-     * - les statistiques,
-     * - la déduplication.
+     * Entrée : Payload avec message, level, domain, env, httpStatus, request['uri']
+     * Résultat attendu : normalized['fingerprint'] présent, mb_strlen() = 16
      */
     public function testGenerateFingerprint(): void
-    /**
-     * But : Vérifier que le fingerprint est généré avec une longueur de 16 caractères.
-     *
-     * Entrée : Payload valide avec level, domain, env, httpStatus, request.uri
-     * Résultat attendu : fingerprint de 16 caractères
-     */
-    public function testGenerateFingerprint(): void
+    {
+        $payload = [
+            'message' => 'Erreur',
+
+            'level' => 'error',
+
+            'domain' => 'billing',
+
+            'env' => 'prod',
+
             'httpStatus' => 500,
 
             'client' => 'backend',
@@ -304,15 +304,15 @@ final class LogPayloadNormalizerTest extends TestCase
     }
 
     /**
-     * Vérifie le filtrage automatique
-     * des données sensibles.
-    /**
-     * But : Vérifier que les données sensibles dans le context sont filtrées.
+     * But : Vérifier que les clés sensibles du contexte sont masquées automatiquement.
      *
-     * Entrée : context.password = 'secret-password', context.token = 'secret-token'
-     * Résultat attendu : context.password = '[FILTERED]', context.token = '[FILTERED]'
+     * Entrée : context['password'] = 'secret-password', context['token'] = 'secret-token'
+     * Résultat attendu : normalized['context']['password'] = '[FILTERED]', ['token'] = '[FILTERED]'
      */
     public function testFilterSensitiveData(): void
+    {
+        $payload = [
+            'message' => 'Erreur',
 
             'level' => 'error',
 
@@ -347,22 +347,22 @@ final class LogPayloadNormalizerTest extends TestCase
     }
 
     /**
-     * Vérifie la suppression des query strings
-     * dans les URI.
+     * But : Vérifier que la query string est supprimée de l'URI normalisée.
      *
-     * Cette normalisation garantit :
-     * - un fingerprint stable,
-     * - aucune fuite de secrets,
-     * - une meilleure déduplication.
+     * Entrée : request['uri'] = '/checkout?token=abc&user=42'
+     * Résultat attendu : normalized['request']['uri'] = '/checkout'
      */
     public function testNormalizeUriWithoutQueryString(): void
-    /**
-     * But : Vérifier que la query string est supprimée de l'URI.
-     *
-     * Entrée : request.uri = '/checkout?token=abc&user=42'
-     * Résultat attendu : request.uri = '/checkout'
-     */
-    public function testNormalizeUriWithoutQueryString(): void
+    {
+        $payload = [
+            'message' => 'Erreur',
+
+            'level' => 'error',
+
+            'domain' => 'billing',
+
+            'env' => 'prod',
+
             'httpStatus' => 500,
 
             'client' => 'backend',
@@ -384,15 +384,10 @@ final class LogPayloadNormalizerTest extends TestCase
     }
 
     /**
-     * Vérifie que les URI numériques
-     * produisent le même fingerprint.
+     * But : Vérifier que /users/1 et /users/999 produisent le même fingerprint.
      *
-     * Exemple :
-     * - /users/1
-     * - /users/2
-     *
-     * doivent produire :
-     * - le même regroupement.
+     * Entrée : payload1 avec '/users/1', payload2 avec '/users/999'
+     * Résultat attendu : normalized1['fingerprint'] === normalized2['fingerprint']
      */
     public function testFingerprintNormalizesNumericUris(): void
     {
@@ -436,7 +431,7 @@ final class LogPayloadNormalizerTest extends TestCase
      * But : Vérifier qu'un UUID valide dans externalId est conservé sans modification.
      *
      * Entrée : externalId = '01963610-f9d2-7f5b-a13c-3b2f5f0e2f91'
-     * Résultat attendu : externalId conservé identique
+     * Résultat attendu : normalized['externalId'] = l'UUID d'origine
      */
     public function testKeepValidExternalId(): void
     {
@@ -460,7 +455,7 @@ final class LogPayloadNormalizerTest extends TestCase
      * But : Vérifier qu'un requestId valide est conservé sans modification.
      *
      * Entrée : requestId = 'req_checkout_123'
-     * Résultat attendu : requestId = 'req_checkout_123'
+     * Résultat attendu : normalized['requestId'] = 'req_checkout_123'
      */
     public function testKeepValidRequestId(): void
     {
@@ -479,10 +474,10 @@ final class LogPayloadNormalizerTest extends TestCase
     }
 
     /**
-     * But : Vérifier qu'une date client valide est normalisée sans erreur.
+     * But : Vérifier qu'une date client valide est normalisée correctement.
      *
      * Entrée : clientDate = '2026-01-01 10:00:00'
-     * Résultat attendu : clientDate non null dans le payload normalisé
+     * Résultat attendu : normalized['clientDate'] non null
      */
     public function testNormalizeValidClientDate(): void
     {
@@ -501,15 +496,15 @@ final class LogPayloadNormalizerTest extends TestCase
     }
 
     /**
-     * Vérifie les fallbacks par défaut
-     * lorsqu'aucune donnée n'est fournie.
-    /**
-     * But : Vérifier que les valeurs fallback sont appliquées quand le payload est vide.
+     * But : Vérifier que les valeurs par défaut sont bien appliquées pour un payload vide.
      *
-     * Entrée : payload vide []
-     * Résultat attendu : message='Unknown error', level='error', domain='unknown', env='prod' et autres valeurs par défaut
+     * Entrée : Payload vide []
+     * Résultat attendu : message='Unknown error', level='error', domain='unknown', env='prod', httpStatus=500, client='unknown-client'
      */
     public function testFallbackValuesWhenFieldsMissing(): void
+    {
+        $normalized = $this->normalizer->normalize(
+            []
         );
 
         self::assertSame(
@@ -533,10 +528,13 @@ final class LogPayloadNormalizerTest extends TestCase
         );
 
         self::assertSame(
-    /**
-     * But : Vérifier que des URI avec segments numériques différents produisent le même fingerprint.
-     *
-     * Entrée : /users/1 et /users/999
-     * Résultat attendu : Les deux fingerprints sont identiques
-     */
-    public function testFingerprintNormalizesNumericUris(): void
+            500,
+            $normalized['httpStatus']
+        );
+
+        self::assertSame(
+            'unknown-client',
+            $normalized['client']
+        );
+    }
+}

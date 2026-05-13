@@ -59,22 +59,22 @@ final class LogEntryTest extends TestCase
 
         self::assertSame(
             'Payment failed',
-            $entry->message(),
+            $entry->getMessage(),
         );
 
         self::assertSame(
             'billing',
-            $entry->domain(),
+            $entry->getDomain(),
         );
 
         self::assertSame(
             LogLevel::ERROR,
-            $entry->level(),
+            $entry->getLevel(),
         );
 
         self::assertSame(
             Environment::Production,
-            $entry->environment(),
+            $entry->getEnvironment(),
         );
     }
 
@@ -92,7 +92,7 @@ final class LogEntryTest extends TestCase
 
         self::assertSame(
             'billing',
-            $entry->domain(),
+            $entry->getDomain(),
         );
     }
 
@@ -110,7 +110,7 @@ final class LogEntryTest extends TestCase
 
         self::assertSame(
             'Payment failed',
-            $entry->message(),
+            $entry->getMessage(),
         );
     }
 
@@ -233,7 +233,7 @@ final class LogEntryTest extends TestCase
         $entry = $this->createEntry();
 
         self::assertNotEmpty(
-            $entry->id(),
+            $entry->getExternalId(),
         );
     }
 
@@ -249,8 +249,8 @@ final class LogEntryTest extends TestCase
         $right = $this->createEntry();
 
         self::assertNotSame(
-            $left->id(),
-            $right->id(),
+            $left->getExternalId(),
+            $right->getExternalId(),
         );
     }
 
@@ -268,7 +268,7 @@ final class LogEntryTest extends TestCase
 
         self::assertSame(
             'external-id',
-            $entry->id(),
+            $entry->getExternalId(),
         );
     }
 
@@ -432,7 +432,7 @@ final class LogEntryTest extends TestCase
         self::assertSame(
             42,
             $entry
-                ->context()['userId'],
+                ->getContext()['userId'],
         );
     }
 
@@ -453,7 +453,7 @@ final class LogEntryTest extends TestCase
         self::assertSame(
             '128MB',
             $entry
-                ->extra()['memory'],
+                ->getExtra()['memory'],
         );
     }
 
@@ -473,7 +473,7 @@ final class LogEntryTest extends TestCase
 
         self::assertSame(
             $date,
-            $entry->clientDate(),
+            $entry->getClientDate(),
         );
     }
 
@@ -500,7 +500,7 @@ final class LogEntryTest extends TestCase
 
         self::assertCount(
             1,
-            $entry->ingestionWarnings(),
+            $entry->getIngestionWarnings(),
         );
 
         self::assertTrue(
@@ -591,7 +591,7 @@ final class LogEntryTest extends TestCase
             extra: $extra,
             clientDate: $clientDate,
             createdAt: $createdAt,
-            id: $id,
+            externalId: $id,
         );
     }
 }

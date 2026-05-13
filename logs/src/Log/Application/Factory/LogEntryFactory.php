@@ -97,7 +97,7 @@ final readonly class LogEntryFactory implements LogEntryFactoryInterface
         $clientDate  = $this->createNullableDate($payload['clientDate'] ?? null, 'clientDate', $warnings);
 
         return new LogEntry(
-            id: $id,
+            externalId: $id,
             message: $message,
             level: $level,
             domain: $domain,

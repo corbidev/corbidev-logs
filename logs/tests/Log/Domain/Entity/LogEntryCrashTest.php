@@ -82,7 +82,7 @@ final class LogEntryCrashTest extends TestCase
 
         self::assertCount(
             10000,
-            $entry->context(),
+            $entry->getContext(),
         );
     }
 
@@ -109,7 +109,7 @@ final class LogEntryCrashTest extends TestCase
 
         self::assertCount(
             10000,
-            $entry->extra(),
+            $entry->getExtra(),
         );
     }
 
@@ -166,7 +166,7 @@ final class LogEntryCrashTest extends TestCase
 
         self::assertSame(
             $payload,
-            $entry->context()['huge'],
+            $entry->getContext()['huge'],
         );
     }
 
@@ -413,7 +413,7 @@ final class LogEntryCrashTest extends TestCase
 
         self::assertCount(
             5000,
-            $entry->ingestionWarnings(),
+            $entry->getIngestionWarnings(),
         );
     }
 

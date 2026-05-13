@@ -39,6 +39,12 @@ final class CorruptedQueueFileManagerCrashTest extends TestCase
         $this->removeDirectory($this->baseDirectory);
     }
 
+    /**
+     * But : Vérifier que move('') lève \InvalidArgumentException.
+     *
+     * Entrée : Chaîne vide comme chemin source
+     * Résultat attendu : \InvalidArgumentException lancée
+     */
     public function test_it_rejects_empty_source_file(): void
     {
         $manager = $this->createManager();
@@ -50,6 +56,12 @@ final class CorruptedQueueFileManagerCrashTest extends TestCase
         $manager->move('');
     }
 
+    /**
+     * But : Vérifier que move() lève \RuntimeException si le fichier source n'existe pas.
+     *
+     * Entrée : Chemin '/does/not/exist.json'
+     * Résultat attendu : \RuntimeException lancée
+     */
     public function test_it_rejects_non_existing_file(): void
     {
         $manager = $this->createManager();
@@ -63,6 +75,12 @@ final class CorruptedQueueFileManagerCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que move() lève \RuntimeException si le chemin donné est un répertoire.
+     *
+     * Entrée : Répertoire /logs/ comme source
+     * Résultat attendu : \RuntimeException lancée
+     */
     public function test_it_rejects_directory_instead_of_file(): void
     {
         $manager = $this->createManager();
@@ -83,6 +101,12 @@ final class CorruptedQueueFileManagerCrashTest extends TestCase
         $manager->move($directory);
     }
 
+    /**
+     * But : Vérifier que move() lève \RuntimeException si /corrupted/ n'est pas accessible en écriture.
+     *
+     * Entrée : /corrupted/ avec permissions 0555 (Linux/macOS uniquement)
+     * Résultat attendu : \RuntimeException lancée
+     */
     public function test_it_fails_when_corrupted_directory_is_not_writable(): void
     {
         if (PHP_OS_FAMILY === 'Windows') {
@@ -109,6 +133,12 @@ final class CorruptedQueueFileManagerCrashTest extends TestCase
         $manager->move($sourceFile);
     }
 
+    /**
+     * But : Vérifier que 50 déplacements avec collisions sur 50 fichiers existants ne crashent pas.
+     *
+     * Entrée : 50 fichiers préexistants + 50 fichiers à déplacer avec mêmes noms
+     * Résultat attendu : Tous les 50 fichiers sources déplacés, destinations existent
+     */
     public function test_it_survives_massive_collisions(): void
     {
         $manager = $this->createManager();
@@ -139,6 +169,12 @@ final class CorruptedQueueFileManagerCrashTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que le contenu du fichier corrompu n'est jamais supprimé ou altéré.
+     *
+     * Entrée : Fichier avec contenu partiel '{"broken":'
+     * Résultat attendu : destination existe et son contenu = contenu original
+     */
     public function test_it_never_deletes_corrupted_file(): void
     {
         $manager = $this->createManager();
@@ -160,6 +196,12 @@ final class CorruptedQueueFileManagerCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que move() gère un fichier avec contenu UTF-8 invalide sans exception.
+     *
+     * Entrée : Fichier avec contenu "\xB1\x31"
+     * Résultat attendu : Destination existe, contenu préservé tel quel
+     */
     public function test_it_handles_invalid_utf8_content(): void
     {
         $manager = $this->createManager();
@@ -181,6 +223,12 @@ final class CorruptedQueueFileManagerCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que move() gère les collisions multiples avec suffixes incrémentaux uniques.
+     *
+     * Entrée : test.json, test_1.json, test_2.json préexistants, source nommée test.json
+     * Résultat attendu : Destination se termine par 'test_3.json'
+     */
     public function test_it_generates_unique_collision_names(): void
     {
         $manager = $this->createManager();

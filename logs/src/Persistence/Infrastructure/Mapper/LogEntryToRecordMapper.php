@@ -95,7 +95,7 @@ final class LogEntryToRecordMapper
         $record->setExternalId(
             $this->truncate(
                 $this->sanitizeString(
-                    $entry->id(),
+                    $entry->getExternalId(),
                 ),
                 self::EXTERNAL_ID_MAX_LENGTH,
             ),
@@ -109,7 +109,7 @@ final class LogEntryToRecordMapper
             $this->truncate(
                 $this->sanitizeString(
                     $entry
-                        ->fingerprint()
+                        ->getFingerprint()
                         ->value(),
                 ),
                 self::FINGERPRINT_MAX_LENGTH,
@@ -120,7 +120,7 @@ final class LogEntryToRecordMapper
             $this->truncate(
                 $this->sanitizeString(
                     $entry
-                        ->requestId()
+                        ->getRequestId()
                         ->value(),
                 ),
                 self::REQUEST_ID_MAX_LENGTH,
@@ -131,7 +131,7 @@ final class LogEntryToRecordMapper
             $this->truncate(
                 $this->sanitizeString(
                     $entry
-                        ->level()
+                        ->getLevel()
                         ->value,
                 ),
                 self::LEVEL_MAX_LENGTH,
@@ -140,14 +140,14 @@ final class LogEntryToRecordMapper
 
         $record->setHttpStatus(
             $entry
-                ->httpStatus()
+                ->getHttpStatus()
                 ->value(),
         );
 
         $record->setDomain(
             $this->truncate(
                 $this->sanitizeString(
-                    $entry->domain(),
+                    $entry->getDomain(),
                 ),
                 self::DOMAIN_MAX_LENGTH,
             ),
@@ -157,7 +157,7 @@ final class LogEntryToRecordMapper
             $this->truncate(
                 $this->sanitizeString(
                     $entry
-                        ->request()
+                        ->getRequest()
                         ->uri()
                         ->value(),
                 ),
@@ -168,7 +168,7 @@ final class LogEntryToRecordMapper
         $record->setMethod(
             $this->createNullableString(
                 value: $entry
-                    ->request()
+                    ->getRequest()
                     ->method(),
                 maxLength: self::METHOD_MAX_LENGTH,
             ),
@@ -177,7 +177,7 @@ final class LogEntryToRecordMapper
         $record->setUserAgent(
             $this->createNullableString(
                 value: $entry
-                    ->request()
+                    ->getRequest()
                     ->userAgent(),
                 maxLength: self::USER_AGENT_MAX_LENGTH,
             ),
@@ -187,7 +187,7 @@ final class LogEntryToRecordMapper
             $this->truncate(
                 $this->sanitizeString(
                     $entry
-                        ->environment()
+                        ->getEnvironment()
                         ->value,
                 ),
                 self::ENV_MAX_LENGTH,
@@ -198,7 +198,7 @@ final class LogEntryToRecordMapper
             $this->truncate(
                 $this->sanitizeString(
                     $entry
-                        ->client()
+                        ->getClient()
                         ->value(),
                 ),
                 self::CLIENT_MAX_LENGTH,
@@ -207,40 +207,40 @@ final class LogEntryToRecordMapper
 
         $record->setMessage(
             $this->sanitizeString(
-                $entry->message(),
+                $entry->getMessage(),
             ),
         );
 
         $record->setContextJson(
             $this->normalizeContext(
-                $entry->context(),
+                $entry->getContext(),
             ),
         );
 
         $record->setExtraJson(
             $this->normalizeContext(
-                $entry->extra(),
+                $entry->getExtra(),
             ),
         );
 
         $record->setIngestionWarningsJson(
             $this->normalizeWarnings(
-                $entry->ingestionWarnings(),
+                $entry->getIngestionWarnings(),
             ),
         );
 
         $record->setCreatedAt(
-            $entry->createdAt(),
+            $entry->getCreatedAt(),
         );
 
         $record->setClientDate(
-            $entry->clientDate(),
+            $entry->getClientDate(),
         );
 
         $record->setIp(
             $this->createNullableString(
                 value: $entry
-                    ->ipAddress()
+                    ->getIpAddress()
                     ->value(),
                 maxLength: self::IP_MAX_LENGTH,
             ),

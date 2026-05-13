@@ -537,6 +537,12 @@ final class RequestTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que Request accepte toutes les méthodes HTTP autorisées.
+     *
+     * Entrée : ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']
+     * Résultat attendu : method() = la méthode passée pour chacune
+     */
     public function testItSupportsAllAllowedMethods(): void
     {
         $methods = [

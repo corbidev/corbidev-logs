@@ -439,6 +439,12 @@ final class IpAddressTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne '0.0.0.0' pour des inputs hostiles.
+     *
+     * Entrée : 7 inputs hostiles (null, [], stdClass, binaire, UTF-8 invalide, XSS, SQL injection)
+     * Résultat attendu : '0.0.0.0' pour chaque input
+     */
     public function testItFallsBackForHostilePayloads(): void
     {
         $inputs = [
@@ -461,6 +467,12 @@ final class IpAddressTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que fromExternal() ne crashe pas avec un payload de 1 000 000 caractères.
+     *
+     * Entrée : str_repeat('A', 1000000)
+     * Résultat attendu : '0.0.0.0' (fallback), aucune exception
+     */
     public function testItHandlesHugePayloadWithoutCrash(): void
     {
         $payload = str_repeat('A', 1000000);
@@ -473,6 +485,12 @@ final class IpAddressTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() gère une séquence binaire sans exception.
+     *
+     * Entrée : "\x00\x01\x02"
+     * Résultat attendu : Instance IpAddress créée (fallback ou valide)
+     */
     public function testItHandlesBinaryPayload(): void
     {
         $ip = IpAddress::fromExternal(
@@ -485,6 +503,12 @@ final class IpAddressTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() gère une valeur UTF-8 invalide sans exception.
+     *
+     * Entrée : hex2bin('b131')
+     * Résultat attendu : Instance IpAddress créée (fallback ou valide)
+     */
     public function testItHandlesInvalidUtf8Payload(): void
     {
         $ip = IpAddress::fromExternal(

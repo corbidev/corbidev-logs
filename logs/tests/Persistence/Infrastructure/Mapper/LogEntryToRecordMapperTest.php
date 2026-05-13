@@ -101,7 +101,7 @@ final class LogEntryToRecordMapperTest extends TestCase
         );
 
         self::assertSame(
-            $entry->id(),
+            $entry->getExternalId(),
             $record->getExternalId(),
         );
     }

@@ -372,6 +372,12 @@ final class IngestionWarningTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que 5 000 itérations de sérialisation ne crashent pas.
+     *
+     * Entrée : 5 000 IngestionWarning avec champs 'field_{i}'
+     * Résultat attendu : Chaque json_encode() produit un JSON valide
+     */
     public function testItSurvivesMassiveSerializationLoop(): void
     {
         for ($i = 0; $i < 5000; ++$i) {
@@ -393,6 +399,12 @@ final class IngestionWarningTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que jsonSerialize() retourne une structure stable avec les 4 clés attendues.
+     *
+     * Entrée : IngestionWarning valide
+     * Résultat attendu : Clés 'field', 'type', 'original', 'fallback' présentes
+     */
     public function testItProducesStableJsonStructure(): void
     {
         $warning = new IngestionWarning(
@@ -425,6 +437,12 @@ final class IngestionWarningTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier qu'une ressource PHP dans original est représentée par '[unsupported]'.
+     *
+     * Entrée : original = fopen('php://memory', 'rb')
+     * Résultat attendu : toArray()['original'] = '[unsupported]'
+     */
     public function testItHandlesUnsupportedResourceGracefully(): void
     {
         $resource = fopen(

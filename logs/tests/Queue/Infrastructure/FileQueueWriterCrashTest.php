@@ -40,6 +40,12 @@ final class FileQueueWriterCrashTest extends TestCase
         $this->removeDirectory($this->baseDirectory);
     }
 
+    /**
+     * But : Vérifier que write() lève \RuntimeException si le payload dépasse maxPayloadSize.
+     *
+     * Entrée : maxPayloadSize=100, payload de 1 000 caractères
+     * Résultat attendu : \RuntimeException lancée
+     */
     public function test_it_rejects_payload_exceeding_max_size(): void
     {
         $writer = $this->createWriter(
@@ -53,6 +59,12 @@ final class FileQueueWriterCrashTest extends TestCase
         ]);
     }
 
+    /**
+     * But : Vérifier que write() échoue si le répertoire de base n'est pas accessible en écriture.
+     *
+     * Entrée : Répertoire créé avec permissions 0555 (Linux/macOS uniquement)
+     * Résultat attendu : \RuntimeException lancée
+     */
     public function test_it_fails_when_base_directory_is_not_writable(): void
     {
         if (PHP_OS_FAMILY === 'Windows') {
@@ -75,6 +87,12 @@ final class FileQueueWriterCrashTest extends TestCase
         ]);
     }
 
+    /**
+     * But : Vérifier qu'un payload de 1 Mo est accepté et persiste correctement.
+     *
+     * Entrée : maxPayloadSize=10*1024*1024, message de 1 048 576 caractères
+     * Résultat attendu : Fichier créé et existant
+     */
     public function test_it_handles_massive_payload(): void
     {
         $writer = $this->createWriter(
@@ -93,6 +111,12 @@ final class FileQueueWriterCrashTest extends TestCase
         self::assertFileExists($path);
     }
 
+    /**
+     * But : Vérifier qu'aucun fichier final partiel n'est créé en cas d'échec d'écriture.
+     *
+     * Entrée : Répertoire non accessible en écriture (Linux/macOS)
+     * Résultat attendu : Aucun fichier dans /logs/*.json
+     */
     public function test_it_never_creates_partial_final_file_on_failure(): void
     {
         if (PHP_OS_FAMILY === 'Windows') {
@@ -124,6 +148,12 @@ final class FileQueueWriterCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le JSON produit est toujours valide même avec du UTF-8 invalide dans le payload.
+     *
+     * Entrée : payload avec 'utf8' => "\xB1\x31"
+     * Résultat attendu : json_last_error() = JSON_ERROR_NONE
+     */
     public function test_it_never_leaves_invalid_json(): void
     {
         $writer = $this->createWriter();
@@ -150,6 +180,12 @@ final class FileQueueWriterCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que 2 000 écritures successives ne causent pas de crash ou de collision.
+     *
+     * Entrée : 2 000 appels à write() avec messages distincts
+     * Résultat attendu : count(glob(logs/*.json)) = 2000, tous les fichiers existent
+     */
     public function test_it_survives_high_frequency_writes(): void
     {
         $writer = $this->createWriter();
@@ -174,6 +210,12 @@ final class FileQueueWriterCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier qu'aucun fichier temporaire n'est laissé dans /tmp/ après un échec.
+     *
+     * Entrée : Répertoire non accessible en écriture
+     * Résultat attendu : /tmp/* est vide ou n'existe pas
+     */
     public function test_it_never_leaves_temporary_files_after_failure(): void
     {
         mkdir($this->baseDirectory, 0555, true);

@@ -13,7 +13,7 @@ Le projet vise à fournir une plateforme de logs :
 - prévisible
 - maintenable
 - compatible mutualisé
-- optimisée pour les performances d’écriture
+- optimisée pour les performances d'écriture
 
 Le système est conçu pour :
 
@@ -32,13 +32,13 @@ Le système est conçu pour :
 2. simplicité
 3. prédictibilité
 4. maintenabilité
-5. performances d’écriture
+5. performances d'écriture
 
 ---
 
 ## Principes fondamentaux
 
-- un log imparfait vaut mieux qu’un log perdu
+- un log imparfait vaut mieux qu'un log perdu
 - toutes les données externes sont hostiles
 - aucun comportement implicite
 - aucun composant magique
@@ -176,7 +176,7 @@ Le système utilise :
 
 ## Important
 
-Le JWT est volontairement évité pour l’ingestion des logs.
+Le JWT est volontairement évité pour l'ingestion des logs.
 
 Pourquoi :
 
@@ -187,10 +187,9 @@ Pourquoi :
 
 ---
 
-
 ---
 
-# 📡 Exemple de payload attendu par l’API
+# 📡 Exemple de payload attendu par l'API
 
 ## Endpoint
 
@@ -296,7 +295,6 @@ Content-Type: application/json
 - les champs sensibles sont filtrés
 - le fingerprint est recalculé serveur
 - les query strings sont supprimées des URI
-
 
 # 📦 Contrat LogEntry
 
@@ -507,7 +505,7 @@ Toujours :
 
 Jamais :
 
-- SELECT *
+- SELECT \*
 - chargement massif mémoire
 
 ---
@@ -517,7 +515,7 @@ Jamais :
 ## Règle absolue
 
 ```txt
-SI CE N’EST PAS TESTÉ → ÇA N’EXISTE PAS
+SI CE N'EST PAS TESTÉ → ÇA N'EXISTE PAS
 ```
 
 ---

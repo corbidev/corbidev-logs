@@ -74,7 +74,8 @@ final readonly class LogEntry
     /**
      * Identifiant externe unique.
      */
-    private string $id;
+    private string $externalId;
+
 
     /**
      * Message principal.
@@ -180,8 +181,9 @@ final readonly class LogEntry
         array $extra = [],
         ?DateTimeImmutable $clientDate = null,
         ?DateTimeImmutable $createdAt = null,
-        ?string $id = null,
+        ?string $externalId = null,
     ) {
+
         $message = $this->normalizeMessage(
             $message,
         );
@@ -202,8 +204,8 @@ final readonly class LogEntry
             $ingestionWarnings,
         );
 
-        $this->id = $this->buildId(
-            $id,
+        $this->externalId = $this->buildExternalId(
+            $externalId,
         );
 
         $this->message = $message;
@@ -224,18 +226,18 @@ final readonly class LogEntry
             ?? new DateTimeImmutable();
     }
 
-    /**
+        /**
      * Retourne l'identifiant externe.
      */
-    public function id(): string
+    public function getExternalId(): string
     {
-        return $this->id;
+        return $this->externalId;
     }
 
     /**
      * Retourne le message.
      */
-    public function message(): string
+    public function getMessage(): string
     {
         return $this->message;
     }
@@ -243,7 +245,7 @@ final readonly class LogEntry
     /**
      * Retourne le niveau.
      */
-    public function level(): LogLevel
+    public function getLevel(): LogLevel
     {
         return $this->level;
     }
@@ -251,7 +253,7 @@ final readonly class LogEntry
     /**
      * Retourne le domaine.
      */
-    public function domain(): string
+    public function getDomain(): string
     {
         return $this->domain;
     }
@@ -259,7 +261,7 @@ final readonly class LogEntry
     /**
      * Retourne l'environnement.
      */
-    public function environment(): Environment
+    public function getEnvironment(): Environment
     {
         return $this->environment;
     }
@@ -267,7 +269,7 @@ final readonly class LogEntry
     /**
      * Retourne le status HTTP.
      */
-    public function httpStatus(): HttpStatus
+    public function getHttpStatus(): HttpStatus
     {
         return $this->httpStatus;
     }
@@ -275,7 +277,7 @@ final readonly class LogEntry
     /**
      * Retourne le client.
      */
-    public function client(): Client
+    public function getClient(): Client
     {
         return $this->client;
     }
@@ -283,7 +285,7 @@ final readonly class LogEntry
     /**
      * Retourne l'identifiant de requête.
      */
-    public function requestId(): RequestId
+    public function getRequestId(): RequestId
     {
         return $this->requestId;
     }
@@ -291,7 +293,7 @@ final readonly class LogEntry
     /**
      * Retourne la requête HTTP.
      */
-    public function request(): Request
+    public function getRequest(): Request
     {
         return $this->request;
     }
@@ -299,7 +301,7 @@ final readonly class LogEntry
     /**
      * Retourne l'adresse IP.
      */
-    public function ipAddress(): IpAddress
+    public function getIpAddress(): IpAddress
     {
         return $this->ipAddress;
     }
@@ -307,7 +309,7 @@ final readonly class LogEntry
     /**
      * Retourne le fingerprint.
      */
-    public function fingerprint(): Fingerprint
+    public function getFingerprint(): Fingerprint
     {
         return $this->fingerprint;
     }
@@ -317,7 +319,7 @@ final readonly class LogEntry
      *
      * @return list<IngestionWarning>
      */
-    public function ingestionWarnings(): array
+    public function getIngestionWarnings(): array
     {
         return $this->ingestionWarnings;
     }
@@ -335,7 +337,7 @@ final readonly class LogEntry
      *
      * @return array<string, mixed>
      */
-    public function context(): array
+    public function getContext(): array
     {
         return $this->context;
     }
@@ -345,7 +347,7 @@ final readonly class LogEntry
      *
      * @return array<string, mixed>
      */
-    public function extra(): array
+    public function getExtra(): array
     {
         return $this->extra;
     }
@@ -353,7 +355,7 @@ final readonly class LogEntry
     /**
      * Retourne la date serveur.
      */
-    public function createdAt(): DateTimeImmutable
+    public function getCreatedAt(): DateTimeImmutable
     {
         return $this->createdAt;
     }
@@ -361,7 +363,7 @@ final readonly class LogEntry
     /**
      * Retourne la date client.
      */
-    public function clientDate(): ?DateTimeImmutable
+    public function getClientDate(): ?DateTimeImmutable
     {
         return $this->clientDate;
     }
@@ -381,7 +383,7 @@ final readonly class LogEntry
     public function equals(
         self $other,
     ): bool {
-        return $this->id === $other->id;
+        return $this->externalId === $other->externalId;
     }
 
     /**
@@ -392,7 +394,7 @@ final readonly class LogEntry
     public function toArray(): array
     {
         return [
-            'id' => $this->id,
+            'externalId' => $this->externalId,
 
             'message' => $this->message,
 
@@ -442,15 +444,15 @@ final readonly class LogEntry
     /**
      * Construit un identifiant stable.
      */
-    private function buildId(
-        ?string $id,
+    private function buildExternalId(
+        ?string $externalId,
     ): string {
-        $id = trim(
-            (string) $id,
+        $externalId = trim(
+            (string) $externalId,
         );
 
-        if ($id !== '') {
-            return $id;
+        if ($externalId !== '') {
+            return $externalId;
         }
 
         return Uuid::v7()->toRfc4122();

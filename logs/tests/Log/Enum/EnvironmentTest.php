@@ -288,6 +288,12 @@ final class EnvironmentTest extends TestCase
         fclose($resource);
     }
 
+    /**
+     * But : Vérifier que la factory retourne Production pour les inputs hostiles courants.
+     *
+     * Entrée : 7 inputs hostiles (null, '', 'unknown', binaire, XSS, SQL injection)
+     * Résultat attendu : Environment::Production pour chaque input
+     */
     public function testItFallsBackToProductionForHostilePayloads(): void
     {
         $inputs = [
@@ -310,6 +316,12 @@ final class EnvironmentTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que la factory ne crashe pas avec un payload de 1 000 000 caractères.
+     *
+     * Entrée : str_repeat('PRODUCTION', 100000)
+     * Résultat attendu : Environment::Production (fallback), aucune exception
+     */
     public function testItHandlesHugePayloadWithoutCrash(): void
     {
         $payload = str_repeat('PRODUCTION', 100000);
@@ -322,6 +334,12 @@ final class EnvironmentTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory gère une séquence binaire sans exception.
+     *
+     * Entrée : "\x00\x01\x02"
+     * Résultat attendu : Instance de Environment créée (Production ou autre)
+     */
     public function testItHandlesBinaryPayload(): void
     {
         $environment = Environment::fromExternal(
@@ -334,6 +352,12 @@ final class EnvironmentTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory gère une valeur UTF-8 invalide sans exception.
+     *
+     * Entrée : "\xB1\x31"
+     * Résultat attendu : Instance de Environment créée (Production ou autre)
+     */
     public function testItHandlesInvalidUtf8Payload(): void
     {
         $environment = Environment::fromExternal(
