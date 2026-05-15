@@ -3,6 +3,9 @@ git
 .rsync-ignore
 .gitignore
 .vscode
+scripts
+README_*.md
+
 
 # ✅ Exceptions EN PREMIER, avant les règles d'exclusion générales
 !.env.*.example
@@ -16,11 +19,12 @@ docker-compose.*
 database
 vendor
 
-api/.env
-api/.env.*
-api/vendor
-api/var
-api/tests
-api/config/jwt
-api/postman
-api/public/bundles/
+logs/.env
+logs/.env.*
+logs/vendor
+logs/var
+logs/tests
+logs/config/jwt
+logs/postman
+logs/public/bundles/
+
