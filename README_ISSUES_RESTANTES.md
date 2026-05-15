@@ -13,7 +13,7 @@ Ce document reformule le backlog en issues unitaires, prêtes à être reprises 
 
 ### ING-001
 
-title: `Create Ingestion module skeleton`
+title: `[src] [Ingestion] Créer le squelette du module Ingestion`
 
 labels:
 
@@ -36,7 +36,7 @@ acceptance:
 
 ### ING-002
 
-title: `Expose POST /api/logs`
+title: `[src] [Ingestion] [Infrastructure] Exposer POST /api/logs`
 
 labels:
 
@@ -62,7 +62,7 @@ acceptance:
 
 ### ING-003
 
-title: `Validate ingestion payload`
+title: `[src] [Ingestion] [Domain] Valider le payload d'ingestion`
 
 labels:
 
@@ -88,7 +88,7 @@ acceptance:
 
 ### ING-004
 
-title: `Connect normalizer factory and queue`
+title: `[src] [Log] [Application] Connecter normalizer, factory et queue`
 
 labels:
 
@@ -113,7 +113,7 @@ acceptance:
 
 ### ING-005
 
-title: `Return 202 Accepted on ingestion`
+title: `[src] [Ingestion] [Infrastructure] Retourner 202 Accepted à l'ingestion`
 
 labels:
 
@@ -137,7 +137,7 @@ acceptance:
 
 ### ING-006
 
-title: `Add ingestion functional tests`
+title: `[tests] [Ingestion] Ajouter les tests fonctionnels d'ingestion`
 
 labels:
 
@@ -163,7 +163,7 @@ acceptance:
 
 ### Q-001
 
-title: `Finalize queue processing command`
+title: `[src] [Queue] [Infrastructure] Finaliser la commande de traitement de queue`
 
 labels:
 
@@ -185,7 +185,7 @@ acceptance:
 
 ### Q-002
 
-title: `Wire queue reader to persistence`
+title: `[src] [Queue] [Infrastructure] Brancher le reader de queue à la persistence`
 
 labels:
 
@@ -209,7 +209,7 @@ acceptance:
 
 ### Q-003
 
-title: `Implement bounded retry strategy`
+title: `[src] [Queue] [Infrastructure] Implémenter une stratégie de retry bornée`
 
 labels:
 
@@ -233,7 +233,7 @@ acceptance:
 
 ### Q-004
 
-title: `Add batch processing metrics`
+title: `[src] [Queue] [Infrastructure] Ajouter les métriques de traitement batch`
 
 labels:
 
@@ -257,7 +257,7 @@ acceptance:
 
 ### P-001
 
-title: `Finalize SQL schema`
+title: `[src] [Persistence] [Infrastructure] Finaliser le schéma SQL`
 
 labels:
 
@@ -279,7 +279,7 @@ acceptance:
 
 ### P-002
 
-title: `Consolidate LogEntry to SQL mapping`
+title: `[src] [Persistence] [Infrastructure] Consolider le mapping LogEntry vers SQL`
 
 labels:
 
@@ -303,7 +303,7 @@ acceptance:
 
 ### P-003
 
-title: `Bound persistence batch size`
+title: `[src] [Persistence] [Application] Borner la taille des batchs de persistence`
 
 labels:
 
@@ -327,7 +327,7 @@ acceptance:
 
 ### P-004
 
-title: `Test SQL failure and rollback handling`
+title: `[tests] [Persistence] Tester les erreurs SQL et la gestion du rollback`
 
 labels:
 
@@ -353,7 +353,7 @@ acceptance:
 
 ### AUTH-001
 
-title: `Create ApiToken module skeleton`
+title: `[src] [ApiToken] Créer le squelette du module ApiToken`
 
 labels:
 
@@ -373,7 +373,7 @@ acceptance:
 
 ### AUTH-002
 
-title: `Implement opaque token generation`
+title: `[src] [ApiToken] [Domain] Implémenter la génération de tokens opaques`
 
 labels:
 
@@ -397,7 +397,7 @@ acceptance:
 
 ### AUTH-003
 
-title: `Add token revocation and expiration`
+title: `[src] [ApiToken] [Domain] Ajouter la révocation et l'expiration des tokens`
 
 labels:
 
@@ -420,7 +420,7 @@ acceptance:
 
 ### AUTH-004
 
-title: `Protect ingestion with bearer token`
+title: `[src] [Ingestion] [Infrastructure] Protéger l'ingestion avec un bearer token`
 
 labels:
 
@@ -444,7 +444,7 @@ acceptance:
 
 ### AUTH-005
 
-title: `Clarify JWT versus opaque tokens`
+title: `[docs] [Auth] Clarifier JWT versus tokens opaques`
 
 labels:
 
@@ -469,7 +469,7 @@ acceptance:
 
 ### PRJ-001
 
-title: `Create Project module skeleton`
+title: `[src] [Project] Créer le squelette du module Project`
 
 labels:
 
@@ -489,7 +489,7 @@ acceptance:
 
 ### PRJ-002
 
-title: `Support retention per project`
+title: `[src] [Project] [Domain] Gérer la rétention par projet`
 
 labels:
 
@@ -512,7 +512,7 @@ acceptance:
 
 ### SRCH-001
 
-title: `Create bounded Search module`
+title: `[src] [Search] Créer un module Search borné`
 
 labels:
 
@@ -532,7 +532,7 @@ acceptance:
 
 ### SRCH-002
 
-title: `Add main search filters`
+title: `[src] [Search] [Application] Ajouter les filtres principaux de recherche`
 
 labels:
 
@@ -555,7 +555,7 @@ acceptance:
 
 ### DASH-001
 
-title: `Create Dashboard module skeleton`
+title: `[src] [Dashboard] Créer le squelette du module Dashboard`
 
 labels:
 
@@ -575,7 +575,7 @@ acceptance:
 
 ### DASH-002
 
-title: `Build paginated log list`
+title: `[src] [Dashboard] [Infrastructure] Construire la liste paginée des logs`
 
 labels:
 
@@ -599,7 +599,7 @@ acceptance:
 
 ### DASH-003
 
-title: `Build log detail view`
+title: `[src] [Dashboard] [Infrastructure] Construire la vue détail d'un log`
 
 labels:
 
@@ -624,7 +624,7 @@ acceptance:
 
 ### DOC-001
 
-title: `Harmonize all README files`
+title: `[docs] Harmoniser tous les fichiers README`
 
 labels:
 
@@ -643,7 +643,7 @@ acceptance:
 
 ### DOC-002
 
-title: `Document queue operations`
+title: `[docs] [Queue] Documenter l'exploitation de la queue`
 
 labels:
 
@@ -665,7 +665,7 @@ acceptance:
 
 ### TEST-001
 
-title: `Cover critical failure cases`
+title: `[tests] Couvrir les cas critiques de défaillance`
 
 labels:
 
@@ -685,7 +685,7 @@ acceptance:
 
 ### OPS-001
 
-title: `Validate local install and CI`
+title: `[ops] [tests] Valider l'installation locale et la CI`
 
 labels:
 
