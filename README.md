@@ -294,6 +294,8 @@ La direction actuelle du projet reste :
 4. ajouter la lecture bornée
 5. construire le dashboard
 
+Plan détaillé d'exécution : [README_PLAN_RESTANT.md](README_PLAN_RESTANT.md)
+
 ## Statut
 
 Projet en cours de développement, avec un socle write side déjà amorcé et une lecture encore en consolidation.
