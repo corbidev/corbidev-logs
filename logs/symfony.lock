@@ -27,8 +27,6 @@
         },
         "files": [
             "config/packages/doctrine.yaml",
-            "src/Entity/.gitignore",
-            "src/Repository/.gitignore"
         ]
     },
     "doctrine/doctrine-fixtures-bundle": {
@@ -132,7 +130,6 @@
             "config/routes/framework.yaml",
             "config/services.yaml",
             "public/index.php",
-            "src/Controller/.gitignore",
             "src/Kernel.php",
             ".editorconfig"
         ]
