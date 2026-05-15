@@ -28,11 +28,35 @@ Le but est de tester :
 ```txt
 notre architecture
 nos invariants
-notre résilience
 nos handlers
 nos writers
 nos erreurs
 nos comportements de crash
+notre résilience
+```
+
+---
+
+# Objectifs des tests
+
+Les tests doivent garantir :
+
+```txt
+stabilité
+résilience
+prévisibilité
+robustesse
+```
+
+même avec :
+
+```txt
+payloads hostiles
+JSON invalides
+DB indisponible
+IO cassée
+batchs énormes
+fichiers corrompus
 ```
 
 ---
@@ -71,9 +95,10 @@ Il ne simule pas correctement :
 - locks
 - corruption fichier
 - persistence réelle
-- taille DB
 - reconnexion
 - erreurs filesystem
+- taille DB
+- comportements disque
 
 Pour un projet orienté robustesse persistence :
 
@@ -103,7 +128,132 @@ C’est le meilleur compromis pour ce projet.
 
 # Architecture des tests
 
-## Unit
+L’architecture des tests suit exactement
+l’architecture métier du projet.
+
+```txt
+tests/
+
+├── ApiToken/
+├── Dashboard/
+├── Ingestion/
+├── Integration/
+├── Log/
+├── Persistence/
+├── Project/
+├── Queue/
+├── Search/
+└── Shared/
+```
+
+---
+
+# Règle principale
+
+Les tests doivent refléter :
+
+```txt
+src/
+```
+
+et NON une architecture technique artificielle.
+
+---
+
+# Sous dossiers autorisés
+
+Les sous dossiers métier et techniques réels sont autorisés.
+
+Exemple :
+
+```txt
+tests/Persistence/
+
+├── Application/
+├── Domain/
+└── Infrastructure/
+```
+
+car cela reflète :
+
+```txt
+src/Persistence/
+
+├── Application/
+├── Domain/
+└── Infrastructure/
+```
+
+---
+
+# Hiérarchie interdite
+
+Éviter :
+
+```txt
+tests/Persistence/Integration/Database/Write/Sqlite/
+```
+
+ou :
+
+```txt
+tests/Unit/Persistence/Domain/
+```
+
+Car cela crée :
+
+- surcharge mentale
+- navigation difficile
+- architecture floue
+- séparation artificielle
+
+---
+
+# Crash tests
+
+Les crash tests restent proches
+du contexte métier concerné.
+
+Exemple :
+
+```txt
+tests/Persistence/Infrastructure/
+
+├── DoctrineLogWriterTest.php
+├── DoctrineLogWriterCrashTest.php
+├── SqliteFailureTest.php
+└── CorruptedDatabaseTest.php
+```
+
+et NON :
+
+```txt
+tests/Crash/Persistence/
+```
+
+---
+
+# Pourquoi cette architecture
+
+Cette organisation permet :
+
+- architecture miroir
+- navigation immédiate
+- responsabilité explicite
+- maintenance simple
+- cohérence avec `src/`
+- isolation métier
+
+Elle évite :
+
+- hiérarchies profondes
+- dossiers techniques inutiles
+- séparation artificielle
+- sur-ingénierie testing
+
+---
+
+# Tests unitaires
 
 Les tests unitaires :
 
@@ -130,7 +280,7 @@ fakes
 
 ---
 
-# Integration
+# Tests d’intégration
 
 Les tests d’intégration utilisent :
 
@@ -156,35 +306,14 @@ Les crash tests doivent simuler :
 
 - DB indisponible
 - fichier DB supprimé
-- locks
+- locks SQLite
 - JSON invalide
 - batch énorme
 - disque plein
 - corruption
 - rollback
-
----
-
-# Structure recommandée
-
-```txt
-tests/
-
-├── Unit/
-│
-├── Integration/
-│   ├── Queue/
-│   ├── Persistence/
-│   └── Search/
-│
-├── Functional/
-│
-└── Crash/
-    ├── Database/
-    ├── Queue/
-    ├── CorruptedPayload/
-    └── DiskFailure/
-```
+- données hostiles
+- IO cassée
 
 ---
 
@@ -195,8 +324,14 @@ tests/
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 
-<phpunit bootstrap="vendor/autoload.php">
+<phpunit
+    bootstrap="tests/bootstrap.php"
+    cacheDirectory=".phpunit.cache"
+    colors="true"
+>
+
     <php>
+
         <server
             name="APP_ENV"
             value="test"
@@ -206,7 +341,21 @@ tests/
             name="DATABASE_URL"
             value="sqlite:///%kernel.project_dir%/var/test.db"
         />
+
     </php>
+
+    <testsuites>
+
+        <testsuite name="Project Test Suite">
+
+            <directory>
+                tests
+            </directory>
+
+        </testsuite>
+
+    </testsuites>
+
 </phpunit>
 ```
 
@@ -231,12 +380,20 @@ doctrine:
 
 Créer une classe de base :
 
+```txt
+tests/Shared/DatabaseTestCase.php
+```
+
+---
+
+# Exemple DatabaseTestCase
+
 ```php
 <?php
 
 declare(strict_types=1);
 
-namespace App\Tests\Integration;
+namespace App\Tests\Shared;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
@@ -341,15 +498,45 @@ pas aux tests.
 
 declare(strict_types=1);
 
-namespace App\Tests\Integration\Persistence;
+namespace App\Tests\Persistence\Infrastructure;
 
-use App\Tests\Integration\DatabaseTestCase;
+use App\Tests\Shared\DatabaseTestCase;
 
-final class LogWriterTest extends DatabaseTestCase
+final class DoctrineLogWriterTest extends DatabaseTestCase
 {
     public function test_it_persists_log(): void
     {
         self::assertTrue(true);
+    }
+}
+```
+
+---
+
+# Exemple crash test
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\Persistence\Infrastructure;
+
+use App\Tests\Shared\DatabaseTestCase;
+
+final class DoctrineLogWriterCrashTest extends DatabaseTestCase
+{
+    public function test_it_handles_closed_connection(): void
+    {
+        $this->entityManager
+            ->getConnection()
+            ->close();
+
+        self::assertFalse(
+            $this->entityManager
+                ->getConnection()
+                ->isConnected()
+        );
     }
 }
 ```
@@ -393,6 +580,7 @@ Tester :
 - rollback transaction
 - exception SQL
 - timeout
+- corruption SQLite
 
 ---
 
@@ -502,6 +690,22 @@ Source d’instabilité.
 ## ❌ Tests dépendants de migrations
 
 Fragiles et lents.
+
+---
+
+## ❌ Architecture de tests artificielle
+
+Exemple interdit :
+
+```txt
+tests/Unit/Persistence/Domain/
+```
+
+ou :
+
+```txt
+tests/Persistence/Integration/Database/Write/
+```
 
 ---
 

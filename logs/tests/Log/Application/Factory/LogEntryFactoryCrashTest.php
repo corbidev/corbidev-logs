@@ -6,6 +6,8 @@ namespace App\Tests\Unit\Log\Application\Factory;
 
 use App\Log\Application\Factory\LogEntryFactory;
 use App\Log\Domain\Entity\LogEntry;
+use App\Log\Enum\IngestionWarningType;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 
@@ -14,12 +16,36 @@ use stdClass;
  *
  * Crash tests critiques de LogEntryFactory.
  *
- * Objectifs :
+ * OBJECTIFS :
+ * -----------
  * - garantir robustesse ingestion
  * - garantir absence de crash
  * - garantir stabilité mémoire
  * - tester payloads hostiles
+ * - tester payloads legacy
+ * - tester structures invalides
+ *
+ * GARANTIES TESTÉES :
+ * -------------------
+ * - requestId invalide
+ * - request payload invalide
+ * - binary payloads
+ * - invalid UTF-8
+ * - gros payloads
+ * - gros tableaux
+ * - structures hostiles
+ * - ressources PHP
+ * - compatibilité legacy
+ * - ingestionWarnings
+ *
+ * IMPORTANT :
+ * ------------
+ * La factory ingestion :
+ * - ne doit presque jamais throw
+ * - doit corriger les données hostiles
+ * - doit tracer les corrections
  */
+#[CoversClass(LogEntryFactory::class)]
 final class LogEntryFactoryCrashTest extends TestCase
 {
     private LogEntryFactory $factory;
@@ -29,6 +55,12 @@ final class LogEntryFactoryCrashTest extends TestCase
         $this->factory = new LogEntryFactory();
     }
 
+    /**
+     * But : Vérifier que la factory ne lève jamais d'exception avec des payloads hostiles.
+     *
+     * Entrée : Payloads variés (null, stdClass, binaire, UTF-8 invalide, ressource PHP, XSS, SQL injection)
+     * Résultat attendu : Instance LogEntry valide retournée pour chaque payload, aucune exception
+     */
     public function testItNeverThrowsWithHostilePayloads(): void
     {
         $resource = fopen(
@@ -36,62 +68,112 @@ final class LogEntryFactoryCrashTest extends TestCase
             'r',
         );
 
+        self::assertIsResource(
+            $resource,
+        );
+
         $payloads = [
             [],
+
             [
                 'message' => null,
             ],
+
             [
                 'message' => [],
             ],
+
             [
                 'message' => new stdClass(),
             ],
+
             [
                 'message' => "\x00\x01\x02",
             ],
+
             [
                 'message' => "\xB1\x31",
             ],
+
             [
                 'message' => str_repeat(
                     'A',
                     1000000,
                 ),
             ],
+
             [
                 'message' => '<script>alert(1)</script>',
             ],
+
             [
                 'message' => "'; DROP TABLE logs; --",
             ],
+
             [
                 'message' => '../../../../../etc/passwd',
             ],
+
+            [
+                'requestId' => [],
+            ],
+
+            [
+                'requestId' => new stdClass(),
+            ],
+
+            [
+                'requestId' => '<script>',
+            ],
+
+            [
+                'requestId' => "\x00\x01",
+            ],
+
+            [
+                'request' => 'invalid',
+            ],
+
+            [
+                'request' => new stdClass(),
+            ],
+
+            [
+                'request' => [
+                    'method' => [],
+                    'uri' => [],
+                    'userAgent' => [],
+                ],
+            ],
+
             [
                 'context' => $resource,
             ],
+
             [
                 'extra' => $resource,
             ],
-            [
-                'tags' => $resource,
-            ],
+
             [
                 'fingerprint' => [],
             ],
+
             [
                 'ip' => [],
             ],
+
             [
                 'uri' => [],
             ],
+
             [
                 'method' => [],
             ],
+
             [
                 'env' => [],
             ],
+
             [
                 'level' => [],
             ],
@@ -108,14 +190,22 @@ final class LogEntryFactoryCrashTest extends TestCase
             );
         }
 
-        fclose($resource);
+        fclose(
+            $resource,
+        );
     }
 
+    /**
+     * But : Vérifier que la factory gère un contexte de 10 000 entrées sans crash.
+     *
+     * Entrée : Payload avec context contenant 10 000 clés 'key-{i}'
+     * Résultat attendu : LogEntry créée avec context().count() = 10 000
+     */
     public function testItHandlesHugeContext(): void
     {
         $context = [];
 
-        for ($i = 0; $i < 10000; $i++) {
+        for ($i = 0; $i < 10000; ++$i) {
             $context['key-' . $i] = str_repeat(
                 'A',
                 1000,
@@ -126,17 +216,23 @@ final class LogEntryFactoryCrashTest extends TestCase
             'context' => $context,
         ]);
 
-        self::assertInstanceOf(
-            LogEntry::class,
-            $entry,
+        self::assertCount(
+            10000,
+            $entry->getContext(),
         );
     }
 
+    /**
+     * But : Vérifier que la factory gère un extra de 10 000 entrées sans crash.
+     *
+     * Entrée : Payload avec extra contenant 10 000 clés 'key-{i}'
+     * Résultat attendu : LogEntry créée avec extra().count() = 10 000
+     */
     public function testItHandlesHugeExtra(): void
     {
         $extra = [];
 
-        for ($i = 0; $i < 10000; $i++) {
+        for ($i = 0; $i < 10000; ++$i) {
             $extra['key-' . $i] = str_repeat(
                 'B',
                 1000,
@@ -147,17 +243,225 @@ final class LogEntryFactoryCrashTest extends TestCase
             'extra' => $extra,
         ]);
 
+        self::assertCount(
+            10000,
+            $entry->getExtra(),
+        );
+    }
+
+    /**
+     * But : Vérifier que la factory normalise correctement une requête imbriquée avec des valeurs énormes.
+     *
+     * Entrée : method = str_repeat('POST', 1000), uri = str_repeat('/orders', 1000), userAgent = str_repeat('Mozilla/5.0 ', 10000)
+     * Résultat attendu : méthode valide, userAgent tronqué ≤ 500, hasIngestionWarnings() = true
+     */
+    public function testItHandlesHugeNestedRequestPayload(): void
+    {
+        $entry = $this->factory->create([
+            'requestId' => 'req_nested_test',
+
+            'request' => [
+                'method' => str_repeat(
+                    'POST',
+                    1000,
+                ),
+
+                'uri' => str_repeat(
+                    '/orders',
+                    1000,
+                ),
+
+                'userAgent' => str_repeat(
+                    'Mozilla/5.0 ',
+                    10000,
+                ),
+            ],
+        ]);
+
         self::assertInstanceOf(
             LogEntry::class,
             $entry,
         );
+
+        self::assertContains(
+            $entry->getRequest()->method(),
+            [
+                'GET',
+                'POST',
+                'PUT',
+                'PATCH',
+                'DELETE',
+                'HEAD',
+                'OPTIONS',
+            ],
+        );
+
+        self::assertLessThanOrEqual(
+            500,
+            mb_strlen(
+                $entry
+                    ->getRequest()
+                    ->userAgent(),
+            ),
+        );
+
+        self::assertTrue(
+            $entry->hasIngestionWarnings(),
+        );
     }
 
-    public function testItHandlesHugeTags(): void
+    /**
+     * But : Vérifier que le warning MESSAGE_TRUNCATED est bien enregistré lors d'une troncature.
+     *
+     * Entrée : message de 60 000 caractères (str_repeat('ERROR ', 10000))
+     * Résultat attendu : message tronqué ≤ 1 000, warning MESSAGE_TRUNCATED présent
+     */
+    public function testItTracksMessageTruncationWarning(): void
+    {
+        $entry = $this->factory->create([
+            'message' => str_repeat(
+                'ERROR ',
+                10000,
+            ),
+        ]);
+
+        self::assertLessThanOrEqual(
+            1000,
+            mb_strlen(
+                $entry->getMessage(),
+            ),
+        );
+
+        self::assertTrue(
+            $entry->hasIngestionWarnings(),
+        );
+
+        $types = array_map(
+            static fn ($warning): string => $warning
+                ->type()
+                ->value,
+            $entry->getIngestionWarnings(),
+        );
+
+        self::assertContains(
+            IngestionWarningType::MESSAGE_TRUNCATED->value,
+            $types,
+        );
+    }
+
+    /**
+     * But : Vérifier que le warning USER_AGENT_TRUNCATED est bien enregistré lors d'une troncature.
+     *
+     * Entrée : userAgent = str_repeat('Mozilla/5.0 ', 10000) dans request
+     * Résultat attendu : userAgent tronqué ≤ 500, warning USER_AGENT_TRUNCATED présent
+     */
+    public function testItTracksUserAgentTruncationWarning(): void
+    {
+        $entry = $this->factory->create([
+            'request' => [
+                'userAgent' => str_repeat(
+                    'Mozilla/5.0 ',
+                    10000,
+                ),
+            ],
+        ]);
+
+        self::assertLessThanOrEqual(
+            500,
+            mb_strlen(
+                $entry
+                    ->getRequest()
+                    ->userAgent(),
+            ),
+        );
+
+        $types = array_map(
+            static fn ($warning): string => $warning
+                ->type()
+                ->value,
+            $entry->getIngestionWarnings(),
+        );
+
+        self::assertContains(
+            IngestionWarningType::USER_AGENT_TRUNCATED->value,
+            $types,
+        );
+    }
+
+    /**
+     * But : Vérifier que le warning INVALID_IP est bien enregistré lors d'une IP invalide.
+     *
+     * Entrée : ip = '999.999.999.999'
+     * Résultat attendu : ip = '127.0.0.1' (fallback), warning INVALID_IP présent
+     */
+    public function testItTracksInvalidIpWarning(): void
+    {
+        $entry = $this->factory->create([
+            'ip' => '999.999.999.999',
+        ]);
+
+        self::assertSame(
+            '127.0.0.1',
+            $entry
+                ->getIpAddress()
+                ->value(),
+        );
+
+        $types = array_map(
+            static fn ($warning): string => $warning
+                ->type()
+                ->value,
+            $entry->getIngestionWarnings(),
+        );
+
+        self::assertContains(
+            IngestionWarningType::INVALID_IP->value,
+            $types,
+        );
+    }
+
+    /**
+     * But : Vérifier que le warning INVALID_REQUEST_ID est bien enregistré pour un requestId invalide.
+     *
+     * Entrée : requestId = [] (tableau)
+     * Résultat attendu : requestId non vide régénéré, warning INVALID_REQUEST_ID présent
+     */
+    public function testItTracksInvalidRequestIdWarning(): void
+    {
+        $entry = $this->factory->create([
+            'requestId' => [],
+        ]);
+
+        self::assertNotEmpty(
+            $entry
+                ->getRequestId()
+                ->value(),
+        );
+
+        $types = array_map(
+            static fn ($warning): string => $warning
+                ->type()
+                ->value,
+            $entry->getIngestionWarnings(),
+        );
+
+        self::assertContains(
+            IngestionWarningType::INVALID_REQUEST_ID->value,
+            $types,
+        );
+    }
+
+    /**
+     * But : Vérifier que la factory gère les payloads "tags" hérités sans crash.
+     *
+     * Entrée : payload avec 1 000 tags de 100 caractères chacun
+     * Résultat attendu : LogEntry créée sans exception
+     */
+    public function testItIgnoresLegacyTagsPayload(): void
     {
         $tags = [];
 
-        for ($i = 0; $i < 1000; $i++) {
+        for ($i = 0; $i < 1000; ++$i) {
             $tags['tag-' . $i] = str_repeat(
                 'C',
                 100,
@@ -174,6 +478,12 @@ final class LogEntryFactoryCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la factory tronque et normalise un payload extêmement volumineux.
+     *
+     * Entrée : message/requestId/userAgent/context/extra de 600 000 à 1 000 000 caractères
+     * Résultat attendu : message ≤ 1000, userAgent ≤ 500, requestId non vide, hasIngestionWarnings()=true
+     */
     public function testItHandlesHugePayloadWithoutCrash(): void
     {
         $payload = [
@@ -181,6 +491,18 @@ final class LogEntryFactoryCrashTest extends TestCase
                 'ERROR ',
                 100000,
             ),
+
+            'requestId' => str_repeat(
+                'REQ_',
+                10000,
+            ),
+
+            'request' => [
+                'userAgent' => str_repeat(
+                    'Mozilla/5.0 ',
+                    100000,
+                ),
+            ],
 
             'context' => [
                 'huge' => str_repeat(
@@ -201,9 +523,169 @@ final class LogEntryFactoryCrashTest extends TestCase
             $payload,
         );
 
+        self::assertLessThanOrEqual(
+            1000,
+            mb_strlen(
+                $entry->getMessage(),
+            ),
+        );
+
+        self::assertLessThanOrEqual(
+            500,
+            mb_strlen(
+                $entry
+                    ->getRequest()
+                    ->userAgent(),
+            ),
+        );
+
+        self::assertNotEmpty(
+            $entry
+                ->getRequestId()
+                ->value(),
+        );
+
+        self::assertTrue(
+            $entry->hasIngestionWarnings(),
+        );
+    }
+
+    /**
+     * But : Vérifier que la factory gère des valeurs UTF-8 invalides sans exception.
+     *
+     * Entrée : message/requestId/userAgent/context contenant hex2bin('b131')
+     * Résultat attendu : LogEntry valide créée
+     */
+    public function testItHandlesInvalidUtf8Payloads(): void
+    {
+        $payload = hex2bin(
+            'b131',
+        );
+
+        self::assertNotFalse(
+            $payload,
+        );
+
+        $entry = $this->factory->create([
+            'message' => $payload,
+
+            'requestId' => $payload,
+
+            'request' => [
+                'userAgent' => $payload,
+            ],
+
+            'context' => [
+                'binary' => $payload,
+            ],
+        ]);
+
         self::assertInstanceOf(
             LogEntry::class,
             $entry,
         );
+    }
+
+    /**
+     * But : Vérifier que la factory gère des séquences binaires sans exception.
+     *
+     * Entrée : message/requestId/userAgent/context/extra contenant "\x00\x01\x02"
+     * Résultat attendu : LogEntry valide créée
+     */
+    public function testItHandlesBinaryPayloads(): void
+    {
+        $entry = $this->factory->create([
+            'message' => "\x00\x01\x02",
+
+            'requestId' => "\x00\x01\x02",
+
+            'request' => [
+                'userAgent' => "\x00\x01\x02",
+            ],
+
+            'context' => [
+                'binary' => "\x00\x01\x02",
+            ],
+
+            'extra' => [
+                'binary' => "\x00\x01\x02",
+            ],
+        ]);
+
+        self::assertInstanceOf(
+            LogEntry::class,
+            $entry,
+        );
+    }
+
+    /**
+     * But : Vérifier que 5 000 appels successifs à create() ne causent pas de crash ou de fuite mémoire.
+     *
+     * Entrée : 5 000 appels avec 'requestId' = 'req_{i}' et context['iteration'] = $i
+     * Résultat attendu : Chaque appel retourne une LogEntry valide
+     */
+    public function testItHandlesRepeatedFactoryCalls(): void
+    {
+        for ($i = 0; $i < 5000; ++$i) {
+            $entry = $this->factory->create([
+                'message' => 'Payment failed',
+
+                'requestId' => 'req_' . $i,
+
+                'context' => [
+                    'iteration' => $i,
+                ],
+            ]);
+
+            self::assertInstanceOf(
+                LogEntry::class,
+                $entry,
+            );
+        }
+    }
+
+    /**
+     * But : Vérifier que chaque IngestionWarning a la structure toArray() attendue.
+     *
+     * Entrée : message de 10 000 caractères + ip='999.999.999.999'
+     * Résultat attendu : Chaque warning a les clés 'field', 'type', 'original', 'fallback'
+     */
+    public function testItProducesStableWarningsStructure(): void
+    {
+        $entry = $this->factory->create([
+            'message' => str_repeat(
+                'A',
+                10000,
+            ),
+
+            'ip' => '999.999.999.999',
+        ]);
+
+        foreach (
+            $entry->getIngestionWarnings()
+            as $warning
+        ) {
+            $data = $warning->toArray();
+
+            self::assertArrayHasKey(
+                'field',
+                $data,
+            );
+
+            self::assertArrayHasKey(
+                'type',
+                $data,
+            );
+
+            self::assertArrayHasKey(
+                'original',
+                $data,
+            );
+
+            self::assertArrayHasKey(
+                'fallback',
+                $data,
+            );
+        }
     }
 }

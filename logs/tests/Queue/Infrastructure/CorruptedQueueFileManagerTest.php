@@ -33,6 +33,12 @@ final class CorruptedQueueFileManagerTest extends TestCase
         $this->removeDirectory($this->baseDirectory);
     }
 
+    /**
+     * But : Vérifier que move() déplace un fichier corrompu vers le répertoire /corrupted/.
+     *
+     * Entrée : Fichier JSON invalide existant dans /logs/
+     * Résultat attendu : Fichier source supprimé, destination dans /corrupted/, fichier existant
+     */
     public function test_it_moves_corrupted_file(): void
     {
         $manager = $this->createManager();
@@ -54,6 +60,12 @@ final class CorruptedQueueFileManagerTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le nom de fichier d'origine est préservé dans la destination.
+     *
+     * Entrée : Fichier source nommé '20260510_021522_a1b2c3d4.json'
+     * Résultat attendu : Chemin de destination se termine par ce nom
+     */
     public function test_it_preserves_original_filename(): void
     {
         $manager = $this->createManager();
@@ -71,6 +83,12 @@ final class CorruptedQueueFileManagerTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le contenu du fichier corrompu est conservé intégralement après déplacement.
+     *
+     * Entrée : Fichier avec contenu '{"broken": true'
+     * Résultat attendu : file_get_contents(destination) = contenu original
+     */
     public function test_it_preserves_file_content(): void
     {
         $manager = $this->createManager();
@@ -90,6 +108,12 @@ final class CorruptedQueueFileManagerTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le répertoire /corrupted/ est créé automatiquement s'il n'existe pas.
+     *
+     * Entrée : Appel à move() sans répertoire /corrupted/ préexistant
+     * Résultat attendu : baseDirectory/corrupted existe après move()
+     */
     public function test_it_creates_corrupted_directory(): void
     {
         $manager = $this->createManager();
@@ -106,6 +130,12 @@ final class CorruptedQueueFileManagerTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que move() gère une collision de nom en renommant la destination.
+     *
+     * Entrée : /corrupted/test.json existe déjà, source nommée test.json
+     * Résultat attendu : Destination renommée test_1.json, deux fichiers existent
+     */
     public function test_it_handles_filename_collision(): void
     {
         $manager = $this->createManager();
@@ -140,8 +170,18 @@ final class CorruptedQueueFileManagerTest extends TestCase
         self::assertFileExists($destination);
     }
 
+    /**
+     * But : Vérifier que les permissions Unix 0664 sont appliquées au fichier déplacé.
+     *
+     * Entrée : Appel move() sur Linux/macOS
+     * Résultat attendu : fileperms() & 0777 = 0664 (test ignoré sur Windows)
+     */
     public function test_it_applies_file_permissions(): void
     {
+        if (PHP_OS_FAMILY === 'Windows') {
+            $this->markTestSkipped('Les permissions Unix (chmod) ne sont pas fiables sur Windows.');
+        }
+
         $manager = $this->createManager();
 
         $sourceFile = $this->createQueueFile(
@@ -159,6 +199,12 @@ final class CorruptedQueueFileManagerTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que move() retourne bien une chaîne de chemin non vide différente de la source.
+     *
+     * Entrée : Fichier source valide
+     * Résultat attendu : destination est une string != $sourceFile
+     */
     public function test_it_returns_destination_path(): void
     {
         $manager = $this->createManager();
@@ -178,6 +224,12 @@ final class CorruptedQueueFileManagerTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que 100 déplacements de fichiers distincts n'entrainent aucune collision.
+     *
+     * Entrée : 100 fichiers file_0.json...file_99.json
+     * Résultat attendu : count(glob(corrupted/*.json)) = 100, chacun existant
+     */
     public function test_it_moves_multiple_files_without_collision(): void
     {
         $manager = $this->createManager();

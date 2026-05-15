@@ -24,6 +24,12 @@ use stdClass;
 final class ClientTest extends TestCase
 {
     #[DataProvider('provideValidClients')]
+    /**
+     * But : Vérifier que Client accepte des valeurs valides et les normalise correctement.
+     *
+     * Entrée : Cas fournis par le DataProvider `provideValidClients()`
+     * Résultat attendu : La valeur normalisée correspond à l'attendu du DataProvider
+     */
     public function testItCreatesValidClient(
         string $input,
         string $expected,
@@ -37,6 +43,12 @@ final class ClientTest extends TestCase
     }
 
     #[DataProvider('provideInvalidClients')]
+    /**
+     * But : Vérifier que Client rejette les valeurs invalides.
+     *
+     * Entrée : Cas fournis par le DataProvider `provideInvalidClients()`
+     * Résultat attendu : InvalidClientException est levée
+     */
     public function testItRejectsInvalidClient(
         string $input,
     ): void {
@@ -47,6 +59,12 @@ final class ClientTest extends TestCase
         new Client($input);
     }
 
+    /**
+     * But : Vérifier que fromExternal() crée un Client valide depuis une string externe.
+     *
+     * Entrée : 'checkout-service'
+     * Résultat attendu : Client avec valeur 'checkout-service'
+     */
     public function testItCreatesFromExternalString(): void
     {
         $client = Client::fromExternal(
@@ -59,6 +77,12 @@ final class ClientTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le nom du client est normalisé en minuscules.
+     *
+     * Entrée : 'CHECKOUT_SERVICE'
+     * Résultat attendu : 'checkout_service'
+     */
     public function testItNormalizesCase(): void
     {
         $client = new Client(
@@ -71,6 +95,12 @@ final class ClientTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les espaces dans le nom du client sont remplacés par des tirets.
+     *
+     * Entrée : 'My Awesome App'
+     * Résultat attendu : 'my-awesome-app'
+     */
     public function testItNormalizesSpaces(): void
     {
         $client = new Client(
@@ -83,6 +113,12 @@ final class ClientTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le nom du client est trimé et normalisé.
+     *
+     * Entrée : '   Checkout-App   '
+     * Résultat attendu : 'checkout-app'
+     */
     public function testItNormalizesTrim(): void
     {
         $client = new Client(
@@ -95,6 +131,12 @@ final class ClientTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne 'unknown' pour une string invalide.
+     *
+     * Entrée : '<script>alert(1)</script>'
+     * Résultat attendu : 'unknown'
+     */
     public function testItFallsBackForInvalidString(): void
     {
         $client = Client::fromExternal(
@@ -107,6 +149,12 @@ final class ClientTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne 'unknown' pour null.
+     *
+     * Entrée : null
+     * Résultat attendu : 'unknown'
+     */
     public function testItFallsBackForNull(): void
     {
         $client = Client::fromExternal(null);
@@ -117,6 +165,12 @@ final class ClientTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne 'unknown' pour un type invalide.
+     *
+     * Entrée : ['invalid'] (tableau)
+     * Résultat attendu : 'unknown'
+     */
     public function testItFallsBackForInvalidType(): void
     {
         $client = Client::fromExternal(
@@ -129,6 +183,12 @@ final class ClientTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isUnknown() retourne true pour un client créé via fromExternal() avec valeur hostile.
+     *
+     * Entrée : fromExternal('<script>alert(1)</script>')
+     * Résultat attendu : isUnknown() = true
+     */
     public function testItDetectsUnknownClient(): void
     {
         $client = Client::fromExternal(
@@ -140,6 +200,12 @@ final class ClientTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isUnknown() retourne false pour un client valide.
+     *
+     * Entrée : new Client('checkout-service')
+     * Résultat attendu : isUnknown() = false
+     */
     public function testItDetectsKnownClient(): void
     {
         $client = new Client(
@@ -151,6 +217,12 @@ final class ClientTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que equals() compare correctement deux instances de Client.
+     *
+     * Entrée : Client('checkout') vs Client('checkout'), puis vs Client('billing')
+     * Résultat attendu : equals() = true / false selon les valeurs
+     */
     public function testItComparesClients(): void
     {
         $left = new Client('checkout');
@@ -166,6 +238,12 @@ final class ClientTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la conversion en string retourne la valeur normalisée du client.
+     *
+     * Entrée : new Client('checkout-service')
+     * Résultat attendu : (string) Client = 'checkout-service'
+     */
     public function testItReturnsStableStringRepresentation(): void
     {
         $client = new Client(
@@ -178,6 +256,12 @@ final class ClientTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier qu'un client de 100 caractères (longueur maximale) est accepté.
+     *
+     * Entrée : str_repeat('a', 100)
+     * Résultat attendu : Client créé sans exception
+     */
     public function testItSupportsMaximumLengthBoundary(): void
     {
         $value = str_repeat('a', 100);
@@ -190,6 +274,12 @@ final class ClientTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que Client rejette une valeur dépassant 100 caractères.
+     *
+     * Entrée : str_repeat('a', 101)
+     * Résultat attendu : InvalidClientException est levée
+     */
     public function testItRejectsTooLongClient(): void
     {
         $this->expectException(
@@ -208,6 +298,12 @@ final class ClientTest extends TestCase
      * - aucun crash
      * - aucune exception
      * - toujours un Client valide
+     */
+    /**
+     * But : Vérifier que fromExternal() ne lève jamais d'exception avec des inputs hostiles.
+     *
+     * Entrée : 18 inputs hostiles variés (XSS, SQL, binaire, null, etc.)
+     * Résultat attendu : Aucune exception levée
      */
     public function testItNeverThrowsFromExternal(): void
     {
@@ -250,6 +346,12 @@ final class ClientTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne toujours une valeur valide non vide ≤ 100 chars.
+     *
+     * Entrée : 12 inputs variés
+     * Résultat attendu : Valeur non vide, longueur ≤ 100
+     */
     public function testFromExternalAlwaysReturnsValidClient(): void
     {
         $resource = fopen('php://memory', 'r');
@@ -289,6 +391,12 @@ final class ClientTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne 'unknown' pour les payloads hostiles.
+     *
+     * Entrée : 9 inputs hostiles (injections, binaire, etc.)
+     * Résultat attendu : 'unknown' pour chaque input
+     */
     public function testItFallsBackForHostilePayloads(): void
     {
         $inputs = [
@@ -313,6 +421,12 @@ final class ClientTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que fromExternal() ne crashe pas avec un payload de 600 000 caractères.
+     *
+     * Entrée : str_repeat('CLIENT', 100000)
+     * Résultat attendu : 'unknown' retourné, aucune exception
+     */
     public function testItHandlesHugePayloadWithoutCrash(): void
     {
         $payload = str_repeat('CLIENT', 100000);
@@ -325,6 +439,12 @@ final class ClientTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que Client accepte un payload binaire sans crash.
+     *
+     * Entrée : "\x00\x01\x02"
+     * Résultat attendu : Instance Client créée ou fallback, aucune exception
+     */
     public function testItHandlesBinaryPayload(): void
     {
         $client = Client::fromExternal(
@@ -337,6 +457,12 @@ final class ClientTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que Client accepte de l'UTF-8 invalide sans crash.
+     *
+     * Entrée : hex2bin('b131') (UTF-8 invalide)
+     * Résultat attendu : Instance Client créée ou fallback, aucune exception
+     */
     public function testItHandlesInvalidUtf8Payload(): void
     {
         $client = Client::fromExternal(

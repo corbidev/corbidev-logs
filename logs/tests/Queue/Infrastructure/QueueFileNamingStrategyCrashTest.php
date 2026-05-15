@@ -22,6 +22,12 @@ use PHPUnit\Framework\TestCase;
  */
 final class QueueFileNamingStrategyCrashTest extends TestCase
 {
+    /**
+     * But : Vérifier qu'une extension vide est rejetée.
+     *
+     * Entrée : extension = ''
+     * Résultat attendu : Lève une exception `\InvalidArgumentException`
+     */
     public function test_it_rejects_empty_extension(): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -31,6 +37,12 @@ final class QueueFileNamingStrategyCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier qu'une extension composée uniquement d'espaces est rejetée.
+     *
+     * Entrée : extension = '   '
+     * Résultat attendu : Lève une exception `\InvalidArgumentException`
+     */
     public function test_it_rejects_blank_extension(): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -40,6 +52,12 @@ final class QueueFileNamingStrategyCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier qu'une extension commençant par un point est rejetée.
+     *
+     * Entrée : extension = '.json'
+     * Résultat attendu : Lève une exception `\InvalidArgumentException`
+     */
     public function test_it_rejects_extension_with_dot(): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -50,6 +68,12 @@ final class QueueFileNamingStrategyCrashTest extends TestCase
     }
 
     #[DataProvider('invalidExtensionProvider')]
+    /**
+     * But : Vérifier que les extensions avec des caractères invalides sont rejetées.
+     *
+     * Entrée : Cas fournis par le DataProvider `invalidExtensionProvider()`
+     * Résultat attendu : Lève une exception `\InvalidArgumentException`
+     */
     public function test_it_rejects_invalid_extension_characters(
         string $extension,
     ): void {
@@ -73,6 +97,12 @@ final class QueueFileNamingStrategyCrashTest extends TestCase
         yield 'double extension' => ['tar.gz'];
     }
 
+    /**
+     * But : Vérifier que 10 000 appels consécutifs génèrent des noms tous uniques.
+     *
+     * Entrée : 10000 appels à generate()
+     * Résultat attendu : Tous les noms sont uniques (count = 10000)
+     */
     public function test_it_survives_massive_generation(): void
     {
         $strategy = new QueueFileNamingStrategy();
@@ -96,6 +126,12 @@ final class QueueFileNamingStrategyCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les noms générés contiennent uniquement des caractères ASCII imprimables.
+     *
+     * Entrée : 1000 appels à generate()
+     * Résultat attendu : Chaque nom correspond à /^[\x20-\x7E]+$/
+     */
     public function test_it_generates_only_ascii_characters(): void
     {
         $strategy = new QueueFileNamingStrategy();
@@ -110,6 +146,12 @@ final class QueueFileNamingStrategyCrashTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que les noms générés ne permettent pas de traversée de répertoire.
+     *
+     * Entrée : 1000 appels à generate()
+     * Résultat attendu : Aucun nom ne contient '..', '/' ni '\'
+     */
     public function test_it_never_generates_directory_traversal(): void
     {
         $strategy = new QueueFileNamingStrategy();
@@ -134,6 +176,12 @@ final class QueueFileNamingStrategyCrashTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que tous les noms générés ont une longueur fixe.
+     *
+     * Entrée : 1000 appels à generate()
+     * Résultat attendu : Longueur constante = 29 caractères
+     */
     public function test_it_generates_constant_filename_length(): void
     {
         $strategy = new QueueFileNamingStrategy();
@@ -150,6 +198,12 @@ final class QueueFileNamingStrategyCrashTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que les noms sont triables lexicalement par ordre chronologique.
+     *
+     * Entrée : 100 noms générés avec usleep entre chaque
+     * Résultat attendu : Le tri lexicographique correspond à l'ordre de génération
+     */
     public function test_it_generates_lexically_sortable_filenames(): void
     {
         $strategy = new QueueFileNamingStrategy();
@@ -179,6 +233,12 @@ final class QueueFileNamingStrategyCrashTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que les timestamps restent croissants entre deux secondes différentes.
+     *
+     * Entrée : generate(), sleep(1), generate()
+     * Résultat attendu : first < second (ordre stable entre secondes)
+     */
     public function test_it_preserves_timestamp_order_between_seconds(): void
     {
         $strategy = new QueueFileNamingStrategy();
@@ -195,6 +255,12 @@ final class QueueFileNamingStrategyCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que 5 000 appels rapides génèrent tous des noms au bon format.
+     *
+     * Entrée : 5000 appels à generate()
+     * Résultat attendu : Chaque nom correspond au format attendu
+     */
     public function test_it_generates_valid_filenames_under_high_frequency(): void
     {
         $strategy = new QueueFileNamingStrategy();
@@ -209,6 +275,12 @@ final class QueueFileNamingStrategyCrashTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier qu'aucun nom généré ne contient d'espace ou de whitespace.
+     *
+     * Entrée : 1000 appels à generate()
+     * Résultat attendu : Aucun espace dans les noms
+     */
     public function test_it_never_generates_whitespace(): void
     {
         $strategy = new QueueFileNamingStrategy();

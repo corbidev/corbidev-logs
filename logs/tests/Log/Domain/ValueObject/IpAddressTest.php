@@ -25,6 +25,12 @@ use stdClass;
 final class IpAddressTest extends TestCase
 {
     #[DataProvider('provideValidIpAddresses')]
+    /**
+     * But : Vérifier que IpAddress accepte des adresses valides et les normalise correctement.
+     *
+     * Entrée : Cas fournis par le DataProvider `provideValidIpAddresses()`
+     * Résultat attendu : La valeur normalisée correspond à l'attendu du DataProvider
+     */
     public function testItCreatesValidIpAddress(
         string $input,
         string $expected,
@@ -38,6 +44,12 @@ final class IpAddressTest extends TestCase
     }
 
     #[DataProvider('provideInvalidIpAddresses')]
+    /**
+     * But : Vérifier que IpAddress rejette les adresses invalides.
+     *
+     * Entrée : Cas fournis par le DataProvider `provideInvalidIpAddresses()`
+     * Résultat attendu : InvalidIpAddressException est levée
+     */
     public function testItRejectsInvalidIpAddress(
         string $input,
     ): void {
@@ -48,6 +60,12 @@ final class IpAddressTest extends TestCase
         new IpAddress($input);
     }
 
+    /**
+     * But : Vérifier que fromExternal() crée une IpAddress depuis une IPv4 valide.
+     *
+     * Entrée : '192.168.1.10'
+     * Résultat attendu : IpAddress avec valeur '192.168.1.10'
+     */
     public function testItCreatesFromExternalIpv4(): void
     {
         $ip = IpAddress::fromExternal(
@@ -60,6 +78,12 @@ final class IpAddressTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() crée une IpAddress depuis une IPv6 valide.
+     *
+     * Entrée : '2001:db8::1'
+     * Résultat attendu : IpAddress avec valeur '2001:db8::1'
+     */
     public function testItCreatesFromExternalIpv6(): void
     {
         $ip = IpAddress::fromExternal(
@@ -72,6 +96,12 @@ final class IpAddressTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne '0.0.0.0' pour une string invalide.
+     *
+     * Entrée : 'not-an-ip'
+     * Résultat attendu : '0.0.0.0'
+     */
     public function testItFallsBackForInvalidString(): void
     {
         $ip = IpAddress::fromExternal(
@@ -84,6 +114,12 @@ final class IpAddressTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne '0.0.0.0' pour null.
+     *
+     * Entrée : null
+     * Résultat attendu : '0.0.0.0'
+     */
     public function testItFallsBackForNull(): void
     {
         $ip = IpAddress::fromExternal(null);
@@ -94,6 +130,12 @@ final class IpAddressTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne '0.0.0.0' pour un type invalide.
+     *
+     * Entrée : ['invalid'] (tableau)
+     * Résultat attendu : '0.0.0.0'
+     */
     public function testItFallsBackForInvalidType(): void
     {
         $ip = IpAddress::fromExternal(
@@ -106,6 +148,12 @@ final class IpAddressTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isV4() retourne true et isV6() false pour une adresse IPv4.
+     *
+     * Entrée : '192.168.1.10'
+     * Résultat attendu : isV4() = true, isV6() = false
+     */
     public function testItDetectsIpv4(): void
     {
         $ip = new IpAddress(
@@ -121,6 +169,12 @@ final class IpAddressTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isV6() retourne true et isV4() false pour une adresse IPv6.
+     *
+     * Entrée : '::1'
+     * Résultat attendu : isV6() = true, isV4() = false
+     */
     public function testItDetectsIpv6(): void
     {
         $ip = new IpAddress(
@@ -136,6 +190,12 @@ final class IpAddressTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isLocal() retourne true pour l'adresse de loopback IPv4.
+     *
+     * Entrée : '127.0.0.1'
+     * Résultat attendu : isLocal() = true
+     */
     public function testItDetectsLocalIpv4(): void
     {
         $ip = new IpAddress(
@@ -147,6 +207,12 @@ final class IpAddressTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isLocal() retourne true pour l'adresse de loopback IPv6.
+     *
+     * Entrée : '::1'
+     * Résultat attendu : isLocal() = true
+     */
     public function testItDetectsLocalIpv6(): void
     {
         $ip = new IpAddress(
@@ -158,6 +224,12 @@ final class IpAddressTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isLocal() retourne false pour une adresse publique.
+     *
+     * Entrée : '8.8.8.8'
+     * Résultat attendu : isLocal() = false
+     */
     public function testItDetectsNonLocalIp(): void
     {
         $ip = new IpAddress(
@@ -169,6 +241,12 @@ final class IpAddressTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isPrivate() retourne true et isPublic() false pour une IP privée.
+     *
+     * Entrée : '192.168.1.10'
+     * Résultat attendu : isPrivate() = true, isPublic() = false
+     */
     public function testItDetectsPrivateIp(): void
     {
         $ip = new IpAddress(
@@ -184,6 +262,12 @@ final class IpAddressTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isPublic() retourne true et isPrivate() false pour une IP publique.
+     *
+     * Entrée : '8.8.8.8'
+     * Résultat attendu : isPublic() = true, isPrivate() = false
+     */
     public function testItDetectsPublicIp(): void
     {
         $ip = new IpAddress(
@@ -199,6 +283,12 @@ final class IpAddressTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que equals() compare correctement deux IpAddress.
+     *
+     * Entrée : IpAddress('8.8.8.8') vs IpAddress('8.8.8.8'), puis vs IpAddress('1.1.1.1')
+     * Résultat attendu : equals() = true / false
+     */
     public function testItComparesIpAddresses(): void
     {
         $left = new IpAddress('8.8.8.8');
@@ -214,6 +304,12 @@ final class IpAddressTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la conversion en string retourne la valeur de l'IP.
+     *
+     * Entrée : IpAddress('8.8.8.8')
+     * Résultat attendu : (string) IpAddress = '8.8.8.8'
+     */
     public function testItReturnsStableStringRepresentation(): void
     {
         $ip = new IpAddress(
@@ -226,6 +322,12 @@ final class IpAddressTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que l'adresse IP est normalisée (trim et casse).
+     *
+     * Entrée : '   ::1   '
+     * Résultat attendu : '::1'
+     */
     public function testItNormalizesTrimAndCase(): void
     {
         $ip = new IpAddress(
@@ -245,6 +347,12 @@ final class IpAddressTest extends TestCase
      * - aucun crash
      * - aucune exception
      * - toujours un IpAddress valide
+     */
+    /**
+     * But : Vérifier que fromExternal() ne lève jamais d'exception avec des inputs hostiles.
+     *
+     * Entrée : 15 inputs hostiles variés
+     * Résultat attendu : Aucune exception levée
      */
     public function testItNeverThrowsFromExternal(): void
     {
@@ -284,6 +392,12 @@ final class IpAddressTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne toujours une instance d'IpAddress valide.
+     *
+     * Entrée : 12 inputs variés
+     * Résultat attendu : Instance IpAddress valide à chaque appel
+     */
     public function testFromExternalAlwaysReturnsValidIpAddress(): void
     {
         $resource = fopen('php://memory', 'r');
@@ -325,6 +439,12 @@ final class IpAddressTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne '0.0.0.0' pour des inputs hostiles.
+     *
+     * Entrée : 7 inputs hostiles (null, [], stdClass, binaire, UTF-8 invalide, XSS, SQL injection)
+     * Résultat attendu : '0.0.0.0' pour chaque input
+     */
     public function testItFallsBackForHostilePayloads(): void
     {
         $inputs = [
@@ -347,6 +467,12 @@ final class IpAddressTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que fromExternal() ne crashe pas avec un payload de 1 000 000 caractères.
+     *
+     * Entrée : str_repeat('A', 1000000)
+     * Résultat attendu : '0.0.0.0' (fallback), aucune exception
+     */
     public function testItHandlesHugePayloadWithoutCrash(): void
     {
         $payload = str_repeat('A', 1000000);
@@ -359,6 +485,12 @@ final class IpAddressTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() gère une séquence binaire sans exception.
+     *
+     * Entrée : "\x00\x01\x02"
+     * Résultat attendu : Instance IpAddress créée (fallback ou valide)
+     */
     public function testItHandlesBinaryPayload(): void
     {
         $ip = IpAddress::fromExternal(
@@ -371,6 +503,12 @@ final class IpAddressTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() gère une valeur UTF-8 invalide sans exception.
+     *
+     * Entrée : hex2bin('b131')
+     * Résultat attendu : Instance IpAddress créée (fallback ou valide)
+     */
     public function testItHandlesInvalidUtf8Payload(): void
     {
         $ip = IpAddress::fromExternal(

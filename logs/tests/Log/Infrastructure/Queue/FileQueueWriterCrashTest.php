@@ -49,6 +49,12 @@ final class FileQueueWriterCrashTest extends TestCase
         @rmdir($this->directory);
     }
 
+    /**
+     * But : Vérifier que write() lève une exception sur un JSON malformé.
+     *
+     * Entrée : Payload '{"invalid"' (JSON incomplet)
+     * Résultat attendu : QueueWriteException est levée
+     */
     public function testWriteFailsWithInvalidJson(): void
     {
         $writer = $this->createWriter();
@@ -61,6 +67,12 @@ final class FileQueueWriterCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que write() lève une exception sur un payload vide.
+     *
+     * Entrée : Chaîne vide ''
+     * Résultat attendu : QueueWriteException est levée
+     */
     public function testWriteFailsWithEmptyPayload(): void
     {
         $writer = $this->createWriter();
@@ -73,6 +85,12 @@ final class FileQueueWriterCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que write() lève une exception sur un payload UTF-8 invalide.
+     *
+     * Entrée : Payload "\xB1\x31" (séquence invalide)
+     * Résultat attendu : QueueWriteException est levée
+     */
     public function testWriteFailsWithInvalidUtf8(): void
     {
         $writer = $this->createWriter();
@@ -87,6 +105,12 @@ final class FileQueueWriterCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que 5 000 écritures successives créent bien 5 000 fichiers distincts.
+     *
+     * Entrée : 5 000 payloads JSON valides '{"message":"log_{i}"}'
+     * Résultat attendu : 5 000 fichiers présents dans le répertoire de queue
+     */
     public function testMassiveWritesRemainStable(): void
     {
         $writer = $this->createWriter();
@@ -108,6 +132,12 @@ final class FileQueueWriterCrashTest extends TestCase
         self::assertCount(5000, $files);
     }
 
+    /**
+     * But : Vérifier que write() échoue si le répertoire cible est en lecture seule.
+     *
+     * Entrée : Répertoire avec permissions 0555 (lecture seule)
+     * Résultat attendu : QueueDirectoryException est levée
+     */
     public function testWriteFailsOnReadonlyDirectory(): void
     {
         mkdir($this->directory);

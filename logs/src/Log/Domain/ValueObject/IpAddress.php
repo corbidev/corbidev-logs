@@ -9,13 +9,16 @@ use App\Log\Domain\Exception\InvalidIpAddressException;
 /**
  * Représente une adresse IP valide et normalisée.
  *
- * Responsabilités :
+ * RESPONSABILITÉS :
+ * -----------------
  * - garantir une IP exploitable
  * - supporter IPv4 et IPv6
  * - normaliser les données externes hostiles
  * - stabiliser les données stockées
+ * - fournir un fallback robuste
  *
- * Invariants :
+ * INVARIANTS :
+ * -------------
  * - IP toujours valide
  * - string immutable
  * - longueur bornée
@@ -23,9 +26,20 @@ use App\Log\Domain\Exception\InvalidIpAddressException;
 final readonly class IpAddress
 {
     /**
-     * IP fallback utilisée lorsque la donnée externe est invalide.
+     * IP fallback utilisée lorsque
+     * la donnée externe est invalide.
+     *
+     * IMPORTANT :
+     * ------------
+     * Les tests unitaires attendent
+     * explicitement cette valeur.
      */
     private const FALLBACK_IP = '0.0.0.0';
+
+    /**
+     * Longueur maximale IPv6.
+     */
+    private const MAX_LENGTH = 45;
 
     /**
      * Valeur IP normalisée.
@@ -38,9 +52,13 @@ final readonly class IpAddress
     public function __construct(
         string $value,
     ) {
-        $normalized = $this->normalize($value);
+        $normalized = $this->normalize(
+            $value,
+        );
 
-        $this->guard($normalized);
+        $this->guard(
+            $normalized,
+        );
 
         $this->value = $normalized;
     }
@@ -48,22 +66,30 @@ final readonly class IpAddress
     /**
      * Crée une IP depuis une donnée externe hostile.
      *
-     * Règles :
+     * RÈGLES :
+     * --------
      * - trim automatique
      * - fallback sécurisé
      * - aucune exception
+     * - toujours une IP valide
      */
     public static function fromExternal(
         mixed $value,
     ): self {
         if (is_string($value) === false) {
-            return new self(self::FALLBACK_IP);
+            return new self(
+                self::FALLBACK_IP,
+            );
         }
 
         try {
-            return new self($value);
+            return new self(
+                $value,
+            );
         } catch (InvalidIpAddressException) {
-            return new self(self::FALLBACK_IP);
+            return new self(
+                self::FALLBACK_IP,
+            );
         }
     }
 
@@ -134,7 +160,8 @@ final readonly class IpAddress
         return filter_var(
             $this->value,
             FILTER_VALIDATE_IP,
-            FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE,
+            FILTER_FLAG_NO_PRIV_RANGE
+            | FILTER_FLAG_NO_RES_RANGE,
         ) !== false;
     }
 
@@ -156,11 +183,19 @@ final readonly class IpAddress
     }
 
     /**
+     * Garantit la validité métier.
+     *
      * @throws InvalidIpAddressException
      */
     private function guard(
         string $value,
     ): void {
+        if ($value === '') {
+            throw InvalidIpAddressException::invalid(
+                $value,
+            );
+        }
+
         if (
             filter_var(
                 $value,
@@ -175,12 +210,48 @@ final readonly class IpAddress
 
     /**
      * Normalise une IP externe.
+     *
+     * IMPORTANT :
+     * ------------
+     * - trim
+     * - lowercase
+     * - longueur bornée
+     * - jamais null
      */
     private function normalize(
         string $value,
     ): string {
-        return trim(
+        $value = trim(
             strtolower($value),
         );
+
+        /**
+         * Protection longueur IPv6.
+         */
+        if (
+            mb_strlen($value)
+            > self::MAX_LENGTH
+        ) {
+            return self::FALLBACK_IP;
+        }
+
+        /**
+         * Suppression caractères contrôle.
+         */
+        $value = preg_replace(
+            '/[\x00-\x1F\x7F]/u',
+            '',
+            $value,
+        );
+
+        if ($value === null) {
+            return self::FALLBACK_IP;
+        }
+
+        $value = trim(
+            $value,
+        );
+
+        return $value;
     }
 }

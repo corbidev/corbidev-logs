@@ -14,6 +14,12 @@ use PHPUnit\Framework\TestCase;
  */
 final class QueueConfigurationTest extends TestCase
 {
+    /**
+     * But : Vérifier qu'une configuration valide est créée avec les valeurs par défaut correctes.
+     *
+     * Entrée : baseDir = '/var/queue', toutes autres valeurs par défaut
+     * Résultat attendu : Tous les accesseurs retournent les valeurs par défaut attendues
+     */
     public function test_it_creates_valid_configuration(): void
     {
         $configuration = new QueueConfiguration(
@@ -58,6 +64,12 @@ final class QueueConfigurationTest extends TestCase
         self::assertSame(0664, $configuration->getFilePermissions());
     }
 
+    /**
+     * But : Vérifier qu'une configuration entièrement personnalisée est acceptée.
+     *
+     * Entrée : Tous les paramètres fournis avec des valeurs personnalisées
+     * Résultat attendu : Chaque accesseur retourne la valeur personnalisée correspondante
+     */
     public function test_it_supports_custom_configuration(): void
     {
         $configuration = new QueueConfiguration(
@@ -108,6 +120,12 @@ final class QueueConfigurationTest extends TestCase
         self::assertSame(0600, $configuration->getFilePermissions());
     }
 
+    /**
+     * But : Vérifier que le slash final est supprimé du répertoire de base.
+     *
+     * Entrée : baseDir = '/var/queue/'
+     * Résultat attendu : logsDirectory commence par '/var/queue/logs' (sans double slash)
+     */
     public function test_it_trims_trailing_slash_from_base_directory(): void
     {
         $configuration = new QueueConfiguration(
@@ -120,6 +138,12 @@ final class QueueConfigurationTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que tous les répertoires retournés sont des chemins absolus.
+     *
+     * Entrée : baseDir = '/var/queue'
+     * Résultat attendu : Chaque répertoire commence par '/'
+     */
     public function test_it_returns_absolute_directories(): void
     {
         $configuration = new QueueConfiguration(

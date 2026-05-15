@@ -31,6 +31,12 @@ final class FingerprintGeneratorCrashTest extends TestCase
         $this->generator = new FingerprintGenerator();
     }
 
+    /**
+     * But : Vérifier que le générateur ne crashe pas avec un domaine de 800 000 caractères.
+     *
+     * Entrée : Domaine = str_repeat('billing-', 100000)
+     * Résultat attendu : Fingerprint non vide retourné sans exception
+     */
     public function testItHandlesHugeDomain(): void
     {
         $domain = str_repeat(
@@ -51,6 +57,12 @@ final class FingerprintGeneratorCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le générateur ne crashe pas avec une URI de 80 000 segments.
+     *
+     * Entrée : URI = '/' . str_repeat('orders/', 10000)
+     * Résultat attendu : Fingerprint non vide retourné sans exception
+     */
     public function testItHandlesHugeUri(): void
     {
         $uri = '/' . str_repeat(
@@ -71,6 +83,12 @@ final class FingerprintGeneratorCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le générateur ne crashe pas avec un domaine contenant des octets binaires.
+     *
+     * Entrée : Domaine = "\x00\x01\x02"
+     * Résultat attendu : Fingerprint non vide retourné sans exception
+     */
     public function testItHandlesBinaryPayloads(): void
     {
         $domain = "\x00\x01\x02";
@@ -88,6 +106,12 @@ final class FingerprintGeneratorCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le générateur ne crashe pas avec un domaine en UTF-8 invalide.
+     *
+     * Entrée : Domaine = "\xB1\x31" (séquence UTF-8 invalide)
+     * Résultat attendu : Fingerprint non vide retourné sans exception
+     */
     public function testItHandlesInvalidUtf8Payloads(): void
     {
         $domain = "\xB1\x31";
@@ -105,6 +129,12 @@ final class FingerprintGeneratorCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le générateur ne crashe pas avec des payloads d'injection hostiles.
+     *
+     * Entrée : Domaine = "'; DROP TABLE logs; --", URI = "/../../../../../etc/passwd"
+     * Résultat attendu : Fingerprint non vide retourné sans exception
+     */
     public function testItHandlesHostilePayloads(): void
     {
         $domain = "'; DROP TABLE logs; --";
@@ -122,6 +152,12 @@ final class FingerprintGeneratorCrashTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que 10 000 appels consécutifs ne lèvent jamais d'exception.
+     *
+     * Entrée : 10 000 itérations avec domaines 'billing-{i}' et URI '/orders/{i}'
+     * Résultat attendu : Chaque fingerprint est non vide, aucune exception levée
+     */
     public function testItNeverThrows(): void
     {
         for ($i = 0; $i < 10000; $i++) {

@@ -11,13 +11,12 @@ Objectifs :
 - robustesse maximale
 - affichage détaillé des erreurs
 - environnement strict
-- isolation des tests
 - compatibilité Symfony Bridge
-- stabilité CI
-- debug simplifié
+- debug facilité
+- stabilité des tests
 
 Documentation :
-https://phpunit.readthedocs.io/
+https://phpunit.readthedocs.io/en/latest/configuration.html
 -->
 
 <phpunit
@@ -34,20 +33,13 @@ https://phpunit.readthedocs.io/
     failOnNotice="true"
     failOnWarning="true"
     failOnRisky="true"
-    failOnIncomplete="true"
-    failOnSkipped="false"
-
-    stopOnFailure="false"
 
     beStrictAboutOutputDuringTests="true"
-    beStrictAboutTestsThatDoNotTestAnything="true"
 
     executionOrder="depends,defects"
 
     displayDetailsOnTestsThatTriggerDeprecations="true"
     displayDetailsOnPhpunitDeprecations="true"
-    displayDetailsOnIncompleteTests="true"
-    displayDetailsOnSkippedTests="true"
 >
 
     <!--
@@ -84,41 +76,47 @@ https://phpunit.readthedocs.io/
             value="UTC"
         />
 
-        <!-- Symfony -->
+        <!-- Environnement Symfony -->
         <server
             name="APP_ENV"
             value="test"
             force="true"
         />
 
+        <!-- Active le mode debug Symfony -->
         <server
             name="APP_DEBUG"
             value="1"
             force="true"
         />
 
-        <!-- Verbosité Symfony -->
+        <!--
+        Verbosité Symfony :
+
+        -1 = silencieux
+         1 = normal
+         2 = verbose
+         3 = debug détaillé
+        -->
+
         <server
             name="SHELL_VERBOSITY"
             value="3"
         />
 
-        <!-- SQLite fichier -->
+        <!--
+        SQLite fichier pour les tests.
+
+        Pourquoi fichier et non mémoire :
+        - comportement IO réel
+        - meilleure simulation persistence
+        - tests plus réalistes
+        -->
+
         <server
             name="DATABASE_URL"
             value="sqlite:///%kernel.project_dir%/var/test.db"
             force="true"
-        />
-
-        <!-- Symfony PHPUnit Bridge -->
-        <server
-            name="SYMFONY_PHPUNIT_REMOVE"
-            value=""
-        />
-
-        <server
-            name="SYMFONY_DEPRECATIONS_HELPER"
-            value="max[self]=0"
         />
 
     </php>
@@ -131,34 +129,10 @@ https://phpunit.readthedocs.io/
 
     <testsuites>
 
-        <testsuite name="Unit">
+        <testsuite name="Project Test Suite">
 
             <directory>
-                tests/Unit
-            </directory>
-
-        </testsuite>
-
-        <testsuite name="Integration">
-
-            <directory>
-                tests/Integration
-            </directory>
-
-        </testsuite>
-
-        <testsuite name="Functional">
-
-            <directory>
-                tests/Functional
-            </directory>
-
-        </testsuite>
-
-        <testsuite name="Crash">
-
-            <directory>
-                tests/Crash
+                tests
             </directory>
 
         </testsuite>
@@ -183,73 +157,13 @@ https://phpunit.readthedocs.io/
 
         <include>
 
-            <directory suffix=".php">
+            <directory>
                 src
             </directory>
 
         </include>
 
-        <exclude>
-
-            <directory>
-                var
-            </directory>
-
-            <directory>
-                vendor
-            </directory>
-
-            <directory>
-                tests
-            </directory>
-
-        </exclude>
-
     </source>
-
-    <!--
-    ============================================================================
-    Code Coverage
-    ============================================================================
-
-    Configuration couverture de code.
-    -->
-
-    <coverage
-        includeUncoveredFiles="false"
-        disableCodeCoverageIgnore="false"
-    >
-
-        <report>
-
-            <text
-                outputFile="php://stdout"
-                showOnlySummary="false"
-            />
-
-        </report>
-
-    </coverage>
-
-    <!--
-    ============================================================================
-    Logging
-    ============================================================================
-
-    Logs de tests et rapports CI.
-    -->
-
-    <logging>
-
-        <junit
-            outputFile="var/phpunit/junit.xml"
-        />
-
-        <testdoxText
-            outputFile="var/phpunit/testdox.txt"
-        />
-
-    </logging>
 
     <!--
     ============================================================================

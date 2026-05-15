@@ -5,16 +5,16 @@ Vu ton architecture et tes contraintes :
 - Symfony 8
 - PHP 8.4
 - Hébergement mutualisé
-- Priorité absolue à la robustesse d’écriture
+- Priorité absolue à la robustesse d'écriture
 - Architecture simple et prévisible
 
 Il faut commencer par le WRITE SIDE minimal.
 
-Pas le dashboard.  
-Pas la recherche.  
+Pas le dashboard.
+Pas la recherche.
 Pas Doctrine complexe.
 
-L’objectif initial :
+L'objectif initial :
 
 > réussir à accepter et stocker des logs sans jamais perdre de données.
 
@@ -29,8 +29,8 @@ src/
 
 - Ingestion/
 - Queue/
-- Log/
-- Persistence/
+- ✅ Log/
+- ✅ Persistence/
 - Search/
 - Dashboard/
 - Project/
@@ -187,11 +187,11 @@ Et tester :
 - retry
 - lecture batch
 
-C’est le vrai moteur du système.
+C'est le vrai moteur du système.
 
 ---
 
-# 6. Construire l’endpoint ingestion minimal
+# 6. Construire l'endpoint ingestion minimal
 
 Ensuite seulement :
 
@@ -212,7 +212,7 @@ HTTP JSON
 Surtout :
 
 - pas Doctrine
-- pas d’hydratation lourde
+- pas d'hydratation lourde
 - pas de logique métier
 
 Le contrôleur doit être ultra fin.
@@ -243,7 +243,7 @@ Traitement batch :
 
 # 8. Ensuite seulement : persistence SQL
 
-Quand l’ingestion est déjà fiable.
+Quand l'ingestion est déjà fiable.
 
 Là :
 
@@ -260,7 +260,7 @@ Mais seulement après avoir sécurisé :
 
 ---
 
-# Ce qu’il NE faut PAS faire maintenant
+# Ce qu'il NE faut PAS faire maintenant
 
 Évite totalement :
 
@@ -276,8 +276,8 @@ Mais seulement après avoir sécurisé :
 
 Tant que :
 
-- la queue n’est pas béton
-- le normalizer n’est pas testé
+- la queue n'est pas béton
+- le normalizer n'est pas testé
 
 ---
 

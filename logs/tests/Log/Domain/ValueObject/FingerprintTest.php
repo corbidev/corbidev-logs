@@ -25,6 +25,12 @@ use stdClass;
 final class FingerprintTest extends TestCase
 {
     #[DataProvider('provideValidFingerprints')]
+    /**
+     * But : Vérifier que Fingerprint accepte des valeurs valides et les normalise correctement.
+     *
+     * Entrée : Cas fournis par le DataProvider `provideValidFingerprints()`
+     * Résultat attendu : La valeur normalisée correspond à l'attendu du DataProvider
+     */
     public function testItCreatesValidFingerprint(
         string $input,
         string $expected,
@@ -38,6 +44,12 @@ final class FingerprintTest extends TestCase
     }
 
     #[DataProvider('provideInvalidFingerprints')]
+    /**
+     * But : Vérifier que Fingerprint rejette les valeurs invalides.
+     *
+     * Entrée : Cas fournis par le DataProvider `provideInvalidFingerprints()`
+     * Résultat attendu : InvalidFingerprintException est levée
+     */
     public function testItRejectsInvalidFingerprint(
         string $input,
     ): void {
@@ -48,6 +60,12 @@ final class FingerprintTest extends TestCase
         new Fingerprint($input);
     }
 
+    /**
+     * But : Vérifier que fromExternal() crée un Fingerprint valide depuis une string externe.
+     *
+     * Entrée : 'abcdef1234567890'
+     * Résultat attendu : Fingerprint avec valeur 'abcdef1234567890'
+     */
     public function testItCreatesFromExternalString(): void
     {
         $fingerprint = Fingerprint::fromExternal(
@@ -60,6 +78,12 @@ final class FingerprintTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le fingerprint est normalisé en minuscules.
+     *
+     * Entrée : 'ABCDEF1234567890'
+     * Résultat attendu : 'abcdef1234567890'
+     */
     public function testItNormalizesCase(): void
     {
         $fingerprint = new Fingerprint(
@@ -72,6 +96,12 @@ final class FingerprintTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le fingerprint est trimé et normalisé.
+     *
+     * Entrée : '   abcdef1234567890   '
+     * Résultat attendu : 'abcdef1234567890'
+     */
     public function testItNormalizesTrim(): void
     {
         $fingerprint = new Fingerprint(
@@ -84,6 +114,12 @@ final class FingerprintTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne le fallback '0000000000000000' pour une string invalide.
+     *
+     * Entrée : '<script>alert(1)</script>'
+     * Résultat attendu : '0000000000000000'
+     */
     public function testItFallsBackForInvalidString(): void
     {
         $fingerprint = Fingerprint::fromExternal(
@@ -96,6 +132,12 @@ final class FingerprintTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne le fallback '0000000000000000' pour null.
+     *
+     * Entrée : null
+     * Résultat attendu : '0000000000000000'
+     */
     public function testItFallsBackForNull(): void
     {
         $fingerprint = Fingerprint::fromExternal(null);
@@ -106,6 +148,12 @@ final class FingerprintTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne le fallback pour un type invalide.
+     *
+     * Entrée : ['invalid'] (tableau)
+     * Résultat attendu : '0000000000000000'
+     */
     public function testItFallsBackForInvalidType(): void
     {
         $fingerprint = Fingerprint::fromExternal(
@@ -118,6 +166,12 @@ final class FingerprintTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isFallback() retourne true pour un fingerprint fallback.
+     *
+     * Entrée : fromExternal('<script>') → '0000000000000000'
+     * Résultat attendu : isFallback() = true
+     */
     public function testItDetectsFallbackFingerprint(): void
     {
         $fingerprint = Fingerprint::fromExternal(
@@ -129,6 +183,12 @@ final class FingerprintTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isFallback() retourne false pour un fingerprint valide.
+     *
+     * Entrée : 'abcdef1234567890'
+     * Résultat attendu : isFallback() = false
+     */
     public function testItDetectsNonFallbackFingerprint(): void
     {
         $fingerprint = new Fingerprint(
@@ -140,6 +200,12 @@ final class FingerprintTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que equals() compare correctement deux Fingerprints.
+     *
+     * Entrée : Fingerprint('abcdef1234567890') vs le même, puis vs un autre
+     * Résultat attendu : equals() = true / false selon les valeurs
+     */
     public function testItComparesFingerprints(): void
     {
         $left = new Fingerprint(
@@ -163,6 +229,12 @@ final class FingerprintTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la conversion en string retourne la valeur du fingerprint.
+     *
+     * Entrée : new Fingerprint('abcdef1234567890')
+     * Résultat attendu : (string) Fingerprint = 'abcdef1234567890'
+     */
     public function testItReturnsStableStringRepresentation(): void
     {
         $fingerprint = new Fingerprint(
@@ -175,6 +247,12 @@ final class FingerprintTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que Fingerprint::generate() est stable pour les mêmes paramètres.
+     *
+     * Entrée : Deux appels avec les mêmes inputs
+     * Résultat attendu : Les valeurs générées sont identiques
+     */
     public function testItGeneratesStableFingerprint(): void
     {
         $left = Fingerprint::generate(
@@ -190,6 +268,12 @@ final class FingerprintTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que Fingerprint::generate() produit des valeurs différentes pour des inputs différents.
+     *
+     * Entrée : Inputs différents pour les deux appels
+     * Résultat attendu : Les fingerprints générés diffèrent
+     */
     public function testItGeneratesDifferentFingerprint(): void
     {
         $left = Fingerprint::generate(
@@ -205,6 +289,12 @@ final class FingerprintTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le fingerprint généré a exactement 16 caractères.
+     *
+     * Entrée : Paramètres valides pour generate()
+     * Résultat attendu : Longueur = 16
+     */
     public function testGeneratedFingerprintHasExpectedLength(): void
     {
         $fingerprint = Fingerprint::generate(
@@ -219,6 +309,12 @@ final class FingerprintTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le fingerprint généré est en hexadécimal minuscule.
+     *
+     * Entrée : Paramètres valides pour generate()
+     * Résultat attendu : Correspond au pattern /^[a-f0-9]{16}$/
+     */
     public function testGeneratedFingerprintIsLowercase(): void
     {
         $fingerprint = Fingerprint::generate(
@@ -238,6 +334,12 @@ final class FingerprintTest extends TestCase
      * - aucun crash
      * - aucune exception
      * - toujours un Fingerprint valide
+     */
+    /**
+     * But : Vérifier que fromExternal() ne lève jamais d'exception avec des inputs hostiles.
+     *
+     * Entrée : 16 inputs hostiles variés
+     * Résultat attendu : Aucune exception levée
      */
     public function testItNeverThrowsFromExternal(): void
     {
@@ -277,6 +379,12 @@ final class FingerprintTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne toujours un fingerprint de longueur 16 en hexadécimal.
+     *
+     * Entrée : 12 inputs variés
+     * Résultat attendu : Longueur = 16, format hexadécimal
+     */
     public function testFromExternalAlwaysReturnsValidFingerprint(): void
     {
         $resource = fopen('php://memory', 'r');
@@ -318,6 +426,12 @@ final class FingerprintTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne '0000000000000000' pour des payloads hostiles.
+     *
+     * Entrée : 8 inputs hostiles variés
+     * Résultat attendu : '0000000000000000' pour chaque input
+     */
     public function testItFallsBackForHostilePayloads(): void
     {
         $inputs = [
@@ -341,6 +455,12 @@ final class FingerprintTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que fromExternal() ne crashe pas avec un payload de 1 000 000 caractères.
+     *
+     * Entrée : str_repeat('A', 1000000)
+     * Résultat attendu : Fingerprint créé ou fallback, aucune exception
+     */
     public function testItHandlesHugePayloadWithoutCrash(): void
     {
         $payload = str_repeat(
@@ -358,6 +478,12 @@ final class FingerprintTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() gère une séquence binaire sans exception.
+     *
+     * Entrée : "\x00\x01\x02"
+     * Résultat attendu : Instance de Fingerprint créée (fallback ou valide)
+     */
     public function testItHandlesBinaryPayload(): void
     {
         $fingerprint = Fingerprint::fromExternal(
@@ -370,6 +496,12 @@ final class FingerprintTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() gère une valeur UTF-8 invalide sans exception.
+     *
+     * Entrée : hex2bin('b131')
+     * Résultat attendu : Instance de Fingerprint créée (fallback ou valide)
+     */
     public function testItHandlesInvalidUtf8Payload(): void
     {
         $fingerprint = Fingerprint::fromExternal(

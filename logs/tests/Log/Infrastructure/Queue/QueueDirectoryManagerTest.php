@@ -27,6 +27,12 @@ final class QueueDirectoryManagerTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que ensureDirectoryExists crée le répertoire quand il n'existe pas.
+     *
+     * Entrée : Chemin vers un répertoire inexistant
+     * Résultat attendu : Le répertoire existe après l'appel
+     */
     public function testEnsureDirectoryExistsCreatesDirectory(): void
     {
         $manager = new QueueDirectoryManager();
@@ -36,6 +42,12 @@ final class QueueDirectoryManagerTest extends TestCase
         self::assertDirectoryExists($this->baseDirectory);
     }
 
+    /**
+     * But : Vérifier que ensureDirectoryExists est idempotent si le répertoire existe déjà.
+     *
+     * Entrée : Répertoire préalablement créé via mkdir()
+     * Résultat attendu : Pas d'exception, répertoire toujours existant
+     */
     public function testEnsureDirectoryExistsDoesNothingIfDirectoryAlreadyExists(): void
     {
         mkdir($this->baseDirectory);
@@ -47,6 +59,12 @@ final class QueueDirectoryManagerTest extends TestCase
         self::assertDirectoryExists($this->baseDirectory);
     }
 
+    /**
+     * But : Vérifier que ensureDirectoryExists lève une exception si le chemin est un fichier.
+     *
+     * Entrée : Fichier créé à l'emplacement du répertoire attendu
+     * Résultat attendu : QueueDirectoryException est levée
+     */
     public function testEnsureDirectoryExistsThrowsIfPathIsAFile(): void
     {
         file_put_contents($this->baseDirectory, 'test');
@@ -58,6 +76,12 @@ final class QueueDirectoryManagerTest extends TestCase
         $manager->ensureDirectoryExists($this->baseDirectory);
     }
 
+    /**
+     * But : Vérifier que ensureDirectoryExists refuse un chemin vide.
+     *
+     * Entrée : Chaîne vide ''
+     * Résultat attendu : QueueDirectoryException est levée
+     */
     public function testEnsureDirectoryExistsThrowsOnEmptyPath(): void
     {
         $manager = new QueueDirectoryManager();
@@ -67,6 +91,12 @@ final class QueueDirectoryManagerTest extends TestCase
         $manager->ensureDirectoryExists('');
     }
 
+    /**
+     * But : Vérifier que ensureDirectoryExists refuse le chemin '.' (répertoire courant).
+     *
+     * Entrée : Chemin '.'
+     * Résultat attendu : QueueDirectoryException est levée
+     */
     public function testEnsureDirectoryExistsThrowsOnDotPath(): void
     {
         $manager = new QueueDirectoryManager();
@@ -76,6 +106,12 @@ final class QueueDirectoryManagerTest extends TestCase
         $manager->ensureDirectoryExists('.');
     }
 
+    /**
+     * But : Vérifier que ensureDirectoryExists refuse un chemin contenant un octet nul.
+     *
+     * Entrée : "invalid\0path"
+     * Résultat attendu : QueueDirectoryException est levée
+     */
     public function testEnsureDirectoryExistsThrowsOnNullByte(): void
     {
         $manager = new QueueDirectoryManager();

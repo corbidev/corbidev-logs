@@ -8,11 +8,13 @@ use App\Log\Domain\Entity\LogEntry;
 use App\Log\Domain\ValueObject\Client;
 use App\Log\Domain\ValueObject\Fingerprint;
 use App\Log\Domain\ValueObject\HttpStatus;
+use App\Log\Domain\ValueObject\IngestionWarning;
 use App\Log\Domain\ValueObject\IpAddress;
 use App\Log\Domain\ValueObject\Request;
-use App\Log\Domain\ValueObject\Tags;
+use App\Log\Domain\ValueObject\RequestId;
 use App\Log\Domain\ValueObject\Uri;
 use App\Log\Enum\Environment;
+use App\Log\Enum\IngestionWarningType;
 use App\Log\Enum\LogLevel;
 use DateTimeImmutable;
 use Symfony\Component\Uid\Uuid;
@@ -20,93 +22,104 @@ use Symfony\Component\Uid\Uuid;
 /**
  * Factory de création des LogEntry.
  *
- * Responsabilités :
+ * RESPONSABILITÉS :
+ * -----------------
  * - assembler les ValueObjects
  * - protéger le domaine des payloads hostiles
  * - garantir une création robuste
  * - fournir un point d'entrée unique
+ * - tracer les corrections ingestion
  *
- * Cette factory est volontairement explicite.
+ * OBJECTIFS :
+ * -----------
+ * - robustesse
+ * - prédictibilité
+ * - stabilité
+ * - zéro crash ingestion
+ * - aucune perte
  *
- * Aucun mapper magique.
- * Aucun hydrateur complexe.
- * Aucun reflection runtime.
+ * IMPORTANT :
+ * ------------
+ * Cette factory ne doit quasiment
+ * jamais throw.
+ *
+ * Les anomalies ingestion doivent être :
+ * - corrigées
+ * - stabilisées
+ * - tracées via ingestionWarnings
  */
 final readonly class LogEntryFactory implements LogEntryFactoryInterface
 {
     /**
-     * Crée un LogEntry depuis un payload normalisé.
+     * Taille maximale du message.
+     */
+    private const MAX_MESSAGE_LENGTH = 1000;
+
+    /**
+     * Taille maximale du domaine.
+     */
+    private const MAX_DOMAIN_LENGTH = 100;
+
+    /**
+     * Taille maximale méthode HTTP.
+     */
+    private const MAX_METHOD_LENGTH = 10;
+
+    /**
+     * Taille maximale User-Agent.
+     */
+    private const MAX_USER_AGENT_LENGTH = 500;
+
+    /**
+     * Crée un LogEntry depuis un payload externe.
      *
      * @param array<string, mixed> $payload
      */
     public function create(
         array $payload,
     ): LogEntry {
+        $warnings = [];
+
+        $id          = $this->createId($payload);
+        $message     = $this->createMessage($payload, $warnings);
+        $level       = $this->createLevel($payload, $warnings);
+        $domain      = $this->createDomain($payload, $warnings);
+        $environment = $this->createEnvironment($payload, $warnings);
+        $httpStatus  = $this->createHttpStatus($payload, $warnings);
+        $client      = $this->createClient($payload, $warnings);
+        $request     = $this->createRequest($payload, $warnings);
+        $ipAddress   = $this->createIpAddress($payload, $warnings);
+        $fingerprint = $this->createFingerprint($payload, $warnings);
+        $requestId   = $this->createRequestId($payload, $warnings);
+        $context     = $this->createArray($payload['context'] ?? []);
+        $extra       = $this->createArray($payload['extra'] ?? []);
+        $createdAt   = $this->createNullableDate($payload['createdAt'] ?? null, 'createdAt', $warnings);
+        $clientDate  = $this->createNullableDate($payload['clientDate'] ?? null, 'clientDate', $warnings);
+
         return new LogEntry(
-            id: $this->createId(
-                $payload,
-            ),
-
-            message: $this->createMessage(
-                $payload,
-            ),
-
-            level: $this->createLevel(
-                $payload,
-            ),
-
-            domain: $this->createDomain(
-                $payload,
-            ),
-
-            environment: $this->createEnvironment(
-                $payload,
-            ),
-
-            httpStatus: HttpStatus::fromExternal(
-                $payload['httpStatus'] ?? null,
-            ),
-
-            client: Client::fromExternal(
-                $payload['client'] ?? null,
-            ),
-
-            request: $this->createRequest(
-                $payload,
-            ),
-
-            ipAddress: IpAddress::fromExternal(
-                $payload['ip'] ?? null,
-            ),
-
-            fingerprint: Fingerprint::fromExternal(
-                $payload['fingerprint'] ?? null,
-            ),
-
-            tags: Tags::fromExternal(
-                $payload['tags'] ?? [],
-            ),
-
-            context: $this->createArray(
-                $payload['context'] ?? [],
-            ),
-
-            extra: $this->createArray(
-                $payload['extra'] ?? [],
-            ),
-
-            createdAt: $this->createDate(
-                $payload['createdAt'] ?? null,
-            ),
-
-            clientDate: $this->createDate(
-                $payload['clientDate'] ?? null,
-            ),
+            externalId: $id,
+            message: $message,
+            level: $level,
+            domain: $domain,
+            environment: $environment,
+            httpStatus: $httpStatus,
+            client: $client,
+            request: $request,
+            ipAddress: $ipAddress,
+            fingerprint: $fingerprint,
+            requestId: $requestId,
+            ingestionWarnings: $warnings,
+            context: $context,
+            extra: $extra,
+            createdAt: $createdAt,
+            clientDate: $clientDate,
         );
     }
 
     /**
      * Crée un UUID stable.
+     *
+     * @param array<string, mixed> $payload
      */
     private function createId(
         array $payload,
@@ -124,41 +137,74 @@ final readonly class LogEntryFactory implements LogEntryFactoryInterface
     }
 
     /**
-     * Crée un message sécurisé.
+     * Crée un message robuste.
+     *
+     * @param list<IngestionWarning> $warnings
      */
     private function createMessage(
         array $payload,
+        array &$warnings,
     ): string {
-        $value = $payload['message'] ?? '';
+        $value = $payload['message'] ?? null;
 
         if (is_string($value) === false) {
+            $this->addWarning(
+                warnings: $warnings,
+                field: 'message',
+                type: IngestionWarningType::INVALID_MESSAGE,
+                original: $value,
+                fallback: 'unknown error',
+            );
+
             return 'unknown error';
         }
 
-        $value = trim($value);
+        $value = trim(
+            $value,
+        );
 
         if ($value === '') {
             return 'unknown error';
         }
 
+        if (
+            mb_strlen($value)
+            <= self::MAX_MESSAGE_LENGTH
+        ) {
+            return $value;
+        }
+
+        $this->addWarning(
+            warnings: $warnings,
+            field: 'message',
+            type: IngestionWarningType::MESSAGE_TRUNCATED,
+            original: mb_strlen($value),
+            fallback: self::MAX_MESSAGE_LENGTH,
+        );
+
         return mb_substr(
             $value,
             0,
-            1000,
+            self::MAX_MESSAGE_LENGTH,
         );
     }
 
     /**
-     * Crée un domaine normalisé.
+     * Crée un domaine stable.
+     *
+     * @param list<IngestionWarning> $warnings
      */
     private function createDomain(
         array $payload,
+        array &$warnings,
     ): string {
-        $value = $payload['domain'] ?? 'unknown';
+        $value = $payload['domain'] ?? null;
 
         if (is_string($value) === false) {
             return 'unknown';
         }
+
+        $original = $value;
 
         $value = strtolower(
             trim($value),
@@ -168,85 +214,474 @@ final readonly class LogEntryFactory implements LogEntryFactoryInterface
             return 'unknown';
         }
 
-        return mb_substr(
+        if (
+            mb_strlen($value)
+            <= self::MAX_DOMAIN_LENGTH
+        ) {
+            return $value;
+        }
+
+        $normalized = mb_substr(
             $value,
             0,
-            100,
+            self::MAX_DOMAIN_LENGTH,
         );
+
+        $this->addWarning(
+            warnings: $warnings,
+            field: 'domain',
+            type: IngestionWarningType::DOMAIN_NORMALIZED,
+            original: $original,
+            fallback: $normalized,
+        );
+
+        return $normalized;
     }
 
     /**
-     * Crée un niveau de log robuste.
+     * Crée un niveau robuste.
+     *
+     * @param list<IngestionWarning> $warnings
      */
     private function createLevel(
         array $payload,
+        array &$warnings,
     ): LogLevel {
-        return LogLevel::fromExternal(
-            $payload['level'] ?? null,
-        );
+        $value = $payload['level'] ?? null;
+
+        if ($value === null) {
+            return LogLevel::default();
+        }
+
+        $normalized = is_string($value) ? strtolower(trim($value)) : null;
+        $level = $normalized !== null ? LogLevel::tryFrom($normalized) : null;
+
+        if ($level === null) {
+            $this->addWarning(
+                warnings: $warnings,
+                field: 'level',
+                type: IngestionWarningType::INVALID_LEVEL,
+                original: $value,
+                fallback: LogLevel::ERROR->value,
+            );
+
+            return LogLevel::ERROR;
+        }
+
+        return $level;
     }
 
     /**
      * Crée un environnement robuste.
+     *
+     * @param list<IngestionWarning> $warnings
      */
     private function createEnvironment(
         array $payload,
+        array &$warnings,
     ): Environment {
-        return Environment::fromExternal(
-            $payload['env'] ?? null,
+        $value = $payload['env'] ?? null;
+
+        if ($value === null) {
+            return Environment::Production;
+        }
+
+        $env = Environment::tryFromExternal($value);
+
+        if ($env === null) {
+            $this->addWarning(
+                warnings: $warnings,
+                field: 'env',
+                type: IngestionWarningType::INVALID_ENVIRONMENT,
+                original: $value,
+                fallback: Environment::Production->value,
+            );
+
+            return Environment::Production;
+        }
+
+        return $env;
+    }
+
+    /**
+     * Crée un status HTTP robuste.
+     *
+     * @param list<IngestionWarning> $warnings
+     */
+    private function createHttpStatus(
+        array $payload,
+        array &$warnings,
+    ): HttpStatus {
+        $value = $payload['httpStatus'] ?? null;
+
+        try {
+            return HttpStatus::fromExternal(
+                $value,
+            );
+        } catch (\Throwable) {
+            $this->addWarning(
+                warnings: $warnings,
+                field: 'httpStatus',
+                type: IngestionWarningType::INVALID_HTTP_STATUS,
+                original: $value,
+                fallback: 500,
+            );
+
+            return new HttpStatus(
+                500,
+            );
+        }
+    }
+
+    /**
+     * Crée un client robuste.
+     *
+     * @param list<IngestionWarning> $warnings
+     */
+    private function createClient(
+        array $payload,
+        array &$warnings,
+    ): Client {
+        $value = $payload['client'] ?? null;
+
+        try {
+            return Client::fromExternal(
+                $value,
+            );
+        } catch (\Throwable) {
+            $this->addWarning(
+                warnings: $warnings,
+                field: 'client',
+                type: IngestionWarningType::INVALID_CLIENT,
+                original: $value,
+                fallback: 'unknown',
+            );
+
+            return new Client(
+                'unknown',
+            );
+        }
+    }
+
+    /**
+     * Crée une Request robuste.
+     *
+     * @param list<IngestionWarning> $warnings
+     */
+    private function createRequest(
+        array $payload,
+        array &$warnings,
+    ): Request {
+        $requestPayload = $payload['request'] ?? [];
+
+        if (is_array($requestPayload) === false) {
+            $requestPayload = [];
+        }
+
+        return new Request(
+            uri: $this->createUri(
+                $requestPayload,
+                $payload,
+                $warnings,
+            ),
+
+            method: $this->createMethod(
+                $requestPayload,
+                $payload,
+                $warnings,
+            ),
+
+            userAgent: $this->createUserAgent(
+                $requestPayload,
+                $payload,
+                $warnings,
+            ),
         );
     }
 
     /**
-     * Crée un Request VO robuste.
+     * Crée une URI robuste.
+     *
+     * @param list<IngestionWarning> $warnings
      */
-    private function createRequest(
+    private function createUri(
+        array $requestPayload,
         array $payload,
-    ): Request {
-        return new Request(
-            method: $this->createMethod(
-                $payload,
-            ),
+        array &$warnings,
+    ): Uri {
+        $value = $requestPayload['uri']
+            ?? $payload['uri']
+            ?? '/';
 
-            uri: Uri::fromExternal(
-                $payload['uri'] ?? '/',
-            ),
-        );
+        if (!is_string($value)) {
+            return new Uri('/');
+        }
+
+        try {
+            return new Uri($value);
+        } catch (\Throwable) {
+            $this->addWarning(
+                warnings: $warnings,
+                field: 'uri',
+                type: IngestionWarningType::INVALID_URI,
+                original: $value,
+                fallback: '/',
+            );
+
+            return new Uri('/');
+        }
     }
 
     /**
      * Crée une méthode HTTP stable.
+     *
+     * @param list<IngestionWarning> $warnings
      */
     private function createMethod(
+        array $requestPayload,
         array $payload,
+        array &$warnings,
     ): string {
-        $value = $payload['method'] ?? 'GET';
+        $value = $requestPayload['method']
+            ?? $payload['method']
+            ?? null;
 
         if (is_string($value) === false) {
             return 'GET';
         }
 
+        $original = $value;
+
         $value = strtoupper(
             trim($value),
         );
 
-        if ($value === '') {
+        $value = preg_replace(
+            '/[^A-Z]/',
+            '',
+            $value,
+        );
+
+        if ($value === null || $value === '') {
+            $this->addWarning(
+                warnings: $warnings,
+                field: 'method',
+                type: IngestionWarningType::INVALID_METHOD,
+                original: $original,
+                fallback: 'GET',
+            );
+
             return 'GET';
         }
+
+        if (
+            mb_strlen($value)
+            > self::MAX_METHOD_LENGTH
+        ) {
+            $truncated = mb_substr(
+                $value,
+                0,
+                self::MAX_METHOD_LENGTH,
+            );
+
+            $this->addWarning(
+                warnings: $warnings,
+                field: 'method',
+                type: IngestionWarningType::METHOD_TRUNCATED,
+                original: $original,
+                fallback: $truncated,
+            );
+
+            $value = $truncated;
+        }
+
+        return match ($value) {
+            'GET',
+            'POST',
+            'PUT',
+            'PATCH',
+            'DELETE',
+            'HEAD',
+            'OPTIONS' => $value,
+
+            default => $this->fallbackMethod(
+                original: $original,
+                warnings: $warnings,
+            ),
+        };
+    }
+
+    /**
+     * Crée un User-Agent robuste.
+     *
+     * @param list<IngestionWarning> $warnings
+     */
+    private function createUserAgent(
+        array $requestPayload,
+        array $payload,
+        array &$warnings,
+    ): string {
+        $value = $requestPayload['userAgent']
+            ?? $payload['userAgent']
+            ?? '';
+
+        if (is_string($value) === false) {
+            return '';
+        }
+
+        $value = trim(
+            $value,
+        );
+
+        if ($value === '') {
+            return '';
+        }
+
+        if (
+            mb_strlen($value)
+            <= self::MAX_USER_AGENT_LENGTH
+        ) {
+            return $value;
+        }
+
+        $this->addWarning(
+            warnings: $warnings,
+            field: 'userAgent',
+            type: IngestionWarningType::USER_AGENT_TRUNCATED,
+            original: mb_strlen($value),
+            fallback: self::MAX_USER_AGENT_LENGTH,
+        );
 
         return mb_substr(
             $value,
             0,
-            20,
+            self::MAX_USER_AGENT_LENGTH,
         );
     }
 
     /**
-     * Crée une date robuste.
+     * Crée une IP robuste.
+     *
+     * @param list<IngestionWarning> $warnings
      */
-    private function createDate(
+    private function createIpAddress(
+        array $payload,
+        array &$warnings,
+    ): IpAddress {
+        $value = $payload['ip'] ?? null;
+
+        if (!is_string($value)) {
+            return new IpAddress('127.0.0.1');
+        }
+
+        try {
+            return new IpAddress($value);
+        } catch (\Throwable) {
+            $this->addWarning(
+                warnings: $warnings,
+                field: 'ip',
+                type: IngestionWarningType::INVALID_IP,
+                original: $value,
+                fallback: '127.0.0.1',
+            );
+
+            return new IpAddress('127.0.0.1');
+        }
+    }
+
+    /**
+     * Crée un fingerprint robuste.
+     *
+     * @param list<IngestionWarning> $warnings
+     */
+    private function createFingerprint(
+        array $payload,
+        array &$warnings,
+    ): Fingerprint {
+        $value = $payload['fingerprint'] ?? null;
+
+        if (!is_string($value) || trim($value) === '') {
+            $value = null;
+        }
+
+        try {
+            if ($value === null) {
+                throw new \InvalidArgumentException('No fingerprint provided.');
+            }
+
+            return new Fingerprint($value);
+        } catch (\Throwable) {
+            $generated = substr(
+                sha1(
+                    sprintf(
+                        '%s|%s|%s',
+                        is_string($payload['message'] ?? null) ? $payload['message'] : '',
+                        is_string($payload['domain'] ?? null) ? $payload['domain'] : '',
+                        microtime(true),
+                    ),
+                ),
+                0,
+                16,
+            );
+
+            $this->addWarning(
+                warnings: $warnings,
+                field: 'fingerprint',
+                type: IngestionWarningType::FINGERPRINT_REGENERATED,
+                original: $value,
+                fallback: $generated,
+            );
+
+            return new Fingerprint(
+                $generated,
+            );
+        }
+    }
+
+    /**
+     * Crée un RequestId robuste.
+     *
+     * @param list<IngestionWarning> $warnings
+     */
+    private function createRequestId(
+        array $payload,
+        array &$warnings,
+    ): RequestId {
+        $value = $payload['requestId'] ?? null;
+
+        try {
+            return RequestId::fromNullable(
+                $value,
+            );
+        } catch (\Throwable) {
+            $generated = RequestId::generate();
+
+            $this->addWarning(
+                warnings: $warnings,
+                field: 'requestId',
+                type: IngestionWarningType::INVALID_REQUEST_ID,
+                original: $value,
+                fallback: $generated->value(),
+            );
+
+            return $generated;
+        }
+    }
+
+    /**
+     * Crée une date nullable robuste.
+     *
+     * @param list<IngestionWarning> $warnings
+     */
+    private function createNullableDate(
         mixed $value,
-    ): DateTimeImmutable {
+        string $field,
+        array &$warnings,
+    ): ?DateTimeImmutable {
+        if ($value === null) {
+            return null;
+        }
+
         if ($value instanceof DateTimeImmutable) {
             return $value;
         }
@@ -257,10 +692,21 @@ final readonly class LogEntryFactory implements LogEntryFactoryInterface
                     $value,
                 );
             } catch (\Throwable) {
+                $this->addWarning(
+                    warnings: $warnings,
+                    field: $field,
+                    type: $field === 'createdAt'
+                        ? IngestionWarningType::INVALID_CREATED_AT
+                        : IngestionWarningType::INVALID_CLIENT_DATE,
+                    original: $value,
+                    fallback: null,
+                );
+
+                return null;
             }
         }
 
-        return new DateTimeImmutable();
+        return null;
     }
 
     /**
@@ -271,8 +717,50 @@ final readonly class LogEntryFactory implements LogEntryFactoryInterface
     private function createArray(
         mixed $value,
     ): array {
-        return is_array($value)
-            ? $value
-            : [];
+        if (is_array($value) === false) {
+            return [];
+        }
+
+        return $value;
+    }
+
+    /**
+     * Fallback méthode HTTP.
+     *
+     * @param list<IngestionWarning> $warnings
+     */
+    private function fallbackMethod(
+        mixed $original,
+        array &$warnings,
+    ): string {
+        $this->addWarning(
+            warnings: $warnings,
+            field: 'method',
+            type: IngestionWarningType::INVALID_METHOD,
+            original: $original,
+            fallback: 'GET',
+        );
+
+        return 'GET';
+    }
+
+    /**
+     * Ajoute un warning ingestion.
+     *
+     * @param list<IngestionWarning> $warnings
+     */
+    private function addWarning(
+        array &$warnings,
+        string $field,
+        IngestionWarningType $type,
+        mixed $original,
+        mixed $fallback,
+    ): void {
+        $warnings[] = new IngestionWarning(
+            field: $field,
+            type: $type,
+            original: $original,
+            fallback: $fallback,
+        );
     }
 }

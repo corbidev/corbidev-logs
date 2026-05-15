@@ -92,7 +92,7 @@ Les futures versions devront :
 
     "trace": [
       {
-        "file": "/src/Controller/CheckoutController.php",
+        "file": "/src/Ingestion/Application/LogIngestionHandler.php",
         "line": 88,
         "function": "pay"
       }

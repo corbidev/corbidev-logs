@@ -25,6 +25,12 @@ use stdClass;
 final class UriTest extends TestCase
 {
     #[DataProvider('provideValidUris')]
+    /**
+     * But : Vérifier que Uri accepte des URIs valides.
+     *
+     * Entrée : Cas fournis par le DataProvider `provideValidUris()`
+     * Résultat attendu : Uri créée sans exception
+     */
     public function testItCreatesValidUri(
         string $input,
         string $expected,
@@ -38,6 +44,12 @@ final class UriTest extends TestCase
     }
 
     #[DataProvider('provideInvalidUris')]
+    /**
+     * But : Vérifier que Uri rejette les URIs invalides.
+     *
+     * Entrée : Cas fournis par le DataProvider `provideInvalidUris()`
+     * Résultat attendu : InvalidUriException est levée
+     */
     public function testItRejectsInvalidUri(
         string $input,
     ): void {
@@ -48,6 +60,12 @@ final class UriTest extends TestCase
         new Uri($input);
     }
 
+    /**
+     * But : Vérifier que fromExternal() crée une Uri depuis une string externe.
+     *
+     * Entrée : '/api/logs'
+     * Résultat attendu : Uri avec valeur '/api/logs'
+     */
     public function testItCreatesUriFromExternalString(): void
     {
         $uri = Uri::fromExternal('/orders');
@@ -58,6 +76,12 @@ final class UriTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne '/' pour null.
+     *
+     * Entrée : null
+     * Résultat attendu : '/'
+     */
     public function testItFallsBackToRootForNull(): void
     {
         $uri = Uri::fromExternal(null);
@@ -68,6 +92,12 @@ final class UriTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne '/' pour un type invalide.
+     *
+     * Entrée : ['invalid'] (tableau)
+     * Résultat attendu : '/'
+     */
     public function testItFallsBackToRootForInvalidType(): void
     {
         $uri = Uri::fromExternal(
@@ -80,6 +110,12 @@ final class UriTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne '/' pour une URI dépassant la longueur max.
+     *
+     * Entrée : URI de 2001 caractères
+     * Résultat attendu : '/'
+     */
     public function testItFallsBackToRootForInvalidUri(): void
     {
         $uri = Uri::fromExternal(
@@ -92,6 +128,12 @@ final class UriTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la query string est supprimée de l'URI.
+     *
+     * Entrée : '/orders?page=1&sort=asc'
+     * Résultat attendu : '/orders'
+     */
     public function testItRemovesQueryString(): void
     {
         $uri = new Uri(
@@ -104,6 +146,12 @@ final class UriTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le fragment est supprimé de l'URI.
+     *
+     * Entrée : '/orders#section1'
+     * Résultat attendu : '/orders'
+     */
     public function testItRemovesFragment(): void
     {
         $uri = new Uri(
@@ -116,6 +164,12 @@ final class UriTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les slashes doublons dans l'URI sont normalisés.
+     *
+     * Entrée : '//orders//billing'
+     * Résultat attendu : '/orders/billing'
+     */
     public function testItNormalizesDuplicateSlashes(): void
     {
         $uri = new Uri(
@@ -128,6 +182,12 @@ final class UriTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() extrait le path d'une URL complète.
+     *
+     * Entrée : 'https://api.example.com/orders?page=1'
+     * Résultat attendu : '/orders'
+     */
     public function testItNormalizesFullUrl(): void
     {
         $uri = new Uri(
@@ -140,6 +200,12 @@ final class UriTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le slash initial est ajouté si absent.
+     *
+     * Entrée : 'orders/billing'
+     * Résultat attendu : '/orders/billing'
+     */
     public function testItNormalizesMissingLeadingSlash(): void
     {
         $uri = new Uri(
@@ -152,6 +218,12 @@ final class UriTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne '/' pour une chaîne vide.
+     *
+     * Entrée : ''
+     * Résultat attendu : '/'
+     */
     public function testItNormalizesEmptyStringToRoot(): void
     {
         $uri = new Uri('');
@@ -162,6 +234,12 @@ final class UriTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isRoot() retourne true pour '/'.
+     *
+     * Entrée : '/'
+     * Résultat attendu : isRoot() = true
+     */
     public function testItDetectsRootUri(): void
     {
         $uri = new Uri('/');
@@ -175,6 +253,12 @@ final class UriTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que isRoot() retourne false pour une URI avec des segments.
+     *
+     * Entrée : '/orders/billing'
+     * Résultat attendu : isRoot() = false
+     */
     public function testItDetectsUriWithSegments(): void
     {
         $uri = new Uri('/orders/create');
@@ -188,6 +272,12 @@ final class UriTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que segments() retourne les segments de l'URI.
+     *
+     * Entrée : '/orders/billing/123'
+     * Résultat attendu : ['orders', 'billing', '123']
+     */
     public function testItReturnsSegments(): void
     {
         $uri = new Uri('/orders/create');
@@ -201,6 +291,12 @@ final class UriTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que segments() retourne un tableau vide pour '/'.
+     *
+     * Entrée : '/'
+     * Résultat attendu : []
+     */
     public function testItReturnsEmptySegmentsForRoot(): void
     {
         $uri = new Uri('/');
@@ -211,6 +307,12 @@ final class UriTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que equals() compare correctement deux Uri.
+     *
+     * Entrée : Uri('/orders') vs Uri('/orders'), puis vs Uri('/billing')
+     * Résultat attendu : equals() = true / false
+     */
     public function testItComparesUris(): void
     {
         $left = new Uri('/orders');
@@ -226,6 +328,12 @@ final class UriTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que la conversion en string retourne la valeur de l'URI.
+     *
+     * Entrée : Uri('/orders')
+     * Résultat attendu : (string) Uri = '/orders'
+     */
     public function testItReturnsStableStringRepresentation(): void
     {
         $uri = new Uri('/orders');
@@ -236,6 +344,12 @@ final class UriTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les caractères encodés en URL sont décodés dans l'URI.
+     *
+     * Entrée : '/orders%2Fbilling'
+     * Résultat attendu : '/orders/billing'
+     */
     public function testItDecodesEncodedCharacters(): void
     {
         $uri = new Uri(
@@ -248,6 +362,12 @@ final class UriTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier qu'une URI de 2 000 caractères (longueur maximale) est acceptée.
+     *
+     * Entrée : '/' . str_repeat('a', 1999)
+     * Résultat attendu : Uri créée sans exception
+     */
     public function testItSupportsMaximumLengthBoundary(): void
     {
         $path = '/' . str_repeat('a', 2047);
@@ -260,6 +380,12 @@ final class UriTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que Uri rejette une URI dépassant 2 000 caractères.
+     *
+     * Entrée : '/' . str_repeat('a', 2000)
+     * Résultat attendu : InvalidUriException est levée
+     */
     public function testItRejectsUriExceedingMaximumLength(): void
     {
         $this->expectException(
@@ -278,6 +404,12 @@ final class UriTest extends TestCase
      * - aucun crash
      * - aucune exception
      * - toujours un Uri valide
+     */
+    /**
+     * But : Vérifier que fromExternal() ne lève jamais d'exception avec des inputs hostiles.
+     *
+     * Entrée : 18 inputs hostiles variés
+     * Résultat attendu : Aucune exception levée
      */
     public function testItNeverThrowsFromExternal(): void
     {
@@ -317,6 +449,12 @@ final class UriTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne toujours une Uri valide.
+     *
+     * Entrée : 12 inputs variés
+     * Résultat attendu : Valeur non vide commençant par '/'
+     */
     public function testFromExternalAlwaysReturnsValidUri(): void
     {
         $resource = fopen('php://memory', 'r');
@@ -363,6 +501,12 @@ final class UriTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que fromExternal() retourne '/' pour les payloads hostiles.
+     *
+     * Entrée : 8 inputs hostiles (injections, path traversal, etc.)
+     * Résultat attendu : '/' pour chaque input
+     */
     public function testItFallsBackToRootForHostilePayloads(): void
     {
         $inputs = [
@@ -382,6 +526,12 @@ final class UriTest extends TestCase
         }
     }
 
+    /**
+     * But : Vérifier que fromExternal() ne crashe pas avec une URI de 5 000 caractères.
+     *
+     * Entrée : '/' . str_repeat('segment/', 5000)
+     * Résultat attendu : '/' retourné, aucune exception
+     */
     public function testItHandlesHugePayloadWithoutCrash(): void
     {
         $payload = '/' . str_repeat('a', 1000000);
@@ -394,6 +544,12 @@ final class UriTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() accepte un payload binaire sans crash.
+     *
+     * Entrée : "\x00\x01\x02"
+     * Résultat attendu : Uri créée ou fallback '/', aucune exception
+     */
     public function testItHandlesBinaryPayload(): void
     {
         $uri = Uri::fromExternal(
@@ -406,6 +562,12 @@ final class UriTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que fromExternal() accepte de l'UTF-8 invalide sans crash.
+     *
+     * Entrée : hex2bin('b131')
+     * Résultat attendu : Uri créée ou fallback '/', aucune exception
+     */
     public function testItHandlesInvalidUtf8Payload(): void
     {
         $uri = Uri::fromExternal(

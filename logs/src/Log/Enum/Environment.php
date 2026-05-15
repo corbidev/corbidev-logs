@@ -148,6 +148,46 @@ enum Environment: string
     }
 
     /**
+     * Tente de résoudre un environnement depuis une valeur externe.
+     *
+     * Retourne null si la valeur est invalide ou inconnue.
+     * Ne lève jamais d'exception.
+     */
+    public static function tryFromExternal(
+        mixed $value,
+    ): ?self {
+        if (is_string($value) === false) {
+            return null;
+        }
+
+        $normalized = self::normalize($value);
+
+        return match ($normalized) {
+            'prod',
+            'production',
+            'live' => self::Production,
+
+            'staging',
+            'stage',
+            'preprod',
+            'pre-production',
+            'preproduction' => self::Staging,
+
+            'dev',
+            'development',
+            'local',
+            'localhost' => self::Development,
+
+            'test',
+            'testing',
+            'ci',
+            'tests' => self::Test,
+
+            default => null,
+        };
+    }
+
+    /**
      * Normalise une valeur externe.
      *
      * Règles :

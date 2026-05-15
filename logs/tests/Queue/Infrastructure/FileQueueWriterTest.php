@@ -34,6 +34,12 @@ final class FileQueueWriterTest extends TestCase
         $this->removeDirectory($this->baseDirectory);
     }
 
+    /**
+     * But : Vérifier que write() crée un fichier JSON lisible contenant le payload.
+     *
+     * Entrée : payload=['message', 'level', 'domain']
+     * Résultat attendu : Fichier existant, JSON décodé identique au payload
+     */
     public function test_it_writes_valid_queue_file(): void
     {
         $writer = $this->createWriter();
@@ -65,6 +71,12 @@ final class FileQueueWriterTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que write() crée tous les répertoires nécessaires (logs, processing, etc.).
+     *
+     * Entrée : write(['message' => 'test'])
+     * Résultat attendu : Répertoires logs, processing, corrupted, failed, tmp créés
+     */
     public function test_it_creates_required_directories(): void
     {
         $writer = $this->createWriter();
@@ -94,6 +106,12 @@ final class FileQueueWriterTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le fichier écrit a bien l'extension .json.
+     *
+     * Entrée : write(['message' => 'hello'])
+     * Résultat attendu : Chemin retourné se termine par '.json'
+     */
     public function test_it_generates_json_file(): void
     {
         $writer = $this->createWriter();
@@ -108,6 +126,12 @@ final class FileQueueWriterTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le contenu écrit est du JSON valide encodé en UTF-8.
+     *
+     * Entrée : write(['message' => 'UTF-8 éèà'])
+     * Résultat attendu : json_last_error() = JSON_ERROR_NONE
+     */
     public function test_it_writes_valid_json(): void
     {
         $writer = $this->createWriter();
@@ -133,8 +157,18 @@ final class FileQueueWriterTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que les permissions Unix 0664 sont appliquées au fichier créé.
+     *
+     * Entrée : write(['message' => 'permissions']) sur Linux/macOS
+     * Résultat attendu : fileperms() & 0777 = 0664 (test ignoré sur Windows)
+     */
     public function test_it_applies_file_permissions(): void
     {
+        if (PHP_OS_FAMILY === 'Windows') {
+            $this->markTestSkipped('Les permissions Unix (chmod) ne sont pas fiables sur Windows.');
+        }
+
         $writer = $this->createWriter();
 
         $path = $writer->write([
@@ -149,6 +183,12 @@ final class FileQueueWriterTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que 100 appels à write() produisent 100 fichiers avec des chemins uniques.
+     *
+     * Entrée : 100 appels à write()
+     * Résultat attendu : 100 chemins distincts dans array_unique()
+     */
     public function test_it_generates_unique_files(): void
     {
         $writer = $this->createWriter();
@@ -167,6 +207,12 @@ final class FileQueueWriterTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le contenu du fichier est identique au payload original (intégrité).
+     *
+     * Entrée : payload avec tableau imbriqué ['context' => ['user' => 123, 'tags' => [...]]]
+     * Résultat attendu : JSON décodé identique au payload d'entrée
+     */
     public function test_it_preserves_payload_integrity(): void
     {
         $writer = $this->createWriter();
@@ -198,6 +244,12 @@ final class FileQueueWriterTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que 500 écritures produisent 500 fichiers sans collision de noms.
+     *
+     * Entrée : 500 appels à write() avec messages distincts
+     * Résultat attendu : count(glob(logs/*.json)) = 500
+     */
     public function test_it_writes_multiple_files_without_collision(): void
     {
         $writer = $this->createWriter();
@@ -220,6 +272,12 @@ final class FileQueueWriterTest extends TestCase
         );
     }
 
+    /**
+     * But : Vérifier que le répertoire tmp est vide après une écriture réussie.
+     *
+     * Entrée : write(['message' => 'cleanup'])
+     * Résultat attendu : count(glob(tmp/*)) = 0
+     */
     public function test_it_does_not_leave_temporary_files_after_success(): void
     {
         $writer = $this->createWriter();

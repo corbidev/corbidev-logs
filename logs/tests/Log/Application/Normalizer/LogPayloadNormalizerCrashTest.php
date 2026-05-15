@@ -48,8 +48,10 @@ final class LogPayloadNormalizerCrashTest extends TestCase
     }
 
     /**
-     * Vérifie qu'un niveau de log invalide
-     * est remplacé par la valeur fallback.
+     * But : Vérifier qu'un niveau de log invalide est remplacé par la valeur fallback.
+     *
+     * Entrée : payload['level'] = 'LOL'
+     * Résultat attendu : normalized['level'] = 'error'
      */
     public function testInvalidLevelFallback(): void
     {
@@ -68,8 +70,10 @@ final class LogPayloadNormalizerCrashTest extends TestCase
     }
 
     /**
-     * Vérifie qu'un status HTTP invalide
-     * est remplacé par la valeur fallback.
+     * But : Vérifier qu'un status HTTP invalide est remplacé par 500.
+     *
+     * Entrée : payload['httpStatus'] = 'abc'
+     * Résultat attendu : normalized['httpStatus'] = 500
      */
     public function testInvalidHttpStatusFallback(): void
     {
@@ -88,8 +92,10 @@ final class LogPayloadNormalizerCrashTest extends TestCase
     }
 
     /**
-     * Vérifie qu'un externalId invalide
-     * génère automatiquement un UUID v7 valide.
+     * But : Vérifier qu'un externalId invalide est remplacé par un UUID v7 généré.
+     *
+     * Entrée : payload['externalId'] = 'invalid-id'
+     * Résultat attendu : normalized['externalId'] correspond à /^[0-9a-fA-F-]{36}$/
      */
     public function testInvalidExternalIdGeneratesNewUuid(): void
     {
@@ -108,8 +114,10 @@ final class LogPayloadNormalizerCrashTest extends TestCase
     }
 
     /**
-     * Vérifie qu'un requestId invalide
-     * est automatiquement régénéré.
+     * But : Vérifier qu'un requestId invalide est régénéré avec le préfixe 'req_'.
+     *
+     * Entrée : payload['requestId'] = '@@@@@@@'
+     * Résultat attendu : normalized['requestId'] != '@@@@@@@', commence par 'req_'
      */
     public function testInvalidRequestIdGeneratesNewOne(): void
     {
@@ -133,14 +141,10 @@ final class LogPayloadNormalizerCrashTest extends TestCase
     }
 
     /**
-     * Vérifie qu'une chaîne trop longue
-     * est automatiquement tronquée.
+     * But : Vérifier qu'une chaîne très longue est tronquée.
      *
-     * Cela protège :
-     * - la mémoire,
-     * - les performances,
-     * - la taille des payloads,
-     * - les écritures disque.
+     * Entrée : payload['message'] = str_repeat('A', 10000)
+     * Résultat attendu : mb_strlen(normalized['message']) <= 1000
      */
     public function testHugeStringIsTruncated(): void
     {
@@ -162,14 +166,10 @@ final class LogPayloadNormalizerCrashTest extends TestCase
     }
 
     /**
-     * Vérifie qu'un tableau trop volumineux
-     * est limité automatiquement.
+     * But : Vérifier qu'un tableau trop volumineux est limité à 50 entrées.
      *
-     * Cela protège :
-     * - mémoire,
-     * - CPU,
-     * - taille des logs,
-     * - stabilité du pipeline.
+     * Entrée : payload['context'] = range(1, 1000)
+     * Résultat attendu : count(normalized['context']) = 50
      */
     public function testHugeArrayIsLimited(): void
     {
@@ -188,8 +188,10 @@ final class LogPayloadNormalizerCrashTest extends TestCase
     }
 
     /**
-     * Vérifie qu'un context invalide
-     * retourne toujours un tableau.
+     * But : Vérifier qu'une valeur non-tableau pour context est convertie en tableau vide.
+     *
+     * Entrée : payload['context'] = 'invalid'
+     * Résultat attendu : is_array(normalized['context']) = true
      */
     public function testInvalidContextTypeReturnsArray(): void
     {
@@ -207,8 +209,10 @@ final class LogPayloadNormalizerCrashTest extends TestCase
     }
 
     /**
-     * Vérifie qu'un extra invalide
-     * retourne toujours un tableau.
+     * But : Vérifier qu'une valeur non-tableau pour extra est convertie en tableau vide.
+     *
+     * Entrée : payload['extra'] = 123
+     * Résultat attendu : is_array(normalized['extra']) = true
      */
     public function testInvalidExtraTypeReturnsArray(): void
     {
@@ -226,8 +230,10 @@ final class LogPayloadNormalizerCrashTest extends TestCase
     }
 
     /**
-     * Vérifie qu'un tags invalide
-     * retourne toujours un tableau.
+     * But : Vérifier qu'une valeur non-tableau pour tags est convertie en tableau vide.
+     *
+     * Entrée : payload['tags'] = false
+     * Résultat attendu : is_array(normalized['tags']) = true
      */
     public function testInvalidTagsTypeReturnsArray(): void
     {
@@ -245,8 +251,10 @@ final class LogPayloadNormalizerCrashTest extends TestCase
     }
 
     /**
-     * Vérifie qu'un payload vide
-     * ne provoque jamais d'erreur fatale.
+     * But : Vérifier que normalize([]) ne lève aucune exception et retourne un tableau.
+     *
+     * Entrée : Tableau vide []
+     * Résultat attendu : is_array(normalized) = true
      */
     public function testNullPayloadDoesNotCrash(): void
     {
@@ -258,14 +266,10 @@ final class LogPayloadNormalizerCrashTest extends TestCase
     }
 
     /**
-     * Vérifie qu'une structure récursive
-     * ne provoque jamais de crash.
+     * But : Vérifier qu'une structure récursive ne provoque aucun crash.
      *
-     * Ce test protège contre :
-     * - récursions infinies,
-     * - dépassements mémoire,
-     * - stack overflows,
-     * - payloads hostiles.
+     * Entrée : payload avec référence circulaire $payload['recursive'] = &$payload
+     * Résultat attendu : is_array(normalized) = true, aucune exception
      */
     public function testRecursivePayloadDoesNotCrash(): void
     {
@@ -281,8 +285,10 @@ final class LogPayloadNormalizerCrashTest extends TestCase
     }
 
     /**
-     * Vérifie qu'une URI invalide
-     * retourne une valeur fallback sûre.
+     * But : Vérifier qu'une URI invalide est remplacée par '/'.
+     *
+     * Entrée : payload['request']['uri'] = 12345
+     * Résultat attendu : normalized['request']['uri'] = '/'
      */
     public function testInvalidUriFallback(): void
     {
@@ -303,13 +309,10 @@ final class LogPayloadNormalizerCrashTest extends TestCase
     }
 
     /**
-     * Vérifie qu'une query string
-     * est supprimée de l'URI.
+     * But : Vérifier que la query string est supprimée de l'URI normalisée.
      *
-     * Cela protège :
-     * - les fingerprints,
-     * - les données sensibles,
-     * - les tokens.
+     * Entrée : payload['request']['uri'] = '/checkout?token=secret'
+     * Résultat attendu : normalized['request']['uri'] = '/checkout'
      */
     public function testUriQueryStringIsRemoved(): void
     {
@@ -330,8 +333,10 @@ final class LogPayloadNormalizerCrashTest extends TestCase
     }
 
     /**
-     * Vérifie qu'une exception invalide
-     * ne provoque jamais de crash.
+     * But : Vérifier qu'une structure d'exception invalide ne provoque aucun crash.
+     *
+     * Entrée : payload['exception'] = 'boom'
+     * Résultat attendu : is_array(normalized['exception']) = true
      */
     public function testInvalidExceptionStructureDoesNotCrash(): void
     {
@@ -349,8 +354,10 @@ final class LogPayloadNormalizerCrashTest extends TestCase
     }
 
     /**
-     * Vérifie qu'une stacktrace énorme
-     * est automatiquement limitée.
+     * But : Vérifier qu'une stacktrace de 1 000 entrées est limitée à 50.
+     *
+     * Entrée : payload['exception']['trace'] = [1000 entrées]
+     * Résultat attendu : count(normalized['exception']['trace']) = 50
      */
     public function testHugeTraceIsLimited(): void
     {
@@ -380,8 +387,10 @@ final class LogPayloadNormalizerCrashTest extends TestCase
     }
 
     /**
-     * Vérifie qu'une date client invalide
-     * est ignorée proprement.
+     * But : Vérifier qu'une date client invalide est ignorée (null retorné).
+     *
+     * Entrée : payload['clientDate'] = 'not-a-date'
+     * Résultat attendu : normalized['clientDate'] = null
      */
     public function testInvalidClientDateDoesNotCrash(): void
     {
@@ -399,8 +408,10 @@ final class LogPayloadNormalizerCrashTest extends TestCase
     }
 
     /**
-     * Vérifie qu'un objet sans __toString()
-     * est sécurisé proprement.
+     * But : Vérifier qu'un objet sans __toString() dans context est converti en chaîne '[OBJECT...]'.
+     *
+     * Entrée : payload['context']['object'] = new \stdClass()
+     * Résultat attendu : normalized['context']['object'] contient '[OBJECT'
      */
     public function testObjectWithoutToStringDoesNotCrash(): void
     {
@@ -421,8 +432,10 @@ final class LogPayloadNormalizerCrashTest extends TestCase
     }
 
     /**
-     * Vérifie qu'un UTF8 invalide
-     * ne provoque jamais de crash.
+     * But : Vérifier que du contenu UTF-8 invalide dans le payload ne provoque aucun crash.
+     *
+     * Entrée : payload['message'] = "\xB1\x31"
+     * Résultat attendu : is_string(normalized['message']) = true
      */
     public function testInvalidUtf8DoesNotCrash(): void
     {
@@ -440,8 +453,10 @@ final class LogPayloadNormalizerCrashTest extends TestCase
     }
 
     /**
-     * Vérifie que les données sensibles
-     * sont toujours filtrées.
+     * But : Vérifier que les clés sensibles (password, token) sont toujours masquées.
+     *
+     * Entrée : payload['context']['password'] = 'secret', ['token'] = '123456'
+     * Résultat attendu : normalized['context']['password'] = '[FILTERED]', normalized['context']['token'] = '[FILTERED]'
      */
     public function testSensitiveDataIsFiltered(): void
     {
@@ -468,8 +483,10 @@ final class LogPayloadNormalizerCrashTest extends TestCase
     }
 
     /**
-     * Vérifie que createdAt
-     * utilise bien l'horloge injectée.
+     * But : Vérifier que createdAt utilise l'horloge injectée (MockClock).
+     *
+     * Entrée : MockClock fixée au 2026-01-01T00:00:00+00:00
+     * Résultat attendu : normalized['createdAt'] = '2026-01-01T00:00:00+00:00'
      */
     public function testCreatedAtUsesInjectedClock(): void
     {

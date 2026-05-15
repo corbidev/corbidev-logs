@@ -1,0 +1,52 @@
+# 1. SUPPRIMER
+
+AUCUN
+
+
+# 2. CREER
+
+✅ src/Log/Domain/ValueObject/IngestionWarning.php
+
+✅ src/Log/Enum/IngestionWarningType.php
+
+
+# 3. MODIFIER
+
+✅ src/Log/Domain/Entity/LogEntry.php
+
+✅ src/Log/Application/Factory/LogEntryFactory.php
+
+✅ src/Persistence/Infrastructure/Entity/LogRecordEntity.php
+
+✅ src/Persistence/Infrastructure/Mapper/LogEntryToRecordMapper.php
+
+src/Persistence/Infrastructure/Doctrine/DoctrineLogWriter.php
+
+src/Persistence/Infrastructure/Doctrine/DoctrineLogPersister.php
+
+migrations/*
+
+✅ tests/Shared/Factory/LogEntryFactory.php
+
+✅ tests/Shared/Factory/LogEntryFactoryTest.php
+
+✅ tests/Shared/Factory/LogEntryFactoryCrashTest.php
+
+✅ tests/Unit/Log/Application/Factory/LogEntryFactoryCrashTest.php
+
+✅ tests/Unit/Log/Application/Factory/LogEntryFactoryTest.php
+
+
+----
+
+✅ src/Persistence/Infrastructure/Entity/LogRecord.php
+
+✅ src/Log/Enum/IngestionWarningType.php
+
+✅ src/Log/Domain/Exception/InvalidLogEntryException.php
+
+✅ src/Log/Application/Factory/LogEntryFactory.php
+
+✅ src/Log/Domain/ValueObject/IpAddress.php
+
+✅ tests/Shared/Factory/LogEntryFactory.php

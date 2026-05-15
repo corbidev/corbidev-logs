@@ -8,9 +8,10 @@ use App\Log\Domain\Exception\InvalidLogEntryException;
 use App\Log\Domain\ValueObject\Client;
 use App\Log\Domain\ValueObject\Fingerprint;
 use App\Log\Domain\ValueObject\HttpStatus;
+use App\Log\Domain\ValueObject\IngestionWarning;
 use App\Log\Domain\ValueObject\IpAddress;
 use App\Log\Domain\ValueObject\Request;
-use App\Log\Domain\ValueObject\Tags;
+use App\Log\Domain\ValueObject\RequestId;
 use App\Log\Enum\Environment;
 use App\Log\Enum\LogLevel;
 use DateTimeImmutable;
@@ -19,20 +20,44 @@ use Symfony\Component\Uid\Uuid;
 /**
  * Représente un log immutable valide.
  *
- * Source de vérité du système.
+ * SOURCE DE VÉRITÉ :
+ * ------------------
+ * LogEntry représente l'événement métier
+ * central du système de logs.
  *
- * Responsabilités :
- * - encapsuler un événement de log complet
- * - garantir les invariants métier
- * - fournir une structure stable
- * - protéger le domaine des données hostiles
+ * RESPONSABILITÉS :
+ * -----------------
+ * - encapsuler un log valide
+ * - protéger les invariants métier
+ * - garantir une structure stable
+ * - fournir une représentation immutable
+ * - empêcher les états incohérents
  *
- * Invariants :
+ * OBJECTIFS :
+ * -----------
+ * - robustesse
+ * - simplicité
+ * - prédictibilité
+ * - stabilité long terme
+ *
+ * GARANTIES :
+ * -----------
  * - toujours valide
  * - immutable
- * - données normalisées
- * - message jamais vide
+ * - message normalisé
+ * - domaine normalisé
  * - fingerprint toujours présent
+ * - requestId toujours présent
+ * - aucune dépendance Symfony métier
+ * - aucun état partiel
+ *
+ * IMPORTANT :
+ * ------------
+ * LogEntry représente l'état FINAL valide
+ * après ingestion et normalisation.
+ *
+ * Les anomalies ingestion éventuelles
+ * sont conservées dans ingestionWarnings.
  */
 final readonly class LogEntry
 {
@@ -42,9 +67,15 @@ final readonly class LogEntry
     private const MAX_MESSAGE_LENGTH = 1000;
 
     /**
-     * Identifiant unique externe.
+     * Taille maximale du domaine.
      */
-    private string $id;
+    private const MAX_DOMAIN_LENGTH = 100;
+
+    /**
+     * Identifiant externe unique.
+     */
+    private string $externalId;
+
 
     /**
      * Message principal.
@@ -52,7 +83,7 @@ final readonly class LogEntry
     private string $message;
 
     /**
-     * Niveau de log.
+     * Niveau du log.
      */
     private LogLevel $level;
 
@@ -77,12 +108,17 @@ final readonly class LogEntry
     private Client $client;
 
     /**
+     * Identifiant de corrélation requête.
+     */
+    private RequestId $requestId;
+
+    /**
      * Requête HTTP.
      */
     private Request $request;
 
     /**
-     * Adresse IP.
+     * Adresse IP source.
      */
     private IpAddress $ipAddress;
 
@@ -92,9 +128,11 @@ final readonly class LogEntry
     private Fingerprint $fingerprint;
 
     /**
-     * Tags normalisés.
+     * Warnings ingestion.
+     *
+     * @var list<IngestionWarning>
      */
-    private Tags $tags;
+    private array $ingestionWarnings;
 
     /**
      * Contexte libre.
@@ -121,6 +159,7 @@ final readonly class LogEntry
     private ?DateTimeImmutable $clientDate;
 
     /**
+     * @param list<IngestionWarning> $ingestionWarnings
      * @param array<string, mixed> $context
      * @param array<string, mixed> $extra
      *
@@ -136,13 +175,15 @@ final readonly class LogEntry
         Request $request,
         IpAddress $ipAddress,
         Fingerprint $fingerprint,
-        Tags $tags,
+        RequestId $requestId,
+        array $ingestionWarnings = [],
         array $context = [],
         array $extra = [],
         ?DateTimeImmutable $clientDate = null,
         ?DateTimeImmutable $createdAt = null,
-        ?string $id = null,
+        ?string $externalId = null,
     ) {
+
         $message = $this->normalizeMessage(
             $message,
         );
@@ -151,9 +192,21 @@ final readonly class LogEntry
             $domain,
         );
 
-        $this->guardMessage($message);
+        $this->guardMessage(
+            $message,
+        );
 
-        $this->guardDomain($domain);
+        $this->guardDomain(
+            $domain,
+        );
+
+        $this->guardWarnings(
+            $ingestionWarnings,
+        );
+
+        $this->externalId = $this->buildExternalId(
+            $externalId,
+        );
 
         $this->message = $message;
         $this->level = $level;
@@ -164,29 +217,27 @@ final readonly class LogEntry
         $this->request = $request;
         $this->ipAddress = $ipAddress;
         $this->fingerprint = $fingerprint;
-        $this->tags = $tags;
+        $this->requestId = $requestId;
+        $this->ingestionWarnings = $ingestionWarnings;
         $this->context = $context;
         $this->extra = $extra;
         $this->clientDate = $clientDate;
         $this->createdAt = $createdAt
             ?? new DateTimeImmutable();
-
-        $this->id = $id
-            ?? Uuid::v7()->toRfc4122();
     }
 
-    /**
-     * Retourne l'identifiant unique.
+        /**
+     * Retourne l'identifiant externe.
      */
-    public function id(): string
+    public function getExternalId(): string
     {
-        return $this->id;
+        return $this->externalId;
     }
 
     /**
      * Retourne le message.
      */
-    public function message(): string
+    public function getMessage(): string
     {
         return $this->message;
     }
@@ -194,7 +245,7 @@ final readonly class LogEntry
     /**
      * Retourne le niveau.
      */
-    public function level(): LogLevel
+    public function getLevel(): LogLevel
     {
         return $this->level;
     }
@@ -202,7 +253,7 @@ final readonly class LogEntry
     /**
      * Retourne le domaine.
      */
-    public function domain(): string
+    public function getDomain(): string
     {
         return $this->domain;
     }
@@ -210,7 +261,7 @@ final readonly class LogEntry
     /**
      * Retourne l'environnement.
      */
-    public function environment(): Environment
+    public function getEnvironment(): Environment
     {
         return $this->environment;
     }
@@ -218,7 +269,7 @@ final readonly class LogEntry
     /**
      * Retourne le status HTTP.
      */
-    public function httpStatus(): HttpStatus
+    public function getHttpStatus(): HttpStatus
     {
         return $this->httpStatus;
     }
@@ -226,15 +277,23 @@ final readonly class LogEntry
     /**
      * Retourne le client.
      */
-    public function client(): Client
+    public function getClient(): Client
     {
         return $this->client;
     }
 
     /**
-     * Retourne la requête.
+     * Retourne l'identifiant de requête.
      */
-    public function request(): Request
+    public function getRequestId(): RequestId
+    {
+        return $this->requestId;
+    }
+
+    /**
+     * Retourne la requête HTTP.
+     */
+    public function getRequest(): Request
     {
         return $this->request;
     }
@@ -242,7 +301,7 @@ final readonly class LogEntry
     /**
      * Retourne l'adresse IP.
      */
-    public function ipAddress(): IpAddress
+    public function getIpAddress(): IpAddress
     {
         return $this->ipAddress;
     }
@@ -250,31 +309,45 @@ final readonly class LogEntry
     /**
      * Retourne le fingerprint.
      */
-    public function fingerprint(): Fingerprint
+    public function getFingerprint(): Fingerprint
     {
         return $this->fingerprint;
     }
 
     /**
-     * Retourne les tags.
+     * Retourne les warnings ingestion.
+     *
+     * @return list<IngestionWarning>
      */
-    public function tags(): Tags
+    public function getIngestionWarnings(): array
     {
-        return $this->tags;
+        return $this->ingestionWarnings;
     }
 
     /**
+     * Vérifie la présence de warnings ingestion.
+     */
+    public function hasIngestionWarnings(): bool
+    {
+        return $this->ingestionWarnings !== [];
+    }
+
+    /**
+     * Retourne le contexte.
+     *
      * @return array<string, mixed>
      */
-    public function context(): array
+    public function getContext(): array
     {
         return $this->context;
     }
 
     /**
+     * Retourne les données supplémentaires.
+     *
      * @return array<string, mixed>
      */
-    public function extra(): array
+    public function getExtra(): array
     {
         return $this->extra;
     }
@@ -282,7 +355,7 @@ final readonly class LogEntry
     /**
      * Retourne la date serveur.
      */
-    public function createdAt(): DateTimeImmutable
+    public function getCreatedAt(): DateTimeImmutable
     {
         return $this->createdAt;
     }
@@ -290,13 +363,13 @@ final readonly class LogEntry
     /**
      * Retourne la date client.
      */
-    public function clientDate(): ?DateTimeImmutable
+    public function getClientDate(): ?DateTimeImmutable
     {
         return $this->clientDate;
     }
 
     /**
-     * Vérifie si le log est une erreur.
+     * Vérifie si le log représente une erreur.
      */
     public function isError(): bool
     {
@@ -310,35 +383,58 @@ final readonly class LogEntry
     public function equals(
         self $other,
     ): bool {
-        return $this->id === $other->id;
+        return $this->externalId === $other->externalId;
     }
 
     /**
-     * Snapshot sérialisable.
+     * Retourne une représentation sérialisable stable.
      *
      * @return array<string, mixed>
      */
     public function toArray(): array
     {
         return [
-            'id' => $this->id,
+            'externalId' => $this->externalId,
+
             'message' => $this->message,
+
             'level' => $this->level->value,
+
             'domain' => $this->domain,
+
             'environment' => $this->environment->value,
+
             'httpStatus' => $this->httpStatus->value(),
+
             'client' => $this->client->value(),
-            'uri' => $this->request->uri()->value(),
-            'method' => $this->request->method(),
-            'userAgent' => $this->request->userAgent(),
+
+            'requestId' => $this->requestId->value(),
+
+            'request' => [
+                'method' => $this->request->method(),
+                'uri' => $this->request->uri()->value(),
+                'userAgent' => $this->request->userAgent(),
+            ],
+
             'ip' => $this->ipAddress->value(),
+
             'fingerprint' => $this->fingerprint->value(),
-            'tags' => $this->tags->values(),
+
+            'ingestionWarnings' => array_map(
+                static fn (
+                    IngestionWarning $warning,
+                ): array => $warning->toArray(),
+                $this->ingestionWarnings,
+            ),
+
             'context' => $this->context,
+
             'extra' => $this->extra,
+
             'createdAt' => $this->createdAt->format(
                 DATE_ATOM,
             ),
+
             'clientDate' => $this->clientDate?->format(
                 DATE_ATOM,
             ),
@@ -346,6 +442,25 @@ final readonly class LogEntry
     }
 
     /**
+     * Construit un identifiant stable.
+     */
+    private function buildExternalId(
+        ?string $externalId,
+    ): string {
+        $externalId = trim(
+            (string) $externalId,
+        );
+
+        if ($externalId !== '') {
+            return $externalId;
+        }
+
+        return Uuid::v7()->toRfc4122();
+    }
+
+    /**
+     * Vérifie le message.
+     *
      * @throws InvalidLogEntryException
      */
     private function guardMessage(
@@ -366,6 +481,8 @@ final readonly class LogEntry
     }
 
     /**
+     * Vérifie le domaine.
+     *
      * @throws InvalidLogEntryException
      */
     private function guardDomain(
@@ -373,6 +490,35 @@ final readonly class LogEntry
     ): void {
         if ($domain === '') {
             throw InvalidLogEntryException::emptyDomain();
+        }
+
+        if (
+            mb_strlen($domain)
+            > self::MAX_DOMAIN_LENGTH
+        ) {
+            throw InvalidLogEntryException::domainTooLong(
+                self::MAX_DOMAIN_LENGTH,
+            );
+        }
+    }
+
+    /**
+     * Vérifie les warnings ingestion.
+     *
+     * @param list<mixed> $warnings
+     *
+     * @throws InvalidLogEntryException
+     */
+    private function guardWarnings(
+        array $warnings,
+    ): void {
+        foreach ($warnings as $warning) {
+            if (
+                $warning instanceof IngestionWarning
+                === false
+            ) {
+                throw InvalidLogEntryException::invalidContext();
+            }
         }
     }
 
@@ -382,7 +528,9 @@ final readonly class LogEntry
     private function normalizeMessage(
         string $message,
     ): string {
-        return trim($message);
+        return trim(
+            $message,
+        );
     }
 
     /**

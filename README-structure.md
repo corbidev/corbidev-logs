@@ -39,21 +39,16 @@ src/
     └── Infrastructure/
 
 Ordre exact :
-✅ définir le JSON d’ingestion
+✅ définir le JSON d'ingestion
 ✅ écrire les tests du normalizer
 ✅ coder normalizer
 ✅ coder LogEntry
 ✅ coder LogPayloadNormalizer
 ✅ coder FileQueueWriter
 ⬛ coder le controller API
-⬛ tests d’intégration ingestion
+⬛ tests d'intégration ingestion
 Et seulement après :
 ⬛ cron consumer
 ⬛ persistence DB
 ⬛ dashboard
-
-
-
-
-
 
