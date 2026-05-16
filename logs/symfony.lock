@@ -26,7 +26,7 @@
             "ref": "d39a3bd844edfe90c20ae520b804a3bf4f82b4ad"
         },
         "files": [
-            "config/packages/doctrine.yaml",
+            "config/packages/doctrine.yaml"
         ]
     },
     "doctrine/doctrine-fixtures-bundle": {

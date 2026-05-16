@@ -15,6 +15,11 @@ use Symfony\Component\HttpFoundation\Response;
 final class ApiLogsControllerTest extends WebTestCase
 {
     /**
+     * Répertoire des fichiers queue.
+     */
+    private string $queueDirectory;
+
+    /**
      * But : Réduire la verbosité Symfony pour éviter les tests risky.
      *
      * Entrée : Initialisation du test kernel.
@@ -27,6 +32,22 @@ final class ApiLogsControllerTest extends WebTestCase
         putenv('SHELL_VERBOSITY=-1');
         $_SERVER['SHELL_VERBOSITY'] = '-1';
         $_ENV['SHELL_VERBOSITY'] = '-1';
+
+        $this->queueDirectory = dirname(__DIR__, 3)
+            . '/var/queue/logs';
+
+        $this->removeDirectory(
+            dirname(__DIR__, 3) . '/var/queue',
+        );
+    }
+
+    protected function tearDown(): void
+    {
+        $this->removeDirectory(
+            dirname(__DIR__, 3) . '/var/queue',
+        );
+
+        parent::tearDown();
     }
 
     /**
@@ -76,6 +97,75 @@ final class ApiLogsControllerTest extends WebTestCase
             '{"success":true,"data":{"status":"accepted"}}',
             $response->getContent() ?: '',
         );
+
+        $files = glob($this->queueDirectory . '/*.json');
+
+        self::assertIsArray($files);
+
+        self::assertCount(1, $files);
+
+        $content = file_get_contents($files[0]);
+
+        self::assertNotFalse($content);
+
+        $decoded = json_decode(
+            $content,
+            true,
+            512,
+            JSON_THROW_ON_ERROR,
+        );
+
+        self::assertSame('hello', $decoded['message'] ?? null);
+        self::assertSame('prod', $decoded['environment'] ?? null);
+        self::assertArrayHasKey('request', $decoded);
+        self::assertArrayHasKey('ingestionWarnings', $decoded);
+    }
+
+    /**
+     * But : Vérifier qu'un log hostile n'interrompt pas le flux et produit quand même un fichier queue.
+     *
+     * Entrée : POST /api/logs avec un log valide structurellement mais hostile dans son contenu.
+     * Résultat attendu : HTTP 200 et au moins un fichier queue créé.
+     */
+    public function test_it_handles_hostile_log_payload_without_breaking_flow(): void
+    {
+        $client = static::createClient();
+
+        $client->request(
+            'POST',
+            '/api/logs',
+            server: [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_ACCEPT' => 'application/json',
+            ],
+            content: json_encode(
+                [
+                    'logs' => [
+                        [
+                            'message' => str_repeat('<script>', 200),
+                            'domain' => '../../../etc/passwd',
+                            'context' => [
+                                'nested' => array_fill(0, 500, 'x'),
+                                'token' => 'super-secret',
+                            ],
+                        ],
+                    ],
+                ],
+                JSON_THROW_ON_ERROR,
+            ),
+        );
+
+        $response = $client->getResponse();
+
+        self::assertSame(
+            Response::HTTP_OK,
+            $response->getStatusCode(),
+        );
+
+        $files = glob($this->queueDirectory . '/*.json');
+
+        self::assertIsArray($files);
+        self::assertCount(1, $files);
     }
 
     /**
@@ -270,5 +360,41 @@ final class ApiLogsControllerTest extends WebTestCase
             '{"success":false,"error":"unsupported_media_type","message":"Content-Type must be application/json."}',
             $response->getContent() ?: '',
         );
+    }
+
+    /**
+     * Supprime un répertoire de test de manière récursive.
+     */
+    private function removeDirectory(string $directory): void
+    {
+        if (!is_dir($directory)) {
+            return;
+        }
+
+        $items = scandir($directory);
+
+        if ($items === false) {
+            return;
+        }
+
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+
+            $path = $directory . '/' . $item;
+
+            if (is_dir($path)) {
+                $this->removeDirectory($path);
+
+                continue;
+            }
+
+            @chmod($path, 0644);
+            @unlink($path);
+        }
+
+        @chmod($directory, 0755);
+        @rmdir($directory);
     }
 }
