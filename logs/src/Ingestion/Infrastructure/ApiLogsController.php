@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ingestion\Infrastructure;
 
+use App\Ingestion\Domain\IngestionPayloadValidator;
 use JsonException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -21,6 +22,10 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 final class ApiLogsController
 {
+    public function __construct(
+        private readonly IngestionPayloadValidator $payloadValidator,
+    ) {}
+
     /**
      * Reçoit une requête d'ingestion JSON.
      *
@@ -41,7 +46,7 @@ final class ApiLogsController
         }
 
         try {
-            json_decode(
+            $payload = json_decode(
                 $request->getContent(),
                 true,
                 512,
@@ -51,6 +56,18 @@ final class ApiLogsController
             return $this->errorResponse(
                 error: 'invalid_json',
                 message: 'Request body must be valid JSON.',
+                status: Response::HTTP_BAD_REQUEST,
+            );
+        }
+
+        $validationError = $this->payloadValidator->validate(
+            $payload,
+        );
+
+        if ($validationError !== null) {
+            return $this->errorResponse(
+                error: 'invalid_payload',
+                message: $validationError,
                 status: Response::HTTP_BAD_REQUEST,
             );
         }

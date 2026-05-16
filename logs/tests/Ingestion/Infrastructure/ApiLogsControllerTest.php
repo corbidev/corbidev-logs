@@ -32,7 +32,7 @@ final class ApiLogsControllerTest extends WebTestCase
     /**
      * But : Vérifier que la route accepte un POST JSON valide.
      *
-     * Entrée : POST /api/logs avec Content-Type application/json et body JSON correct.
+     * Entrée : POST /api/logs avec Content-Type application/json et body JSON contenant logs.
      * Résultat attendu : HTTP 200, Content-Type JSON, payload de succès stable.
      */
     public function test_it_accepts_post_json_request(): void
@@ -47,7 +47,13 @@ final class ApiLogsControllerTest extends WebTestCase
                 'HTTP_ACCEPT' => 'application/json',
             ],
             content: json_encode(
-                ['message' => 'hello'],
+                [
+                    'logs' => [
+                        [
+                            'message' => 'hello',
+                        ],
+                    ],
+                ],
                 JSON_THROW_ON_ERROR,
             ),
         );
@@ -68,6 +74,120 @@ final class ApiLogsControllerTest extends WebTestCase
 
         self::assertJsonStringEqualsJsonString(
             '{"success":true,"data":{"status":"accepted"}}',
+            $response->getContent() ?: '',
+        );
+    }
+
+    /**
+     * But : Vérifier qu'un payload sans champ logs est refusé proprement.
+     *
+     * Entrée : POST /api/logs avec body JSON sans logs.
+     * Résultat attendu : HTTP 400, code erreur invalid_payload, message stable.
+     */
+    public function test_it_rejects_payload_without_logs(): void
+    {
+        $client = static::createClient();
+
+        $client->request(
+            'POST',
+            '/api/logs',
+            server: [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_ACCEPT' => 'application/json',
+            ],
+            content: json_encode(
+                ['message' => 'hello'],
+                JSON_THROW_ON_ERROR,
+            ),
+        );
+
+        $response = $client->getResponse();
+
+        self::assertSame(
+            Response::HTTP_BAD_REQUEST,
+            $response->getStatusCode(),
+        );
+
+        self::assertJsonStringEqualsJsonString(
+            '{"success":false,"error":"invalid_payload","message":"Payload must contain a \"logs\" field."}',
+            $response->getContent() ?: '',
+        );
+    }
+
+    /**
+     * But : Vérifier qu'un champ logs vide est refusé proprement.
+     *
+     * Entrée : POST /api/logs avec logs=[].
+     * Résultat attendu : HTTP 400, code erreur invalid_payload, message stable.
+     */
+    public function test_it_rejects_empty_logs_payload(): void
+    {
+        $client = static::createClient();
+
+        $client->request(
+            'POST',
+            '/api/logs',
+            server: [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_ACCEPT' => 'application/json',
+            ],
+            content: json_encode(
+                [
+                    'logs' => [],
+                ],
+                JSON_THROW_ON_ERROR,
+            ),
+        );
+
+        $response = $client->getResponse();
+
+        self::assertSame(
+            Response::HTTP_BAD_REQUEST,
+            $response->getStatusCode(),
+        );
+
+        self::assertJsonStringEqualsJsonString(
+            '{"success":false,"error":"invalid_payload","message":"The \"logs\" field must not be empty."}',
+            $response->getContent() ?: '',
+        );
+    }
+
+    /**
+     * But : Vérifier qu'une entrée de log mal structurée est refusée proprement.
+     *
+     * Entrée : POST /api/logs avec logs contenant une scalar à l'index 0.
+     * Résultat attendu : HTTP 400, code erreur invalid_payload, message stable.
+     */
+    public function test_it_rejects_logs_entries_that_are_not_objects(): void
+    {
+        $client = static::createClient();
+
+        $client->request(
+            'POST',
+            '/api/logs',
+            server: [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_ACCEPT' => 'application/json',
+            ],
+            content: json_encode(
+                [
+                    'logs' => [
+                        'invalid-entry',
+                    ],
+                ],
+                JSON_THROW_ON_ERROR,
+            ),
+        );
+
+        $response = $client->getResponse();
+
+        self::assertSame(
+            Response::HTTP_BAD_REQUEST,
+            $response->getStatusCode(),
+        );
+
+        self::assertJsonStringEqualsJsonString(
+            '{"success":false,"error":"invalid_payload","message":"Each log entry must be an object. Invalid entry at index 0."}',
             $response->getContent() ?: '',
         );
     }
