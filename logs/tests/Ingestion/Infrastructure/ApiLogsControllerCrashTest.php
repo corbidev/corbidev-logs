@@ -50,7 +50,13 @@ final class ApiLogsControllerCrashTest extends WebTestCase
             '{"logs": [}',
             "\xB1\x31",
             json_encode(
-                ['message' => str_repeat('X', 200000)],
+                [
+                    'logs' => [
+                        [
+                            'message' => str_repeat('X', 200000),
+                        ],
+                    ],
+                ],
                 JSON_THROW_ON_ERROR,
             ),
             '{"message":"<script>alert(1)</script>"}',
@@ -104,7 +110,7 @@ final class ApiLogsControllerCrashTest extends WebTestCase
 
         for ($index = 0; $index < 250; ++$index) {
             $payload = $index % 2 === 0
-                ? sprintf('{"message":"stress-%d"}', $index)
+                ? sprintf('{"logs":[{"message":"stress-%d"}]}', $index)
                 : '{"logs": [}';
 
             $client->request(
