@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Ingestion\Infrastructure;
 
 use App\Ingestion\Domain\IngestionPayloadValidator;
+use App\Log\Application\Ingestion\LogIngestionPipeline;
 use JsonException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -24,6 +25,7 @@ final class ApiLogsController
 {
     public function __construct(
         private readonly IngestionPayloadValidator $payloadValidator,
+        private readonly LogIngestionPipeline $ingestionPipeline,
     ) {}
 
     /**
@@ -71,6 +73,10 @@ final class ApiLogsController
                 status: Response::HTTP_BAD_REQUEST,
             );
         }
+
+        $this->ingestionPipeline->process(
+            $payload['logs'],
+        );
 
         return new JsonResponse(
             [

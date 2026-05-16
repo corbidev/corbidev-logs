@@ -19,5 +19,15 @@ services:
     App\:
         resource: '../src/'
 
+    App\Queue\Infrastructure\QueueConfiguration:
+        arguments:
+            $baseDirectory: '%kernel.project_dir%/var/queue'
+
+    App\Queue\Application\QueueWriterInterface:
+        alias: App\Queue\Infrastructure\FileQueueWriter
+
+    App\Log\Application\Factory\LogEntryFactoryInterface:
+        alias: App\Log\Application\Factory\LogEntryFactory
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
