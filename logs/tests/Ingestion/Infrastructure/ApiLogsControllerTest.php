@@ -15,10 +15,10 @@ use Symfony\Component\HttpFoundation\Response;
 final class ApiLogsControllerTest extends WebTestCase
 {
     /**
-     * But : Reduire la verbosite Symfony pour eviter les tests risky.
+     * But : Réduire la verbosité Symfony pour éviter les tests risky.
      *
-     * Entree : Initialisation du test kernel.
-     * Resultat attendu : Aucun output parasite dans les tests HTTP.
+     * Entrée : Initialisation du test kernel.
+     * Résultat attendu : Aucun output parasite dans les tests HTTP.
      */
     protected function setUp(): void
     {
@@ -30,10 +30,10 @@ final class ApiLogsControllerTest extends WebTestCase
     }
 
     /**
-     * But : Verifier que la route accepte un POST JSON valide.
+     * But : Vérifier que la route accepte un POST JSON valide.
      *
-     * Entree : POST /api/logs avec Content-Type application/json et body JSON correct.
-     * Resultat attendu : HTTP 200, Content-Type JSON, payload de succes stable.
+     * Entrée : POST /api/logs avec Content-Type application/json et body JSON correct.
+     * Résultat attendu : HTTP 200, Content-Type JSON, payload de succès stable.
      */
     public function test_it_accepts_post_json_request(): void
     {
@@ -73,10 +73,10 @@ final class ApiLogsControllerTest extends WebTestCase
     }
 
     /**
-     * But : Verifier qu'un JSON invalide retourne une erreur lisible et stable.
+     * But : Vérifier qu'un JSON invalide retourne une erreur lisible et stable.
      *
-     * Entree : POST /api/logs avec Content-Type application/json et body casse.
-     * Resultat attendu : HTTP 400, Content-Type JSON, code erreur invalid_json.
+     * Entrée : POST /api/logs avec Content-Type application/json et body cassé.
+     * Résultat attendu : HTTP 400, Content-Type JSON, code erreur invalid_json.
      */
     public function test_it_returns_stable_error_for_invalid_json(): void
     {
@@ -113,10 +113,10 @@ final class ApiLogsControllerTest extends WebTestCase
     }
 
     /**
-     * But : Verifier qu'un Content-Type non JSON est refuse proprement.
+     * But : Vérifier qu'un Content-Type non JSON est refusé proprement.
      *
-     * Entree : POST /api/logs avec Content-Type text/plain.
-     * Resultat attendu : HTTP 415, Content-Type JSON, code erreur unsupported_media_type.
+     * Entrée : POST /api/logs avec Content-Type text/plain.
+     * Résultat attendu : HTTP 415, Content-Type JSON, code erreur unsupported_media_type.
      */
     public function test_it_returns_stable_error_for_non_json_content_type(): void
     {

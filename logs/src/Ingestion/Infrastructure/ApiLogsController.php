@@ -13,21 +13,21 @@ use Symfony\Component\Routing\Attribute\Route;
 /**
  * Endpoint HTTP d'ingestion.
  *
- * Responsabilites :
+ * Responsabilités :
  * - exposer POST /api/logs
  * - garantir une surface JSON-only
- * - retourner des reponses stables (succes/erreur)
+ * - retourner des réponses stables (succès/erreur)
  * - ne jamais renvoyer de HTML
  */
 final class ApiLogsController
 {
     /**
-     * Recoit une requete d'ingestion JSON.
+     * Reçoit une requête d'ingestion JSON.
      *
      * Comportement :
      * - 415 si le Content-Type n'est pas JSON
      * - 400 si le body JSON est invalide
-     * - 200 si la requete est syntaxiquement valide
+     * - 200 si la requête est syntaxiquement valide
      */
     #[Route('/api/logs', name: 'api_ingestion_logs', methods: ['POST'])]
     public function __invoke(Request $request): JsonResponse
@@ -85,7 +85,7 @@ final class ApiLogsController
     }
 
     /**
-     * Verifie si la requete annonce un media type JSON.
+     * Vérifie si la requête annonce un media type JSON.
      */
     private function isJsonRequest(Request $request): bool
     {
