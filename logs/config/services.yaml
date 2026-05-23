@@ -27,7 +27,7 @@ services:
         alias: App\Queue\Infrastructure\FileQueueReader
 
     App\Queue\Application\QueuePersistenceInterface:
-        alias: App\Queue\Infrastructure\NoopQueuePersistence
+        alias: App\Queue\Infrastructure\PersistLogBatchQueuePersistence
 
     App\Queue\Application\QueueConsumerInterface:
         alias: App\Queue\Infrastructure\FileQueueConsumer
