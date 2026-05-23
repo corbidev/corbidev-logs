@@ -24,7 +24,13 @@ final readonly class FileQueueConsumer implements QueueConsumerInterface
     public function __construct(
         private QueueReaderInterface $reader,
         private QueuePersistenceInterface $persistence,
+        private int $maxRetries = 3,
     ) {
+        if ($this->maxRetries <= 0) {
+            throw new \InvalidArgumentException(
+                'Queue max retries must be greater than zero.',
+            );
+        }
     }
 
     /**
@@ -66,8 +72,26 @@ final readonly class FileQueueConsumer implements QueueConsumerInterface
         $path = $this->extractPath($item);
         $payload = $this->extractPayload($item);
 
-        $this->persistence->persist($payload);
-        $this->reader->delete($path);
+        $lastException = null;
+
+        for ($attempt = 1; $attempt <= $this->maxRetries; ++$attempt) {
+            try {
+                $this->persistence->persist($payload);
+                $this->reader->delete($path);
+
+                return;
+            } catch (\Throwable $exception) {
+                $lastException = $exception;
+            }
+        }
+
+        throw new \RuntimeException(
+            sprintf(
+                'Queue item persistence failed after %d attempt(s).',
+                $this->maxRetries,
+            ),
+            previous: $lastException,
+        );
     }
 
     /**
