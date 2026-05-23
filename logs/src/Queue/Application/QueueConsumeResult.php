@@ -56,6 +56,16 @@ final class QueueConsumeResult
     private int $movedToFailedCount = 0;
 
     /**
+     * Nombre total de retries consommés.
+     */
+    private int $retryCount = 0;
+
+    /**
+     * Durée totale du batch en secondes.
+     */
+    private float $durationSeconds = 0.0;
+
+    /**
      * Incrémente le nombre de payloads persistés.
      */
     public function incrementProcessed(): void
@@ -81,6 +91,32 @@ final class QueueConsumeResult
     }
 
     /**
+     * Incrémente le nombre total de retries.
+     */
+    public function incrementRetries(int $count = 1): void
+    {
+        if ($count <= 0) {
+            return;
+        }
+
+        $this->retryCount += $count;
+    }
+
+    /**
+     * Enregistre la durée totale du batch.
+     */
+    public function setDurationSeconds(float $durationSeconds): void
+    {
+        if ($durationSeconds < 0.0) {
+            throw new \InvalidArgumentException(
+                'Queue batch duration cannot be negative.',
+            );
+        }
+
+        $this->durationSeconds = $durationSeconds;
+    }
+
+    /**
      * Retourne le nombre de payloads persistés.
      */
     public function getProcessedCount(): int
@@ -103,6 +139,22 @@ final class QueueConsumeResult
     public function getMovedToFailedCount(): int
     {
         return $this->movedToFailedCount;
+    }
+
+    /**
+     * Retourne le nombre total de retries.
+     */
+    public function getRetryCount(): int
+    {
+        return $this->retryCount;
+    }
+
+    /**
+     * Retourne la durée totale du batch en secondes.
+     */
+    public function getDurationSeconds(): float
+    {
+        return $this->durationSeconds;
     }
 
     /**
@@ -165,7 +217,9 @@ final class QueueConsumeResult
      *     processed: int,
      *     failed: int,
      *     movedToFailed: int,
+     *     retries: int,
      *     total: int,
+     *     durationSeconds: float,
      *     successful: bool
      * }
      */
@@ -175,7 +229,9 @@ final class QueueConsumeResult
             'processed' => $this->processedCount,
             'failed' => $this->failedCount,
             'movedToFailed' => $this->movedToFailedCount,
+            'retries' => $this->retryCount,
             'total' => $this->getTotalCount(),
+            'durationSeconds' => $this->durationSeconds,
             'successful' => $this->isSuccessful(),
         ];
     }

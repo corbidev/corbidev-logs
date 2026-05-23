@@ -48,11 +48,9 @@ final class ProcessQueueCommand extends Command
 
         try {
             $limit = $this->resolveLimit($input);
-            $start = microtime(true);
             $result = $this->consumer->consume($limit);
-            $duration = microtime(true) - $start;
 
-            $this->renderSuccess($io, $result, $duration);
+            $this->renderSuccess($io, $result);
 
             return Command::SUCCESS;
         } catch (\Throwable $exception) {
@@ -93,8 +91,9 @@ final class ProcessQueueCommand extends Command
     private function renderSuccess(
         SymfonyStyle $io,
         QueueConsumeResult $result,
-        float $duration,
     ): void {
+        $duration = $result->getDurationSeconds();
+
         $io->success(
             sprintf('Queue process completed in %.3f seconds.', $duration),
         );
@@ -105,6 +104,8 @@ final class ProcessQueueCommand extends Command
                 ['Processed', (string) $result->getProcessedCount()],
                 ['Failed', (string) $result->getFailedCount()],
                 ['MovedToFailed', (string) $result->getMovedToFailedCount()],
+                ['Retries', (string) $result->getRetryCount()],
+                ['Total', (string) $result->getTotalCount()],
                 ['Duration', sprintf('%.3f sec', $duration)],
             ],
         );

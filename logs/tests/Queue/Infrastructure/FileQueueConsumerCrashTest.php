@@ -67,6 +67,7 @@ final class FileQueueConsumerCrashTest extends TestCase
         self::assertSame(0, $result->getProcessedCount());
         self::assertSame(100, $result->getFailedCount());
         self::assertSame(100, $result->getMovedToFailedCount());
+        self::assertSame(200, $result->getRetryCount());
     }
 
     /**
@@ -109,6 +110,7 @@ final class FileQueueConsumerCrashTest extends TestCase
         self::assertSame(0, $result->getProcessedCount());
         self::assertSame(1, $result->getFailedCount());
         self::assertSame(1, $result->getMovedToFailedCount());
+        self::assertSame(0, $result->getRetryCount());
     }
 
     /**
@@ -150,6 +152,7 @@ final class FileQueueConsumerCrashTest extends TestCase
         self::assertSame(0, $result->getProcessedCount());
         self::assertSame(1, $result->getFailedCount());
         self::assertSame(0, $result->getMovedToFailedCount());
+        self::assertSame(0, $result->getRetryCount());
     }
 
     /**
@@ -212,6 +215,7 @@ final class FileQueueConsumerCrashTest extends TestCase
         self::assertSame(1, $result->getProcessedCount());
         self::assertSame(1, $result->getFailedCount());
         self::assertSame(1, $result->getMovedToFailedCount());
+        self::assertSame(2, $result->getRetryCount());
     }
 
     /**
@@ -255,5 +259,6 @@ final class FileQueueConsumerCrashTest extends TestCase
         self::assertSame(0, $result->getProcessedCount());
         self::assertSame(1, $result->getFailedCount());
         self::assertSame(1, $result->getMovedToFailedCount());
+        self::assertSame(19, $result->getRetryCount());
     }
 }
