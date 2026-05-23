@@ -23,6 +23,15 @@ services:
         arguments:
             $baseDirectory: '%kernel.project_dir%/var/queue'
 
+    App\Queue\Application\QueueReaderInterface:
+        alias: App\Queue\Infrastructure\FileQueueReader
+
+    App\Queue\Application\QueuePersistenceInterface:
+        alias: App\Queue\Infrastructure\NoopQueuePersistence
+
+    App\Queue\Application\QueueConsumerInterface:
+        alias: App\Queue\Infrastructure\FileQueueConsumer
+
     App\Queue\Application\QueueWriterInterface:
         alias: App\Queue\Infrastructure\FileQueueWriter
 
