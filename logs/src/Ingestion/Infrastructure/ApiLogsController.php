@@ -34,7 +34,7 @@ final class ApiLogsController
      * Comportement :
      * - 415 si le Content-Type n'est pas JSON
      * - 400 si le body JSON est invalide
-     * - 200 si la requête est syntaxiquement valide
+     * - 202 si la requête est acceptée et queueée
      */
     #[Route('/api/logs', name: 'api_ingestion_logs', methods: ['POST'])]
     public function __invoke(Request $request): JsonResponse
@@ -74,7 +74,7 @@ final class ApiLogsController
             );
         }
 
-        $this->ingestionPipeline->process(
+        $result = $this->ingestionPipeline->process(
             $payload['logs'],
         );
 
@@ -82,10 +82,10 @@ final class ApiLogsController
             [
                 'success' => true,
                 'data' => [
-                    'status' => 'accepted',
+                    'received' => $result['queued'],
                 ],
             ],
-            Response::HTTP_OK,
+            Response::HTTP_ACCEPTED,
         );
     }
 
