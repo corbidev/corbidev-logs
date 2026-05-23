@@ -30,6 +30,7 @@ final class ProcessQueueCommandTest extends TestCase
 
         $result = new QueueConsumeResult();
         $result->incrementProcessed();
+        $result->setDurationSeconds(0.123);
 
         $consumer
             ->expects(self::once())
@@ -47,6 +48,16 @@ final class ProcessQueueCommandTest extends TestCase
 
         self::assertStringContainsString(
             'Queue process completed',
+            $commandTester->getDisplay(),
+        );
+
+        self::assertStringContainsString(
+            'Retries',
+            $commandTester->getDisplay(),
+        );
+
+        self::assertStringContainsString(
+            'Total',
             $commandTester->getDisplay(),
         );
     }

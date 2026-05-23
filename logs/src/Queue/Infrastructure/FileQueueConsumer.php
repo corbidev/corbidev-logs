@@ -41,14 +41,20 @@ final readonly class FileQueueConsumer implements QueueConsumerInterface
     ): QueueConsumeResult {
         $this->validateLimit($limit);
 
+        $startedAt = microtime(true);
         $result = new QueueConsumeResult();
 
         foreach ($this->reader->readBatch($limit) as $item) {
             try {
-                $this->consumeItem($item);
+                $attempts = $this->consumeItem($item);
                 $result->incrementProcessed();
+                $result->incrementRetries(max(0, $attempts - 1));
             } catch (\Throwable $exception) {
                 $result->incrementFailed();
+
+                if ($exception instanceof QueueRetryExhaustedException) {
+                    $result->incrementRetries($exception->getRetryCount());
+                }
 
                 $movedToFailed = $this->handleFailedItem(
                     $item,
@@ -61,13 +67,17 @@ final readonly class FileQueueConsumer implements QueueConsumerInterface
             }
         }
 
+        $result->setDurationSeconds(
+            microtime(true) - $startedAt,
+        );
+
         return $result;
     }
 
     /**
      * @param array{path:string,payload:array<string,mixed>} $item
      */
-    private function consumeItem(array $item): void
+    private function consumeItem(array $item): int
     {
         $path = $this->extractPath($item);
         $payload = $this->extractPayload($item);
@@ -79,17 +89,14 @@ final readonly class FileQueueConsumer implements QueueConsumerInterface
                 $this->persistence->persist($payload);
                 $this->reader->delete($path);
 
-                return;
+                return $attempt;
             } catch (\Throwable $exception) {
                 $lastException = $exception;
             }
         }
 
-        throw new \RuntimeException(
-            sprintf(
-                'Queue item persistence failed after %d attempt(s).',
-                $this->maxRetries,
-            ),
+        throw new QueueRetryExhaustedException(
+            retryCount: max(0, $this->maxRetries - 1),
             previous: $lastException,
         );
     }
@@ -159,5 +166,30 @@ final readonly class FileQueueConsumer implements QueueConsumerInterface
                 'Queue consume limit must be greater than zero.',
             );
         }
+    }
+}
+
+/**
+ * Exception interne indiquant que toutes les tentatives
+ * de persistence ont été épuisées pour un item.
+ */
+final class QueueRetryExhaustedException extends \RuntimeException
+{
+    public function __construct(
+        private readonly int $retryCount,
+        ?\Throwable $previous = null,
+    ) {
+        parent::__construct(
+            sprintf(
+                'Queue item persistence failed after %d attempt(s).',
+                $retryCount + 1,
+            ),
+            previous: $previous,
+        );
+    }
+
+    public function getRetryCount(): int
+    {
+        return $this->retryCount;
     }
 }
