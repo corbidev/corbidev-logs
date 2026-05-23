@@ -39,7 +39,7 @@ final class ApiLogsControllerCrashTest extends WebTestCase
      * But : Vérifier que des payloads hostiles sous Content-Type JSON ne provoquent jamais d'erreur 500.
      *
      * Entrée : Plusieurs bodies hostiles ou incohérents envoyés en application/json.
-     * Résultat attendu : HTTP 200 ou 400, Content-Type JSON, aucun HTML dans la réponse.
+     * Résultat attendu : HTTP 202 ou 400, Content-Type JSON, aucun HTML dans la réponse.
      */
     public function test_it_never_returns_html_for_hostile_json_bodies(): void
     {
@@ -79,7 +79,7 @@ final class ApiLogsControllerCrashTest extends WebTestCase
             self::assertContains(
                 $response->getStatusCode(),
                 [
-                    Response::HTTP_OK,
+                    Response::HTTP_ACCEPTED,
                     Response::HTTP_BAD_REQUEST,
                 ],
             );

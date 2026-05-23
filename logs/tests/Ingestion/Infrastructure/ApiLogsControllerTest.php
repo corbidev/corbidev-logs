@@ -54,7 +54,7 @@ final class ApiLogsControllerTest extends WebTestCase
      * But : Vérifier que la route accepte un POST JSON valide.
      *
      * Entrée : POST /api/logs avec Content-Type application/json et body JSON contenant logs.
-     * Résultat attendu : HTTP 200, Content-Type JSON, payload de succès stable.
+     * Résultat attendu : HTTP 202, Content-Type JSON, payload de succès stable.
      */
     public function test_it_accepts_post_json_request(): void
     {
@@ -82,7 +82,7 @@ final class ApiLogsControllerTest extends WebTestCase
         $response = $client->getResponse();
 
         self::assertSame(
-            Response::HTTP_OK,
+            Response::HTTP_ACCEPTED,
             $response->getStatusCode(),
         );
 
@@ -94,7 +94,7 @@ final class ApiLogsControllerTest extends WebTestCase
         );
 
         self::assertJsonStringEqualsJsonString(
-            '{"success":true,"data":{"status":"accepted"}}',
+            '{"success":true,"data":{"received":1}}',
             $response->getContent() ?: '',
         );
 
@@ -125,7 +125,7 @@ final class ApiLogsControllerTest extends WebTestCase
      * But : Vérifier qu'un log hostile n'interrompt pas le flux et produit quand même un fichier queue.
      *
      * Entrée : POST /api/logs avec un log valide structurellement mais hostile dans son contenu.
-     * Résultat attendu : HTTP 200 et au moins un fichier queue créé.
+     * Résultat attendu : HTTP 202 et au moins un fichier queue créé.
      */
     public function test_it_handles_hostile_log_payload_without_breaking_flow(): void
     {
@@ -158,7 +158,7 @@ final class ApiLogsControllerTest extends WebTestCase
         $response = $client->getResponse();
 
         self::assertSame(
-            Response::HTTP_OK,
+            Response::HTTP_ACCEPTED,
             $response->getStatusCode(),
         );
 
