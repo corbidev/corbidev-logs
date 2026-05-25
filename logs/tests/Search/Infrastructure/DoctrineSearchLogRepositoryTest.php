@@ -8,6 +8,7 @@ use App\Search\Domain\SearchFilters;
 use App\Search\Domain\SearchPagination;
 use App\Search\Infrastructure\DoctrineSearchLogRepository;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -72,6 +73,10 @@ final class DoctrineSearchLogRepositoryTest extends TestCase
                     'fingerprint' => 'abcdef1234567890',
                     'limit' => 10,
                     'offset' => 10,
+                ],
+                [
+                    'limit' => ParameterType::INTEGER,
+                    'offset' => ParameterType::INTEGER,
                 ],
             )
             ->willReturn([
