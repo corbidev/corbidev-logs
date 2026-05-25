@@ -1,4 +1,4 @@
-Queue
+# Queue
 
 Objectif
 
@@ -413,3 +413,79 @@ Même si :
 Le log doit déjà être sécurisé sur disque.
 
 C’est la responsabilité principale de la queue.
+
+---
+
+Runbook d'exploitation
+
+Objectif
+
+Exécuter et surveiller le traitement de queue sans connaissance implicite.
+
+Pré-requis
+
+- dépendances installées dans `logs/`
+- variables d'environnement configurées
+- accès base de données disponible pour la persistence
+
+Commande de traitement
+
+Depuis la racine du dépôt :
+
+```bash
+cd logs
+php bin/console app:queue:process
+```
+
+Traitement borné explicite (exemple 200 items max) :
+
+```bash
+cd logs
+php bin/console app:queue:process 200
+```
+
+Lecture du résultat
+
+La commande affiche un tableau avec :
+
+- Processed
+- Failed
+- MovedToFailed
+- Retries
+- Total
+- Duration
+
+Interprétation rapide
+
+- `Failed = 0` et `MovedToFailed = 0` : batch nominal
+- `Retries > 0` : présence de fichiers instables, surveiller le lot suivant
+- `MovedToFailed > 0` : fichiers à analyser dans `var/queue/failed/`
+
+Surveillance opérationnelle minimale
+
+Vérifier les répertoires :
+
+- `var/queue/logs/` (backlog à traiter)
+- `var/queue/corrupted/` (fichiers invalides)
+- `var/queue/failed/` (échecs après retries)
+
+Relance recommandée
+
+- lancer la commande de façon périodique via CRON
+- conserver une limite de batch stable (ex: 100 ou 200)
+- éviter les batchs massifs non maîtrisés
+
+Gestion d'incident
+
+Si la DB est indisponible :
+
+- ne pas supprimer manuellement `var/queue/logs/`
+- rétablir la DB
+- relancer `app:queue:process`
+
+Si `failed/` augmente :
+
+- isoler un échantillon de fichiers
+- vérifier format JSON et données minimales
+- corriger la cause (données ou persistence)
+- retraiter manuellement si nécessaire

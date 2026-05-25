@@ -354,6 +354,10 @@ Critères de fin :
 
 ### DOC-001 - Harmoniser tous les README
 
+Statut :
+
+- livré
+
 Objectif :
 
 - faire correspondre la documentation au code réel
@@ -363,6 +367,10 @@ Critères de fin :
 - aucun README contradictoire
 
 ### DOC-002 - Documenter l'exploitation de la queue
+
+Statut :
+
+- livré
 
 Objectif :
 

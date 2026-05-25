@@ -1,5 +1,11 @@
 # Par quoi commencer ?
 
+## Note de contexte
+
+Ce guide décrit l'ordre de construction initial.
+Au 25/05/2026, plusieurs étapes sont déjà livrées (Ingestion, ApiToken, Project, Search borné, Dashboard liste+détail).
+Les recommandations ci-dessous restent utiles pour prioriser ce qui n'est pas encore finalisé.
+
 Vu ton architecture et tes contraintes :
 
 - Symfony 8
@@ -326,4 +332,4 @@ Le plus rentable au début :
 
 > réussir à écrire 100 000 logs sans en perdre un seul.
 
-Le dashboard peut attendre.
+L'UX avancée du dashboard peut attendre.
