@@ -1,0 +1,57 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Dashboard - Logs{% endblock %}
+
+{% block body %}
+<main style="max-width: 1100px; margin: 2rem auto; padding: 0 1rem; font-family: 'Segoe UI', sans-serif;">
+    <header style="display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: 1rem;">
+        <h1 style="margin: 0; font-size: 1.6rem;">Dashboard Logs</h1>
+        <p style="margin: 0; color: #666;">Total: {{ totalCount }}</p>
+    </header>
+
+    <section style="margin-bottom: 1rem; color: #444;">
+        Page {{ page }} / {{ totalPages }} - {{ perPage }} éléments par page
+    </section>
+
+    <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+        <thead>
+            <tr style="background: #f5f5f5; text-align: left;">
+                <th style="padding: 0.6rem; border-bottom: 1px solid #ddd;">Date</th>
+                <th style="padding: 0.6rem; border-bottom: 1px solid #ddd;">External ID</th>
+                <th style="padding: 0.6rem; border-bottom: 1px solid #ddd;">Projet</th>
+                <th style="padding: 0.6rem; border-bottom: 1px solid #ddd;">Niveau</th>
+                <th style="padding: 0.6rem; border-bottom: 1px solid #ddd;">Domaine</th>
+                <th style="padding: 0.6rem; border-bottom: 1px solid #ddd;">Message</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+                <tr>
+                    <td style="padding: 0.6rem; border-bottom: 1px solid #eee;">{{ item.createdAt|date('Y-m-d H:i:s') }}</td>
+                    <td style="padding: 0.6rem; border-bottom: 1px solid #eee;">
+                        <a href="{{ path('dashboard_logs_show', {'externalId': item.externalId}) }}">{{ item.externalId }}</a>
+                    </td>
+                    <td style="padding: 0.6rem; border-bottom: 1px solid #eee;">{{ item.projectId }}</td>
+                    <td style="padding: 0.6rem; border-bottom: 1px solid #eee;">{{ item.level }}</td>
+                    <td style="padding: 0.6rem; border-bottom: 1px solid #eee;">{{ item.domain }}</td>
+                    <td style="padding: 0.6rem; border-bottom: 1px solid #eee;">{{ item.message }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="6" style="padding: 0.8rem; text-align: center; color: #666;">Aucun log disponible.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <nav style="display: flex; gap: 0.8rem; margin-top: 1rem;">
+        {% if page > 1 %}
+            <a href="{{ path('dashboard_logs_index', {'page': page - 1, 'per_page': perPage}) }}">Page précédente</a>
+        {% endif %}
+
+        {% if page < totalPages %}
+            <a href="{{ path('dashboard_logs_index', {'page': page + 1, 'per_page': perPage}) }}">Page suivante</a>
+        {% endif %}
+    </nav>
+</main>
+{% endblock %}

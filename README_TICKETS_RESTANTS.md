@@ -247,6 +247,10 @@ Critères de fin :
 
 ### PRJ-001 - Créer le module Project
 
+Statut :
+
+- livré
+
 Objectif :
 
 - poser la base métier des projets logiques
@@ -257,6 +261,10 @@ Critères de fin :
 - modèle de projet initial défini
 
 ### PRJ-002 - Gérer la rétention par projet
+
+Statut :
+
+- livré
 
 Objectif :
 
@@ -269,6 +277,10 @@ Critères de fin :
 
 ### SRCH-001 - Créer le module Search borné
 
+Statut :
+
+- livré
+
 Objectif :
 
 - poser les requêtes bornées pour la lecture
@@ -279,6 +291,10 @@ Critères de fin :
 - LIMIT explicite
 
 ### SRCH-002 - Ajouter les filtres principaux
+
+Statut :
+
+- livré
 
 Objectif :
 
@@ -291,6 +307,10 @@ Critères de fin :
 
 ### DASH-001 - Créer le module Dashboard
 
+Statut :
+
+- livré
+
 Objectif :
 
 - préparer l'interface de lecture
@@ -302,6 +322,10 @@ Critères de fin :
 
 ### DASH-002 - Créer la liste paginée des logs
 
+Statut :
+
+- livré
+
 Objectif :
 
 - afficher les logs de manière bornée
@@ -312,6 +336,10 @@ Critères de fin :
 - pas de chargement massif
 
 ### DASH-003 - Créer la vue détail d'un log
+
+Statut :
+
+- livré
 
 Objectif :
 
