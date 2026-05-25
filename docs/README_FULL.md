@@ -1,5 +1,8 @@
 
-# 📘 SYSTÈME DE LOGS — DOCUMENTATION COMPLÈTE (PRODUCTION READY)
+# 📘 SYSTÈME DE LOGS — DOCUMENTATION COMPLÈTE
+
+> Statut au 25/05/2026 : ce document combine du livré et du cible.
+> Les modules Ingestion, ApiToken, Project, Search et Dashboard sont implémentés.
 
 ---
 
@@ -26,10 +29,17 @@ basé sur PSR-3
 ## Diagramme principal
 
 ```
-[ API / MONOLOG ]
-        ↓
-      
-<<A CONSTRUIRE>>
+[API / MONOLOG]
+  ↓
+POST /api/logs (Bearer token opaque)
+  ↓
+Normalizer -> Factory -> QueueWriter
+  ↓
+app:queue:process
+  ↓
+Doctrine DBAL (table logs)
+  ↓
+Search borné -> Dashboard (liste + détail)
 ```
 
 ---
@@ -55,8 +65,15 @@ basé sur PSR-3
 
 ```
 src/
-
-<<A CONSTRUIRE>>
+├── ApiToken/
+├── Dashboard/
+├── Ingestion/
+├── Log/
+├── Persistence/
+├── Project/
+├── Queue/
+├── Search/
+└── Shared/
 ```
 
 ---

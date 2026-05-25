@@ -12,14 +12,19 @@ Ce qui est déjà en place dans le code :
 - création de `LogEntry`
 - écriture de queue disque
 - persistence SQL via Doctrine DBAL
+- endpoint d'ingestion `POST /api/logs` (JSON-only) avec auth Bearer
+- module ApiToken (création, validation, révocation, expiration)
+- module Search borné (pagination + filtres principaux)
+- module Dashboard (liste paginée + vue détail)
+- module Project (base métier + rétention)
 
 Ce qui reste encore à stabiliser ou à compléter :
 
-- la surface HTTP finale d'ingestion
-- le dashboard de lecture
-- la recherche bornée
-- l'UX frontend
-- la clarification définitive de la stratégie d'authentification
+- le traitement batch complet de queue en exploitation continue
+- le runbook d'exploitation queue/incident
+- la couverture des cas critiques restants
+- la validation installation locale/CI répétable
+- l'UX frontend avancée
 
 ## Principes
 
@@ -70,7 +75,7 @@ Objectif : lire simplement, avec des requêtes bornées et des index ciblés.
 
 - PHP 8.4
 - Symfony 8
-- Doctrine ORM / DBAL
+- Doctrine DBAL
 - MySQL / MariaDB
 - Monolog
 
@@ -90,11 +95,20 @@ Objectif : lire simplement, avec des requêtes bornées et des index ciblés.
 
 ### API
 
-La surface d'ingestion est prévue sous `/api/*` et doit rester JSON-only.
+La surface d'ingestion est exposée sous `/api/*` et reste JSON-only.
+
+Route active :
+
+- `POST /api/logs`
 
 ### Dashboard
 
-La surface de lecture est prévue sous `/dashboard/*` et doit rester HTML-only.
+La surface de lecture est exposée sous `/dashboard/*` et reste HTML-only.
+
+Routes actives :
+
+- `GET /dashboard/logs`
+- `GET /dashboard/logs/{externalId}`
 
 ### Authentification
 
@@ -103,6 +117,7 @@ La stratégie d'authentification retenue est : tokens opaques hashés, révocabl
 Le projet n'utilise pas JWT pour l'ingestion.
 
 Format attendu côté client :
+
 - `Authorization: Bearer cbi_...`
 - le token clair n'est jamais stocké
 - seul le hash est persisté en base
@@ -148,16 +163,13 @@ La base réelle du write side est déjà visible dans le code :
 - `src/Log/`
 - `src/Queue/`
 - `src/Persistence/`
-- `src/DataFixtures/`
-- `src/Shared/`
-
-#### À venir
-
 - `src/Ingestion/`
 - `src/Search/`
 - `src/Dashboard/`
 - `src/Project/`
 - `src/ApiToken/`
+- `src/DataFixtures/`
+- `src/Shared/`
 
 ### Détail dossier par dossier
 
@@ -181,25 +193,25 @@ Zone transversale réservée aux briques communes. À ce stade, le dossier sert 
 
 Fixtures de développement et de test pour peupler rapidement un environnement local.
 
-#### `src/Ingestion/` - à venir
+#### `src/Ingestion/` - actuel
 
-Module d'entrée de la plateforme. Il accueillera la validation minimale, l'orchestration du payload HTTP et l'appel vers la queue.
+Module d'entrée de la plateforme. Il porte l'endpoint `POST /api/logs`, la validation minimale, l'orchestration du payload HTTP et l'appel vers la queue.
 
-#### `src/Search/` - à venir
+#### `src/Search/` - actuel
 
-Module de recherche bornée. Il devra rester simple, indexé et strictement paginé.
+Module de recherche bornée. Pagination obligatoire, LIMIT explicite et filtres principaux combinables.
 
-#### `src/Dashboard/` - à venir
+#### `src/Dashboard/` - actuel
 
-Module de lecture côté interface. Il servira à afficher les logs, les filtres et la navigation sans alourdir la partie écriture.
+Module de lecture côté interface. Il affiche la liste paginée et la vue détail des logs.
 
-#### `src/Project/` - à venir
+#### `src/Project/` - actuel
 
-Module de gestion des projets logiques. Il portera les règles de rétention, l'identité du projet et les paramètres liés au périmètre de logs.
+Module de gestion des projets logiques. Il porte la base métier projet et la règle de rétention.
 
-#### `src/ApiToken/` - à venir
+#### `src/ApiToken/` - actuel
 
-Module d'authentification par jetons opaques. Il gérera le hash, la révocation, l'expiration et le suivi des usages.
+Module d'authentification par jetons opaques. Il gère le hash, la révocation et l'expiration.
 
 ## Quick start
 
@@ -296,14 +308,14 @@ La direction actuelle du projet reste :
 1. fiabiliser l'ingestion
 2. bétonner la queue
 3. stabiliser la persistence
-4. ajouter la lecture bornée
-5. construire le dashboard
+4. finaliser le traitement queue d'exploitation
+5. compléter la documentation et les tests critiques
 
 Plan détaillé d'exécution : [README_PLAN_RESTANT.md](README_PLAN_RESTANT.md)
 
 ## Statut
 
-Projet en cours de développement, avec un socle write side déjà amorcé et une lecture encore en consolidation.
+Projet en cours de développement, avec ingestion/auth/search/dashboard déjà livrés et un focus restant sur exploitation queue, qualité et documentation.
 
 ## Vision à venir
 

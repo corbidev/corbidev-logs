@@ -19,16 +19,20 @@ Déjà en place:
 - module Log (normalisation, LogEntry, fingerprint, value objects)
 - module Queue (writer/reader/configuration/corrupted files)
 - module Persistence (batch handler + writer Doctrine DBAL)
+- module Ingestion (endpoint JSON-only + auth Bearer)
+- module ApiToken (création, validation, révocation, expiration)
+- module Project (base métier + rétention)
+- module Search (pagination + filtres principaux)
+- module Dashboard (liste paginée + page détail)
 - base de tests existante
 
 Reste à livrer:
 
-- module Ingestion finalisé
 - cron de consommation de queue en production
-- module Search borné
-- module Dashboard exploitable
-- module Project et ApiToken
-- clarification finale de l'authentification
+- branchement complet lecture queue -> persistence -> suppression en conditions réelles
+- runbook d'exploitation queue/reprise incident
+- couverture des cas critiques restants
+- validation installation locale et CI répétable
 
 ## 3. Priorités (ordre strict)
 
@@ -58,13 +62,13 @@ Objectif:
 
 À faire:
 
-- [ ] créer/compléter le module src/Ingestion avec Application, Domain, Infrastructure
-- [ ] implémenter l'endpoint API (JSON only, jamais HTML)
-- [ ] valider payload minimal et format erreurs/success
-- [ ] brancher normalizer -> factory -> queue writer
-- [ ] renvoyer 202 Accepted sur ingestion réussie
-- [ ] standardiser codes d'erreur (invalid_json, invalid_payload, unauthorized, etc.)
-- [ ] ajouter tests fonctionnels d'ingestion (cas nominal + hostiles)
+- [x] créer/compléter le module src/Ingestion avec Application, Domain, Infrastructure
+- [x] implémenter l'endpoint API (JSON only, jamais HTML)
+- [x] valider payload minimal et format erreurs/success
+- [x] brancher normalizer -> factory -> queue writer
+- [x] renvoyer 202 Accepted sur ingestion réussie
+- [x] standardiser codes d'erreur (invalid_json, invalid_payload, unauthorized, etc.)
+- [x] ajouter tests fonctionnels d'ingestion (cas nominal + hostiles)
 
 Critères d'acceptation:
 
@@ -142,10 +146,10 @@ Objectif:
 
 À faire:
 
-- [ ] implémenter src/Project (modèle + services)
+- [x] implémenter src/Project (modèle + services)
 - [ ] CRUD minimal projet
 - [ ] slug unique et règles de nommage
-- [ ] paramétrer retention_days par projet
+- [x] paramétrer retention_days par projet
 
 Critères d'acceptation:
 
@@ -160,11 +164,11 @@ Objectif:
 
 À faire:
 
-- [ ] implémenter src/Search (requêtes bornées)
-- [ ] pagination obligatoire et LIMIT strict
-- [ ] filtres minimum: période, level, domain, project, fingerprint
+- [x] implémenter src/Search (requêtes bornées)
+- [x] pagination obligatoire et LIMIT strict
+- [x] filtres minimum: période, level, domain, project, fingerprint
 - [ ] tri cohérent et stable
-- [ ] tests de pagination et filtres combinés
+- [x] tests de pagination et filtres combinés
 
 Critères d'acceptation:
 
@@ -179,9 +183,9 @@ Objectif:
 
 À faire:
 
-- [ ] implémenter src/Dashboard
-- [ ] page liste logs paginée
-- [ ] page détail log
+- [x] implémenter src/Dashboard
+- [x] page liste logs paginée
+- [x] page détail log
 - [ ] filtres principaux reliés à Search
 - [ ] erreurs UI gérées proprement
 
@@ -201,7 +205,7 @@ Objectif:
 - [ ] compléter couverture tests sur cas critiques
 - [ ] journaliser événements techniques clés
 - [ ] documenter runbook cron/reprise incident
-- [ ] harmoniser tous les README avec l'état réel
+- [x] harmoniser tous les README avec l'état réel
 - [ ] valider procédure d'installation locale et CI
 
 Critères d'acceptation:
