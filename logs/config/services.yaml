@@ -56,5 +56,8 @@ services:
     App\Dashboard\Domain\DashboardReadModelInterface:
         alias: App\Dashboard\Infrastructure\InMemoryDashboardReadModel
 
+    App\Dashboard\Domain\DashboardLogDetailsRepositoryInterface:
+        alias: App\Dashboard\Infrastructure\DoctrineDashboardLogDetailsRepository
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

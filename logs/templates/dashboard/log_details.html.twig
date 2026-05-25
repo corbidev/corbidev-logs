@@ -1,0 +1,88 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Dashboard - Log {{ log.externalId }}{% endblock %}
+
+{% block body %}
+<main style="max-width: 1000px; margin: 2rem auto; padding: 0 1rem; font-family: 'Segoe UI', sans-serif;">
+    <header style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.2rem;">
+        <div>
+            <h1 style="margin: 0; font-size: 1.6rem;">Log {{ log.externalId }}</h1>
+            <p style="margin: 0.4rem 0 0 0; color: #666;">{{ log.createdAt|date('Y-m-d H:i:s') }} - {{ log.level|upper }} - {{ log.domain }}</p>
+        </div>
+
+        <a href="{{ path('dashboard_logs_index') }}">Retour à la liste</a>
+    </header>
+
+    <section style="border: 1px solid #ddd; border-radius: 6px; padding: 1rem; margin-bottom: 1rem;">
+        <h2 style="margin-top: 0;">Données principales</h2>
+
+        <dl style="display: grid; grid-template-columns: 180px 1fr; gap: 0.5rem 1rem; margin: 0;">
+            <dt>External ID</dt>
+            <dd style="margin: 0;">{{ log.externalId }}</dd>
+
+            <dt>Project ID</dt>
+            <dd style="margin: 0;">{{ log.projectId }}</dd>
+
+            <dt>Fingerprint</dt>
+            <dd style="margin: 0;">{{ log.fingerprint }}</dd>
+
+            <dt>Request ID</dt>
+            <dd style="margin: 0;">{{ log.requestId }}</dd>
+
+            <dt>HTTP status</dt>
+            <dd style="margin: 0;">{{ log.httpStatus }}</dd>
+
+            <dt>Method</dt>
+            <dd style="margin: 0;">{{ log.method ?? 'n/a' }}</dd>
+
+            <dt>URI</dt>
+            <dd style="margin: 0; word-break: break-word;">{{ log.uri }}</dd>
+
+            <dt>Environment</dt>
+            <dd style="margin: 0;">{{ log.env }}</dd>
+
+            <dt>Client</dt>
+            <dd style="margin: 0;">{{ log.client }}</dd>
+
+            <dt>User Agent</dt>
+            <dd style="margin: 0; word-break: break-word;">{{ log.userAgent ?? 'n/a' }}</dd>
+
+            <dt>IP</dt>
+            <dd style="margin: 0;">{{ log.ip ?? 'n/a' }}</dd>
+
+            <dt>Client date</dt>
+            <dd style="margin: 0;">{{ log.clientDate ? log.clientDate|date('Y-m-d H:i:s') : 'n/a' }}</dd>
+        </dl>
+    </section>
+
+    <section style="border: 1px solid #ddd; border-radius: 6px; padding: 1rem; margin-bottom: 1rem;">
+        <h2 style="margin-top: 0;">Message</h2>
+        <pre style="white-space: pre-wrap; margin: 0;">{{ log.message }}</pre>
+    </section>
+
+    <section style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
+        <article style="border: 1px solid #ddd; border-radius: 6px; padding: 1rem;">
+            <h2 style="margin-top: 0;">Context</h2>
+            <pre style="white-space: pre-wrap; margin: 0;">{{ log.context|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+        </article>
+
+        <article style="border: 1px solid #ddd; border-radius: 6px; padding: 1rem;">
+            <h2 style="margin-top: 0;">Extra</h2>
+            <pre style="white-space: pre-wrap; margin: 0;">{{ log.extra|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+        </article>
+
+        <article style="border: 1px solid #ddd; border-radius: 6px; padding: 1rem;">
+            <h2 style="margin-top: 0;">Ingestion warnings</h2>
+            {% if log.ingestionWarnings is empty %}
+                <p style="margin: 0; color: #666;">Aucun warning.</p>
+            {% else %}
+                <ul style="margin: 0; padding-left: 1.2rem;">
+                    {% for warning in log.ingestionWarnings %}
+                        <li>{{ warning }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </article>
+    </section>
+</main>
+{% endblock %}

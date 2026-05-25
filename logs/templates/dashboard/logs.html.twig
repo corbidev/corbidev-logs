@@ -28,7 +28,9 @@
             {% for item in items %}
                 <tr>
                     <td style="padding: 0.6rem; border-bottom: 1px solid #eee;">{{ item.createdAt|date('Y-m-d H:i:s') }}</td>
-                    <td style="padding: 0.6rem; border-bottom: 1px solid #eee;">{{ item.externalId }}</td>
+                    <td style="padding: 0.6rem; border-bottom: 1px solid #eee;">
+                        <a href="{{ path('dashboard_logs_show', {'externalId': item.externalId}) }}">{{ item.externalId }}</a>
+                    </td>
                     <td style="padding: 0.6rem; border-bottom: 1px solid #eee;">{{ item.projectId }}</td>
                     <td style="padding: 0.6rem; border-bottom: 1px solid #eee;">{{ item.level }}</td>
                     <td style="padding: 0.6rem; border-bottom: 1px solid #eee;">{{ item.domain }}</td>
