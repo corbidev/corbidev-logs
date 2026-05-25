@@ -1,25 +1,6 @@
-<?php
+-- Target SQL schema for corbidev-logs (P-001)
+-- Engine: MariaDB/MySQL (InnoDB)
 
-declare(strict_types=1);
-
-namespace DoctrineMigrations;
-
-use Doctrine\DBAL\Schema\Schema;
-use Doctrine\Migrations\AbstractMigration;
-
-/**
- * Auto-generated Migration: Please modify to your needs!
- */
-final class Version20260513204204 extends AbstractMigration
-{
-    public function getDescription(): string
-    {
-        return 'Create target SQL schema for projects, api_tokens and logs tables.';
-    }
-
-    public function up(Schema $schema): void
-    {
-        $this->addSql(<<<'SQL'
 CREATE TABLE IF NOT EXISTS projects (
     id BIGINT UNSIGNED AUTO_INCREMENT NOT NULL,
     slug VARCHAR(100) NOT NULL,
@@ -28,12 +9,10 @@ CREATE TABLE IF NOT EXISTS projects (
     is_active TINYINT(1) NOT NULL DEFAULT 1,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE INDEX uniq_projects_slug (slug),
-    PRIMARY KEY(id)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB
-SQL);
+    UNIQUE KEY uniq_projects_slug (slug),
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-        $this->addSql(<<<'SQL'
 INSERT INTO projects (id, slug, name, retention_days, is_active, created_at, updated_at)
 VALUES (1, 'default', 'Default project', 30, 1, NOW(), NOW())
 ON DUPLICATE KEY UPDATE
@@ -41,10 +20,8 @@ ON DUPLICATE KEY UPDATE
     name = VALUES(name),
     retention_days = VALUES(retention_days),
     is_active = VALUES(is_active),
-    updated_at = NOW()
-SQL);
+    updated_at = NOW();
 
-        $this->addSql(<<<'SQL'
 CREATE TABLE IF NOT EXISTS api_tokens (
     id BIGINT UNSIGNED AUTO_INCREMENT NOT NULL,
     project_id BIGINT UNSIGNED NOT NULL,
@@ -55,17 +32,15 @@ CREATE TABLE IF NOT EXISTS api_tokens (
     revoked_at DATETIME DEFAULT NULL,
     last_used_at DATETIME DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE INDEX uniq_api_tokens_token_hash (token_hash),
-    INDEX idx_api_tokens_project_id (project_id),
-    INDEX idx_api_tokens_expires_at (expires_at),
-    INDEX idx_api_tokens_revoked_at (revoked_at),
-    INDEX idx_api_tokens_prefix (token_prefix),
-    PRIMARY KEY(id),
+    UNIQUE KEY uniq_api_tokens_token_hash (token_hash),
+    KEY idx_api_tokens_project_id (project_id),
+    KEY idx_api_tokens_expires_at (expires_at),
+    KEY idx_api_tokens_revoked_at (revoked_at),
+    KEY idx_api_tokens_prefix (token_prefix),
+    PRIMARY KEY (id),
     CONSTRAINT fk_api_tokens_project_id FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE
-) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB
-SQL);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-        $this->addSql(<<<'SQL'
 CREATE TABLE IF NOT EXISTS logs (
     id BIGINT UNSIGNED AUTO_INCREMENT NOT NULL,
     external_id VARCHAR(36) NOT NULL,
@@ -87,27 +62,17 @@ CREATE TABLE IF NOT EXISTS logs (
     created_at DATETIME NOT NULL,
     client_date DATETIME DEFAULT NULL,
     ip VARCHAR(45) DEFAULT NULL,
-    UNIQUE INDEX uniq_logs_external_id (external_id),
-    INDEX idx_logs_project_id (project_id),
-    INDEX idx_logs_created_at (created_at),
-    INDEX idx_logs_fingerprint (fingerprint),
-    INDEX idx_logs_request_id (request_id),
-    INDEX idx_logs_level (level),
-    INDEX idx_logs_env (env),
-    INDEX idx_logs_http_status (http_status),
-    INDEX idx_logs_project_created (project_id, created_at),
-    INDEX idx_logs_project_fingerprint (project_id, fingerprint),
-    INDEX idx_logs_project_request (project_id, request_id),
-    PRIMARY KEY(id),
+    UNIQUE KEY uniq_logs_external_id (external_id),
+    KEY idx_logs_project_id (project_id),
+    KEY idx_logs_created_at (created_at),
+    KEY idx_logs_fingerprint (fingerprint),
+    KEY idx_logs_request_id (request_id),
+    KEY idx_logs_level (level),
+    KEY idx_logs_env (env),
+    KEY idx_logs_http_status (http_status),
+    KEY idx_logs_project_created (project_id, created_at),
+    KEY idx_logs_project_fingerprint (project_id, fingerprint),
+    KEY idx_logs_project_request (project_id, request_id),
+    PRIMARY KEY (id),
     CONSTRAINT fk_logs_project_id FOREIGN KEY (project_id) REFERENCES projects (id)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB
-SQL);
-    }
-
-    public function down(Schema $schema): void
-    {
-        $this->addSql('DROP TABLE IF EXISTS logs');
-        $this->addSql('DROP TABLE IF EXISTS api_tokens');
-        $this->addSql('DROP TABLE IF EXISTS projects');
-    }
-}
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

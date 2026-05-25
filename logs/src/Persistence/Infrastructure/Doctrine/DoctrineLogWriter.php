@@ -54,6 +54,11 @@ final readonly class DoctrineLogWriter implements LogWriterInterface
      */
     private const string TABLE_NAME = 'logs';
 
+    /**
+     * Projet par défaut en attendant le binding auth/project.
+     */
+    private const int DEFAULT_PROJECT_ID = 1;
+
     public function __construct(
         private Connection $connection,
         private LoggerInterface $logger,
@@ -167,6 +172,8 @@ final readonly class DoctrineLogWriter implements LogWriterInterface
         $this->connection->insert(
             self::TABLE_NAME,
             [
+                'project_id' => self::DEFAULT_PROJECT_ID,
+
                 'external_id' => $this->normalizeNullableString(
                     $entry->getExternalId(),
                 ),
@@ -225,15 +232,15 @@ final readonly class DoctrineLogWriter implements LogWriterInterface
                     ->getIpAddress()
                     ->value(),
 
-                'context' => $this->encodeJson(
+                'context_json' => $this->encodeJson(
                     $entry->getContext(),
                 ),
 
-                'extra' => $this->encodeJson(
+                'extra_json' => $this->encodeJson(
                     $entry->getExtra(),
                 ),
 
-                'ingestion_warnings' => $this->encodeJson(
+                'ingestion_warnings_json' => $this->encodeJson(
                     $this->normalizeWarnings(
                         $entry->getIngestionWarnings(),
                     ),
