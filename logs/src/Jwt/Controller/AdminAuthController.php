@@ -12,6 +12,11 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/admin')]
 class AdminAuthController extends AbstractController
 {
+    public function __construct(
+        private readonly string $adminUser,
+        private readonly string $adminPasswordHash,
+    ) {}
+
     #[Route('/login', name: 'admin_login', methods: ['GET', 'POST'])]
     public function login(Request $request): Response
     {
@@ -26,8 +31,10 @@ class AdminAuthController extends AbstractController
             $password = $request->request->get('password');
 
             if (
-                $user === $_ENV['ADMIN_USER'] &&
-                password_verify($password, $_ENV['ADMIN_PASSWORD_HASH'])
+                is_string($user)
+                && hash_equals($this->adminUser, $user)
+                && is_string($password)
+                && password_verify($password, $this->adminPasswordHash)
             ) {
                 $request->getSession()->set('admin', true);
 

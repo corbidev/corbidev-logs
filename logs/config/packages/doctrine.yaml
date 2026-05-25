@@ -22,6 +22,13 @@ doctrine:
             #     prefix: 'App\Entity'
             #     alias: App
 
+            Jwt:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Jwt/Entity'
+                prefix: 'App\Jwt\Entity'
+                alias: Jwt
+
             Persistence:
                 type: attribute
                 is_bundle: false

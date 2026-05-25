@@ -52,7 +52,7 @@
                         <select class="form-select" name="project_id" required>
                             <option value="">Selectionner...</option>
                             {% for project in projects %}
-                                <option value="{{ project.id }}" {% if form.project_id == project.id|string %}selected{% endif %}>
+                                <option value="{{ project.id }}" {% if form.project_id == (project.id ~ '') %}selected{% endif %}>
                                     {{ project.name }} ({{ project.slug }})
                                 </option>
                             {% endfor %}
