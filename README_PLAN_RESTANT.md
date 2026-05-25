@@ -122,9 +122,9 @@ Objectif:
 
 À faire:
 
-- [ ] implémenter module src/ApiToken (création, hash, révocation, expiration)
+- [x] implémenter module src/ApiToken (création, hash, révocation, expiration)
 - [ ] lier tokens à un Project
-- [ ] ajouter contrôle Authorization Bearer sur endpoint ingestion
+- [x] ajouter contrôle Authorization Bearer sur endpoint ingestion
 - [ ] gérer last_used_at et audit minimal
 - [x] finaliser la documentation de la stratégie tokens opaques (sans JWT)
 
