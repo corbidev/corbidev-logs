@@ -47,5 +47,8 @@ services:
     App\ApiToken\Domain\ApiTokenRepositoryInterface:
         alias: App\ApiToken\Infrastructure\DoctrineApiTokenRepository
 
+    App\Project\Domain\ProjectRepositoryInterface:
+        alias: App\Project\Infrastructure\DoctrineProjectRepository
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
