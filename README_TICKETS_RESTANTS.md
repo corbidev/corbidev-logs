@@ -212,16 +212,16 @@ Critères de fin :
 - accès sans token refusé
 - accès avec token valide accepté
 
-### AUTH-005 - Clarifier la stratégie JWT vs tokens opaques
+### AUTH-005 - Documenter la stratégie tokens opaques (sans JWT)
 
 Objectif :
 
-- aligner documentation et dépendances sur la stratégie retenue
+- documenter explicitement la stratégie d'authentification retenue
 
 Critères de fin :
 
 - position documentée
-- aucune ambiguïté dans les README
+- aucune ambiguïté JWT/tokens opaques dans la documentation
 
 ## P1 - Modules métier de lecture
 

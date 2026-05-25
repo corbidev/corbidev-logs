@@ -444,7 +444,7 @@ acceptance:
 
 ### AUTH-005
 
-title: `[docs] [Auth] Clarifier JWT versus tokens opaques`
+title: `[docs] [Auth] Documenter la stratégie tokens opaques (sans JWT)`
 
 labels:
 
@@ -458,12 +458,12 @@ depends_on:
 
 body:
 
-- aligner documentation et dépendances sur la stratégie retenue
+- documenter explicitement la stratégie d'authentification retenue
 
 acceptance:
 
 - position documentée
-- aucune ambiguïté dans les README
+- aucune ambiguïté JWT/tokens opaques dans la documentation
 
 ## P1 - Read side
 
