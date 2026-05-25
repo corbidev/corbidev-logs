@@ -81,7 +81,60 @@ final class DoctrineLogWriterTest extends TestCase
 
         $connection
             ->expects(self::once())
-            ->method('insert');
+            ->method('insert')
+            ->with(
+                'logs',
+                self::callback(
+                    static function (array $data): bool {
+                        $requiredFields = [
+                            'project_id',
+                            'external_id',
+                            'fingerprint',
+                            'request_id',
+                            'level',
+                            'http_status',
+                            'domain',
+                            'uri',
+                            'env',
+                            'client',
+                            'message',
+                            'context_json',
+                            'extra_json',
+                            'ingestion_warnings_json',
+                            'created_at',
+                        ];
+
+                        foreach ($requiredFields as $field) {
+                            if (!array_key_exists($field, $data)) {
+                                return false;
+                            }
+                        }
+
+                        if ((int) ($data['project_id'] ?? 0) !== 1) {
+                            return false;
+                        }
+
+                        if (!is_string($data['external_id']) || trim($data['external_id']) === '') {
+                            return false;
+                        }
+
+                        if (!is_string($data['context_json']) || $data['context_json'] === '') {
+                            return false;
+                        }
+
+                        if (!is_string($data['extra_json']) || $data['extra_json'] === '') {
+                            return false;
+                        }
+
+                        if (!is_string($data['ingestion_warnings_json']) || $data['ingestion_warnings_json'] === '') {
+                            return false;
+                        }
+
+                        return true;
+                    },
+                ),
+            )
+            ->willReturn(1);
 
         $writer = new DoctrineLogWriter(
             $connection,

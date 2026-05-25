@@ -8,6 +8,7 @@ use App\Log\Domain\Entity\LogEntry;
 use App\Log\Domain\ValueObject\IngestionWarning;
 use App\Persistence\Domain\LogWriterInterface;
 use App\Persistence\Domain\PersistenceResult;
+use App\Persistence\Infrastructure\Mapper\LogEntryToRecordMapper;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception;
 use Psr\Log\LoggerInterface;
@@ -62,6 +63,7 @@ final readonly class DoctrineLogWriter implements LogWriterInterface
     public function __construct(
         private Connection $connection,
         private LoggerInterface $logger,
+        private ?LogEntryToRecordMapper $mapper = null,
     ) {}
 
     /**
@@ -167,94 +169,68 @@ final readonly class DoctrineLogWriter implements LogWriterInterface
     private function insertLogEntry(
         LogEntry $entry,
     ): void {
-        $request = $entry->getRequest();
+        $record = $this->resolveMapper()->map(
+            self::DEFAULT_PROJECT_ID,
+            $entry,
+        );
 
         $this->connection->insert(
             self::TABLE_NAME,
             [
-                'project_id' => self::DEFAULT_PROJECT_ID,
+                'project_id' => (int) $record->getProjectId(),
 
-                'external_id' => $this->normalizeNullableString(
-                    $entry->getExternalId(),
-                ),
+                'external_id' => $record->getExternalId(),
 
-                'fingerprint' => $this->normalizeNullableString(
-                    $entry
-                        ->getFingerprint()
-                        ->value(),
-                ),
+                'fingerprint' => $record->getFingerprint(),
 
-                'message' => $this->truncate(
-                    $entry->getMessage(),
-                    1000,
-                ),
+                'message' => $record->getMessage(),
 
-                'level' => $entry
-                    ->getLevel()
-                    ->value,
+                'level' => $record->getLevel(),
 
-                'domain' => $this->truncate(
-                    $entry->getDomain(),
-                    100,
-                ),
+                'domain' => $record->getDomain(),
 
-                'env' => $entry
-                    ->getEnvironment()
-                    ->value,
+                'env' => $record->getEnv(),
 
-                'http_status' => $entry
-                    ->getHttpStatus()
-                    ->value(),
+                'http_status' => $record->getHttpStatus(),
 
-                'client' => $entry
-                    ->getClient()
-                    ->value(),
+                'client' => $record->getClient(),
 
-                'request_id' => $entry
-                    ->getRequestId()
-                    ->value(),
+                'request_id' => $record->getRequestId(),
 
-                'method' => $this->normalizeNullableString(
-                    $request->method(),
-                ),
+                'method' => $record->getMethod(),
 
-                'uri' => $this->normalizeNullableString(
-                    $request
-                        ->uri()
-                        ->value(),
-                ),
+                'uri' => $record->getUri(),
 
-                'user_agent' => $this->normalizeNullableString(
-                    $request->userAgent(),
-                ),
+                'user_agent' => $record->getUserAgent(),
 
-                'ip' => $entry
-                    ->getIpAddress()
-                    ->value(),
+                'ip' => $record->getIp(),
 
                 'context_json' => $this->encodeJson(
-                    $entry->getContext(),
+                    $record->getContextJson(),
                 ),
 
                 'extra_json' => $this->encodeJson(
-                    $entry->getExtra(),
+                    $record->getExtraJson(),
                 ),
 
                 'ingestion_warnings_json' => $this->encodeJson(
-                    $this->normalizeWarnings(
-                        $entry->getIngestionWarnings(),
-                    ),
+                    $record->getIngestionWarningsJson(),
                 ),
 
-                'created_at' => $entry
+                'created_at' => $record
                     ->getCreatedAt()
                     ->format('Y-m-d H:i:s'),
 
-                'client_date' => $entry
+                'client_date' => $record
                     ->getClientDate()
                     ?->format('Y-m-d H:i:s'),
             ],
         );
+    }
+
+    private function resolveMapper(): LogEntryToRecordMapper
+    {
+        return $this->mapper ?? new LogEntryToRecordMapper();
     }
 
     /**
