@@ -288,6 +288,13 @@ final class DoctrineLogWriterTest extends TestCase
         self::assertTrue(
             $result->hasErrors(),
         );
+
+        $firstError = $result->getErrors()[0] ?? '';
+
+        self::assertStringContainsString(
+            'Database unavailable',
+            $firstError,
+        );
     }
 
     /**
