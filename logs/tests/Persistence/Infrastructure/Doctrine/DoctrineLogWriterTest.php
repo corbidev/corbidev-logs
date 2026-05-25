@@ -14,6 +14,7 @@ use App\Log\Domain\ValueObject\RequestId;
 use App\Log\Domain\ValueObject\Uri;
 use App\Log\Enum\Environment;
 use App\Log\Enum\LogLevel;
+use App\Persistence\Constantes\PersistenceLimits;
 use App\Persistence\Infrastructure\Doctrine\DoctrineLogWriter;
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
@@ -310,7 +311,7 @@ final class DoctrineLogWriterTest extends TestCase
             ->method('commit');
 
         $connection
-            ->expects(self::exactly(500))
+            ->expects(self::exactly(PersistenceLimits::MAX_PERSIST_BATCH_SIZE))
             ->method('insert');
 
         $entries = [];
@@ -333,7 +334,7 @@ final class DoctrineLogWriterTest extends TestCase
         );
 
         self::assertSame(
-            500,
+            PersistenceLimits::MAX_PERSIST_BATCH_SIZE,
             $result->getPersistedCount(),
         );
     }

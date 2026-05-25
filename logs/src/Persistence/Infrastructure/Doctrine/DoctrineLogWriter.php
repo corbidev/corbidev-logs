@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Persistence\Infrastructure\Doctrine;
 
 use App\Log\Domain\Entity\LogEntry;
-use App\Log\Domain\ValueObject\IngestionWarning;
+use App\Persistence\Constantes\PersistenceLimits;
 use App\Persistence\Domain\LogWriterInterface;
 use App\Persistence\Domain\PersistenceResult;
 use App\Persistence\Infrastructure\Mapper\LogEntryToRecordMapper;
@@ -45,11 +45,6 @@ use Psr\Log\LoggerInterface;
  */
 final readonly class DoctrineLogWriter implements LogWriterInterface
 {
-    /**
-     * Taille maximale d'un batch.
-     */
-    private const int MAX_BATCH_SIZE = 500;
-
     /**
      * Nom de la table SQL.
      */
@@ -246,7 +241,7 @@ final readonly class DoctrineLogWriter implements LogWriterInterface
     ): array {
         if (
             count($entries)
-            <= self::MAX_BATCH_SIZE
+            <= PersistenceLimits::MAX_PERSIST_BATCH_SIZE
         ) {
             return $entries;
         }
@@ -255,14 +250,14 @@ final readonly class DoctrineLogWriter implements LogWriterInterface
             'Persistence batch truncated.',
             [
                 'original_size' => count($entries),
-                'max_size' => self::MAX_BATCH_SIZE,
+                'max_size' => PersistenceLimits::MAX_PERSIST_BATCH_SIZE,
             ],
         );
 
         return array_slice(
             $entries,
             0,
-            self::MAX_BATCH_SIZE,
+            PersistenceLimits::MAX_PERSIST_BATCH_SIZE,
         );
     }
 
@@ -289,73 +284,6 @@ final readonly class DoctrineLogWriter implements LogWriterInterface
         } catch (\Throwable) {
             return '{}';
         }
-    }
-
-    /**
-     * Normalise les warnings ingestion.
-     *
-     * @param list<IngestionWarning> $warnings
-     *
-     * @return list<array<string, mixed>>
-     */
-    private function normalizeWarnings(
-        array $warnings,
-    ): array {
-        return array_map(
-            static fn(
-                IngestionWarning $warning,
-            ): array => $warning->toArray(),
-            $warnings,
-        );
-    }
-
-    /**
-     * Tronque une string.
-     */
-    private function truncate(
-        string $value,
-        int $maxLength,
-    ): string {
-        $value = trim($value);
-
-        if ($value === '') {
-            return '';
-        }
-
-        if (
-            mb_strlen($value)
-            <= $maxLength
-        ) {
-            return $value;
-        }
-
-        return mb_substr(
-            $value,
-            0,
-            $maxLength,
-        );
-    }
-
-    /**
-     * Normalise une string nullable.
-     */
-    private function normalizeNullableString(
-        ?string $value,
-    ): ?string {
-        if ($value === null) {
-            return null;
-        }
-
-        $value = trim($value);
-
-        if ($value === '') {
-            return null;
-        }
-
-        return $this->truncate(
-            $value,
-            1000,
-        );
     }
 
     /**
