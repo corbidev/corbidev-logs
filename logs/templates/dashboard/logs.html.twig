@@ -1,57 +1,150 @@
-{% extends 'base.html.twig' %}
+{% extends 'admin/layout.html.twig' %}
 
 {% block title %}Dashboard - Logs{% endblock %}
 
 {% block body %}
-<main style="max-width: 1100px; margin: 2rem auto; padding: 0 1rem; font-family: 'Segoe UI', sans-serif;">
-    <header style="display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: 1rem;">
-        <h1 style="margin: 0; font-size: 1.6rem;">Dashboard Logs</h1>
-        <p style="margin: 0; color: #666;">Total: {{ totalCount }}</p>
-    </header>
+<main class="admin-page">
+    <section class="admin-shell wide">
+        <div class="d-flex justify-content-between align-items-center mb-3 admin-topbar">
+            <div>
+                <h1 class="h3 admin-title">Dashboard Logs</h1>
+                <p class="admin-subtitle">Vue filtrable des logs persistes.</p>
+            </div>
+            <p class="mb-0 text-muted">Total: {{ totalCount }}</p>
+        </div>
 
-    <section style="margin-bottom: 1rem; color: #444;">
-        Page {{ page }} / {{ totalPages }} - {{ perPage }} éléments par page
+        <section class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <form method="get" action="{{ path('dashboard_logs_index') }}" class="row g-2 align-items-end">
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Date debut</label>
+                        <input class="form-control" type="datetime-local" name="from_date" value="{{ filters.from_date }}">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Date fin</label>
+                        <input class="form-control" type="datetime-local" name="to_date" value="{{ filters.to_date }}">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Niveau</label>
+                        <select class="form-select" name="level">
+                            <option value="">Tous</option>
+                            {% for level in levels %}
+                                <option value="{{ level }}" {% if filters.level == level %}selected{% endif %}>{{ level }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Domaine</label>
+                        <select class="form-select" name="domain">
+                            <option value="">Tous</option>
+                            {% for domain in domains %}
+                                <option value="{{ domain }}" {% if filters.domain == domain %}selected{% endif %}>{{ domain }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Projet</label>
+                        <select class="form-select" name="project_id">
+                            <option value="">Tous</option>
+                            {% for project in projects %}
+                                <option value="{{ project.id }}" {% if filters.project_id == (project.id ~ '') %}selected{% endif %}>
+                                    {{ project.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Fingerprint</label>
+                        <input class="form-control" name="fingerprint" value="{{ filters.fingerprint }}" placeholder="16 chars">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Recherche globale</label>
+                        <input class="form-control" name="q" value="{{ filters.q }}" placeholder="message, URI, requestId, externalId">
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">Par page</label>
+                        <select class="form-select" name="per_page">
+                            {% for option in [25, 50, 100, 200] %}
+                                <option value="{{ option }}" {% if perPage == option %}selected{% endif %}>{{ option }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-brand text-white flex-grow-1">Filtrer</button>
+                        <a href="{{ path('dashboard_logs_index') }}" class="btn btn-outline-secondary btn-soft">Reset</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section class="mb-3 text-muted">
+            Page {{ page }} / {{ totalPages }} - {{ perPage }} elements par page
+        </section>
+
+        <div class="table-wrap table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>External ID</th>
+                        <th>Projet</th>
+                        <th>Niveau</th>
+                        <th>HTTP</th>
+                        <th>Domaine</th>
+                        <th>URI</th>
+                        <th>Request ID</th>
+                        <th>Fingerprint</th>
+                        <th>Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                        <tr>
+                            <td>{{ item.createdAt|date('Y-m-d H:i:s') }}</td>
+                            <td>
+                                <a href="{{ path('dashboard_logs_show', {'externalId': item.externalId}) }}">{{ item.externalId }}</a>
+                            </td>
+                            <td>{{ item.projectId }}</td>
+                            <td>{{ item.level }}</td>
+                            <td>{{ item.httpStatus }}</td>
+                            <td>{{ item.domain }}</td>
+                            <td><span class="text-break">{{ item.uri }}</span></td>
+                            <td>{{ item.requestId }}</td>
+                            <td><code>{{ item.fingerprint }}</code></td>
+                            <td>
+                                {% if item.message|length > 90 %}
+                                    {{ item.message|slice(0, 90) ~ '...' }}
+                                {% else %}
+                                    {{ item.message }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="10" class="text-center text-muted py-4">Aucun log disponible.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <nav class="d-flex gap-2 mt-3">
+            {% if page > 1 %}
+                <a class="btn btn-outline-secondary btn-soft" href="{{ path('dashboard_logs_index', paginationParams|merge({'page': page - 1})) }}">Page precedente</a>
+            {% endif %}
+
+            {% if page < totalPages %}
+                <a class="btn btn-outline-secondary btn-soft" href="{{ path('dashboard_logs_index', paginationParams|merge({'page': page + 1})) }}">Page suivante</a>
+            {% endif %}
+        </nav>
     </section>
-
-    <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
-        <thead>
-            <tr style="background: #f5f5f5; text-align: left;">
-                <th style="padding: 0.6rem; border-bottom: 1px solid #ddd;">Date</th>
-                <th style="padding: 0.6rem; border-bottom: 1px solid #ddd;">External ID</th>
-                <th style="padding: 0.6rem; border-bottom: 1px solid #ddd;">Projet</th>
-                <th style="padding: 0.6rem; border-bottom: 1px solid #ddd;">Niveau</th>
-                <th style="padding: 0.6rem; border-bottom: 1px solid #ddd;">Domaine</th>
-                <th style="padding: 0.6rem; border-bottom: 1px solid #ddd;">Message</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in items %}
-                <tr>
-                    <td style="padding: 0.6rem; border-bottom: 1px solid #eee;">{{ item.createdAt|date('Y-m-d H:i:s') }}</td>
-                    <td style="padding: 0.6rem; border-bottom: 1px solid #eee;">
-                        <a href="{{ path('dashboard_logs_show', {'externalId': item.externalId}) }}">{{ item.externalId }}</a>
-                    </td>
-                    <td style="padding: 0.6rem; border-bottom: 1px solid #eee;">{{ item.projectId }}</td>
-                    <td style="padding: 0.6rem; border-bottom: 1px solid #eee;">{{ item.level }}</td>
-                    <td style="padding: 0.6rem; border-bottom: 1px solid #eee;">{{ item.domain }}</td>
-                    <td style="padding: 0.6rem; border-bottom: 1px solid #eee;">{{ item.message }}</td>
-                </tr>
-            {% else %}
-                <tr>
-                    <td colspan="6" style="padding: 0.8rem; text-align: center; color: #666;">Aucun log disponible.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <nav style="display: flex; gap: 0.8rem; margin-top: 1rem;">
-        {% if page > 1 %}
-            <a href="{{ path('dashboard_logs_index', {'page': page - 1, 'per_page': perPage}) }}">Page précédente</a>
-        {% endif %}
-
-        {% if page < totalPages %}
-            <a href="{{ path('dashboard_logs_index', {'page': page + 1, 'per_page': perPage}) }}">Page suivante</a>
-        {% endif %}
-    </nav>
 </main>
 {% endblock %}

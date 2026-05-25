@@ -34,6 +34,7 @@ final readonly class SearchLogsHandler
             domain: $request->getDomain(),
             projectId: $request->getProjectId(),
             fingerprint: $request->getFingerprint(),
+            query: $request->getQuery(),
         );
 
         return $this->repository->search(
