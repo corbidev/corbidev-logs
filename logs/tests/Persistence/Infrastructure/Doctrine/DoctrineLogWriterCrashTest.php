@@ -298,6 +298,13 @@ final class DoctrineLogWriterCrashTest extends TestCase
             100,
             $result->getErrors(),
         );
+
+        $firstError = $result->getErrors()[0] ?? '';
+
+        self::assertStringContainsString(
+            'Disk full',
+            $firstError,
+        );
     }
 
     private function createLogEntry(): LogEntry
