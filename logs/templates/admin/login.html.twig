@@ -1,0 +1,24 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Connexion Admin{% endblock %}
+
+{% block body %}
+<main class="admin-page centered">
+    <section class="admin-shell narrow">
+        <span class="admin-kicker">CorbiDev Admin</span>
+        <h1 class="h3 admin-title">Connexion administrateur</h1>
+        <p class="admin-subtitle">Acces securise a la gestion des tokens Bearer API.</p>
+
+        {% if error is defined and error %}
+        <div class="alert alert-danger mb-3">{{ error }}</div>
+        {% endif %}
+
+        <form method="post">
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_login') }}">
+            <input class="form-control mb-2" name="user" placeholder="Utilisateur" autocomplete="username">
+            <input class="form-control mb-3" type="password" name="password" placeholder="Mot de passe" autocomplete="current-password">
+            <button class="btn btn-brand text-white w-100">Se connecter</button>
+        </form>
+    </section>
+</main>
+{% endblock %}

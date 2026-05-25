@@ -1,0 +1,193 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+    :root {
+        --ink: #14213d;
+        --paper: #fffdf8;
+        --mint: #c9f5ee;
+        --accent: #fb8500;
+        --line: #d8e0ea;
+        --surface: #ffffff;
+        --primary-1: #1b998b;
+        --primary-2: #2dbaa7;
+    }
+
+    body {
+        margin: 0;
+        font-family: 'Manrope', sans-serif;
+        color: var(--ink);
+        min-height: 100vh;
+        background:
+            radial-gradient(circle at 5% 10%, var(--mint) 0%, rgba(201, 245, 238, 0) 38%),
+            radial-gradient(circle at 92% 85%, rgba(251, 133, 0, 0.14) 0%, rgba(251, 133, 0, 0) 42%),
+            var(--paper);
+    }
+
+    .admin-page {
+        min-height: calc(100vh - 3rem);
+        padding: 1.5rem;
+    }
+
+    .admin-page.centered {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .admin-shell {
+        width: 100%;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        box-shadow: 0 24px 46px rgba(20, 33, 61, 0.1);
+        padding: 1.6rem;
+        animation: rise 320ms ease-out;
+    }
+
+    .admin-shell.narrow {
+        max-width: 520px;
+    }
+
+    .admin-shell.wide {
+        max-width: 1060px;
+        margin: 0 auto;
+    }
+
+    .admin-title {
+        margin: 0;
+        font-weight: 800;
+    }
+
+    .admin-subtitle {
+        color: #5f6b7c;
+        margin: 0.4rem 0 1.2rem;
+    }
+
+    .admin-kicker {
+        display: inline-block;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        background: #ecfdf7;
+        border: 1px solid #ccf5e8;
+        border-radius: 999px;
+        padding: 0.35rem 0.7rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .form-control {
+        border-radius: 12px;
+        border-color: var(--line);
+        min-height: 46px;
+    }
+
+    .form-control:focus {
+        border-color: #67d8bf;
+        box-shadow: 0 0 0 0.2rem rgba(103, 216, 191, 0.2);
+    }
+
+    .form-check-input {
+        width: 2.8em;
+        height: 1.4em;
+    }
+
+    .btn-brand {
+        border-radius: 12px;
+        border: 0;
+        font-weight: 700;
+        min-height: 46px;
+        background: linear-gradient(120deg, var(--primary-1) 0%, var(--primary-2) 100%);
+    }
+
+    .btn-brand:hover {
+        filter: brightness(1.04);
+    }
+
+    .btn-soft {
+        border-radius: 12px;
+    }
+
+    .table-wrap {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table thead th {
+        background: #f5faf9;
+        border-bottom: 1px solid var(--line);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #4b596d;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+
+    .status-pill.active {
+        background: #ddf9f1;
+        color: #117b66;
+    }
+
+    .status-pill.inactive {
+        background: #ffe7da;
+        color: #a14f0e;
+    }
+
+    .actions {
+        display: flex;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+    }
+
+    .actions .btn {
+        border-radius: 10px;
+    }
+
+    @media (max-width: 768px) {
+        .admin-page {
+            padding: 1rem;
+        }
+
+        .admin-shell {
+            border-radius: 16px;
+            padding: 1rem;
+        }
+
+        .admin-topbar {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 0.8rem;
+        }
+
+        .table {
+            font-size: 0.92rem;
+        }
+    }
+
+    @keyframes rise {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>

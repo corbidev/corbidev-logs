@@ -47,6 +47,10 @@ services:
     App\ApiToken\Domain\ApiTokenRepositoryInterface:
         alias: App\ApiToken\Infrastructure\DoctrineApiTokenRepository
 
+    App\Jwt\Security\SecretCrypto:
+        arguments:
+            $appSecret: '%kernel.secret%'
+
     App\Project\Domain\ProjectRepositoryInterface:
         alias: App\Project\Infrastructure\DoctrineProjectRepository
 
