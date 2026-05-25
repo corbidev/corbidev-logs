@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace App\Persistence\Infrastructure\Doctrine;
 
 use App\Log\Domain\Entity\LogEntry;
-use App\Log\Domain\ValueObject\IngestionWarning;
+use App\Persistence\Constantes\PersistenceLimits;
 use App\Persistence\Domain\LogWriterInterface;
 use App\Persistence\Domain\PersistenceResult;
+use App\Persistence\Infrastructure\Mapper\LogEntryToRecordMapper;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception;
 use Psr\Log\LoggerInterface;
@@ -45,11 +46,6 @@ use Psr\Log\LoggerInterface;
 final readonly class DoctrineLogWriter implements LogWriterInterface
 {
     /**
-     * Taille maximale d'un batch.
-     */
-    private const int MAX_BATCH_SIZE = 500;
-
-    /**
      * Nom de la table SQL.
      */
     private const string TABLE_NAME = 'logs';
@@ -62,6 +58,7 @@ final readonly class DoctrineLogWriter implements LogWriterInterface
     public function __construct(
         private Connection $connection,
         private LoggerInterface $logger,
+        private ?LogEntryToRecordMapper $mapper = null,
     ) {}
 
     /**
@@ -167,94 +164,68 @@ final readonly class DoctrineLogWriter implements LogWriterInterface
     private function insertLogEntry(
         LogEntry $entry,
     ): void {
-        $request = $entry->getRequest();
+        $record = $this->resolveMapper()->map(
+            self::DEFAULT_PROJECT_ID,
+            $entry,
+        );
 
         $this->connection->insert(
             self::TABLE_NAME,
             [
-                'project_id' => self::DEFAULT_PROJECT_ID,
+                'project_id' => (int) $record->getProjectId(),
 
-                'external_id' => $this->normalizeNullableString(
-                    $entry->getExternalId(),
-                ),
+                'external_id' => $record->getExternalId(),
 
-                'fingerprint' => $this->normalizeNullableString(
-                    $entry
-                        ->getFingerprint()
-                        ->value(),
-                ),
+                'fingerprint' => $record->getFingerprint(),
 
-                'message' => $this->truncate(
-                    $entry->getMessage(),
-                    1000,
-                ),
+                'message' => $record->getMessage(),
 
-                'level' => $entry
-                    ->getLevel()
-                    ->value,
+                'level' => $record->getLevel(),
 
-                'domain' => $this->truncate(
-                    $entry->getDomain(),
-                    100,
-                ),
+                'domain' => $record->getDomain(),
 
-                'env' => $entry
-                    ->getEnvironment()
-                    ->value,
+                'env' => $record->getEnv(),
 
-                'http_status' => $entry
-                    ->getHttpStatus()
-                    ->value(),
+                'http_status' => $record->getHttpStatus(),
 
-                'client' => $entry
-                    ->getClient()
-                    ->value(),
+                'client' => $record->getClient(),
 
-                'request_id' => $entry
-                    ->getRequestId()
-                    ->value(),
+                'request_id' => $record->getRequestId(),
 
-                'method' => $this->normalizeNullableString(
-                    $request->method(),
-                ),
+                'method' => $record->getMethod(),
 
-                'uri' => $this->normalizeNullableString(
-                    $request
-                        ->uri()
-                        ->value(),
-                ),
+                'uri' => $record->getUri(),
 
-                'user_agent' => $this->normalizeNullableString(
-                    $request->userAgent(),
-                ),
+                'user_agent' => $record->getUserAgent(),
 
-                'ip' => $entry
-                    ->getIpAddress()
-                    ->value(),
+                'ip' => $record->getIp(),
 
                 'context_json' => $this->encodeJson(
-                    $entry->getContext(),
+                    $record->getContextJson(),
                 ),
 
                 'extra_json' => $this->encodeJson(
-                    $entry->getExtra(),
+                    $record->getExtraJson(),
                 ),
 
                 'ingestion_warnings_json' => $this->encodeJson(
-                    $this->normalizeWarnings(
-                        $entry->getIngestionWarnings(),
-                    ),
+                    $record->getIngestionWarningsJson(),
                 ),
 
-                'created_at' => $entry
+                'created_at' => $record
                     ->getCreatedAt()
                     ->format('Y-m-d H:i:s'),
 
-                'client_date' => $entry
+                'client_date' => $record
                     ->getClientDate()
                     ?->format('Y-m-d H:i:s'),
             ],
         );
+    }
+
+    private function resolveMapper(): LogEntryToRecordMapper
+    {
+        return $this->mapper ?? new LogEntryToRecordMapper();
     }
 
     /**
@@ -270,7 +241,7 @@ final readonly class DoctrineLogWriter implements LogWriterInterface
     ): array {
         if (
             count($entries)
-            <= self::MAX_BATCH_SIZE
+            <= PersistenceLimits::MAX_PERSIST_BATCH_SIZE
         ) {
             return $entries;
         }
@@ -279,14 +250,14 @@ final readonly class DoctrineLogWriter implements LogWriterInterface
             'Persistence batch truncated.',
             [
                 'original_size' => count($entries),
-                'max_size' => self::MAX_BATCH_SIZE,
+                'max_size' => PersistenceLimits::MAX_PERSIST_BATCH_SIZE,
             ],
         );
 
         return array_slice(
             $entries,
             0,
-            self::MAX_BATCH_SIZE,
+            PersistenceLimits::MAX_PERSIST_BATCH_SIZE,
         );
     }
 
@@ -313,73 +284,6 @@ final readonly class DoctrineLogWriter implements LogWriterInterface
         } catch (\Throwable) {
             return '{}';
         }
-    }
-
-    /**
-     * Normalise les warnings ingestion.
-     *
-     * @param list<IngestionWarning> $warnings
-     *
-     * @return list<array<string, mixed>>
-     */
-    private function normalizeWarnings(
-        array $warnings,
-    ): array {
-        return array_map(
-            static fn(
-                IngestionWarning $warning,
-            ): array => $warning->toArray(),
-            $warnings,
-        );
-    }
-
-    /**
-     * Tronque une string.
-     */
-    private function truncate(
-        string $value,
-        int $maxLength,
-    ): string {
-        $value = trim($value);
-
-        if ($value === '') {
-            return '';
-        }
-
-        if (
-            mb_strlen($value)
-            <= $maxLength
-        ) {
-            return $value;
-        }
-
-        return mb_substr(
-            $value,
-            0,
-            $maxLength,
-        );
-    }
-
-    /**
-     * Normalise une string nullable.
-     */
-    private function normalizeNullableString(
-        ?string $value,
-    ): ?string {
-        if ($value === null) {
-            return null;
-        }
-
-        $value = trim($value);
-
-        if ($value === '') {
-            return null;
-        }
-
-        return $this->truncate(
-            $value,
-            1000,
-        );
     }
 
     /**

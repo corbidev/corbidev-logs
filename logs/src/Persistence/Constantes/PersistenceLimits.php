@@ -21,6 +21,16 @@ namespace App\Persistence\Constantes;
 final class PersistenceLimits
 {
     /**
+     * Taille maximale d'un batch de persistence SQL.
+     *
+     * Protection contre :
+     * - pics de charge non bornés
+     * - saturation mémoire
+     * - transactions trop longues
+     */
+    public const int MAX_PERSIST_BATCH_SIZE = 500;
+
+    /**
      * Nombre maximal d'erreurs conservées
      * dans PersistenceResult.
      *

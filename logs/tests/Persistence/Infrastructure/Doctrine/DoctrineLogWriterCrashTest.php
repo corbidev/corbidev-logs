@@ -14,6 +14,7 @@ use App\Log\Domain\ValueObject\RequestId;
 use App\Log\Domain\ValueObject\Uri;
 use App\Log\Enum\Environment;
 use App\Log\Enum\LogLevel;
+use App\Persistence\Constantes\PersistenceLimits;
 use App\Persistence\Infrastructure\Doctrine\DoctrineLogWriter;
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
@@ -25,6 +26,52 @@ use Psr\Log\NullLogger;
  */
 final class DoctrineLogWriterCrashTest extends TestCase
 {
+    /**
+     * But : Vérifier qu'un lot massif est strictement borné avant insertion SQL.
+     *
+     * Entrée : 10 000 LogEntry valides.
+     * Résultat attendu : insert() appelé 500 fois max, résultat success stable.
+     */
+    public function testPersistSurvivesMassiveBatchByApplyingConfiguredLimit(): void
+    {
+        $connection = $this->createMock(
+            Connection::class,
+        );
+
+        $connection
+            ->expects(self::once())
+            ->method('beginTransaction');
+
+        $connection
+            ->expects(self::once())
+            ->method('commit');
+
+        $connection
+            ->expects(self::exactly(PersistenceLimits::MAX_PERSIST_BATCH_SIZE))
+            ->method('insert')
+            ->willReturn(1);
+
+        $writer = new DoctrineLogWriter(
+            $connection,
+            new NullLogger(),
+        );
+
+        $entries = [];
+
+        for ($i = 0; $i < 10000; ++$i) {
+            $entries[] = $this->createLogEntry();
+        }
+
+        $result = $writer->persist($entries);
+
+        self::assertTrue($result->isSuccess());
+
+        self::assertSame(
+            PersistenceLimits::MAX_PERSIST_BATCH_SIZE,
+            $result->getPersistedCount(),
+        );
+    }
+
     /**
      * But : Vérifier que persist() retourne isFailure() si beginTransaction() crashe.
      *
@@ -120,6 +167,80 @@ final class DoctrineLogWriterCrashTest extends TestCase
         self::assertSame(
             1,
             $result->getFailedCount(),
+        );
+    }
+
+    /**
+     * But : Vérifier qu'un échec de commit déclenche rollback et retourne une erreur technique explicite.
+     *
+     * Entrée : insert OK puis commit() lève une RuntimeException SQLSTATE.
+     * Résultat attendu : rollBack() appelé, isFailure()=true, message d'erreur technique présent.
+     */
+    public function testPersistRollsBackWhenCommitFailsAndReturnsExplicitTechnicalError(): void
+    {
+        $connection = $this->createMock(
+            Connection::class,
+        );
+
+        $connection
+            ->expects(self::once())
+            ->method('beginTransaction');
+
+        $connection
+            ->expects(self::once())
+            ->method('insert')
+            ->willReturn(1);
+
+        $connection
+            ->expects(self::once())
+            ->method('commit')
+            ->willThrowException(
+                new \RuntimeException(
+                    'SQLSTATE[HY000] [2002] Connection refused',
+                ),
+            );
+
+        $connection
+            ->expects(self::once())
+            ->method('isTransactionActive')
+            ->willReturn(true);
+
+        $connection
+            ->expects(self::once())
+            ->method('rollBack');
+
+        $writer = new DoctrineLogWriter(
+            $connection,
+            new NullLogger(),
+        );
+
+        $result = $writer->persist([
+            $this->createLogEntry(),
+        ]);
+
+        self::assertTrue(
+            $result->isFailure(),
+        );
+
+        self::assertSame(
+            1,
+            $result->getFailedCount(),
+        );
+
+        self::assertTrue(
+            $result->hasErrors(),
+        );
+
+        $firstError = $result->getErrors()[0] ?? '';
+
+        self::assertStringContainsString(
+            'Persistence batch failure:',
+            $firstError,
+        );
+
+        self::assertStringContainsString(
+            'SQLSTATE[HY000] [2002] Connection refused',
+            $firstError,
         );
     }
 

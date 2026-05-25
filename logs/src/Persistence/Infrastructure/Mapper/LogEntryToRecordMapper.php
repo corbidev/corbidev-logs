@@ -47,11 +47,11 @@ final class LogEntryToRecordMapper
     /**
      * Taille maximale SQL.
      */
-    private const DOMAIN_MAX_LENGTH = 255;
+    private const DOMAIN_MAX_LENGTH = 100;
 
     private const URI_MAX_LENGTH = 1000;
 
-    private const METHOD_MAX_LENGTH = 20;
+    private const METHOD_MAX_LENGTH = 10;
 
     private const USER_AGENT_MAX_LENGTH = 500;
 
