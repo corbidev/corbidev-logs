@@ -397,6 +397,10 @@ Critères de fin :
 
 ### OPS-001 - Valider l'installation locale et CI
 
+Statut :
+
+- livré
+
 Objectif :
 
 - vérifier que l'installation et les tests passent de façon répétable

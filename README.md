@@ -234,6 +234,13 @@ cp ../env.symfony.example .env.local
 cp ../.env.docker-compose.example ../.env
 ```
 
+Alternative PowerShell Windows :
+
+```powershell
+Copy-Item ..\env.symfony.example .env.local -Force
+Copy-Item ..\.env.docker-compose.example ..\.env -Force
+```
+
 1. Adapter les valeurs locales si nécessaire, en particulier les ports Docker et les accès base de données.
 
 1. Démarrer la stack locale depuis la racine du dépôt.
@@ -261,6 +268,12 @@ Commande de lancement :
 cd logs
 php bin/phpunit
 ```
+
+Validation OPS-001 (25/05/2026) :
+
+- `composer install --no-interaction --prefer-dist` : OK
+- `vendor/bin/phpunit` exécuté deux fois de suite : OK
+- exécution globale stable : `860 tests`, `191414 assertions`, `6 skipped`
 
 ## Queue et persistence
 

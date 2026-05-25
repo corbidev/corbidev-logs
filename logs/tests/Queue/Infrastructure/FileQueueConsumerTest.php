@@ -213,8 +213,8 @@ final class FileQueueConsumerTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
 
         new FileQueueConsumer(
-            $this->createMock(QueueReaderInterface::class),
-            $this->createMock(QueuePersistenceInterface::class),
+            $this->createStub(QueueReaderInterface::class),
+            $this->createStub(QueuePersistenceInterface::class),
             0,
         );
     }

@@ -206,7 +206,7 @@ Objectif:
 - [ ] journaliser événements techniques clés
 - [ ] documenter runbook cron/reprise incident
 - [x] harmoniser tous les README avec l'état réel
-- [ ] valider procédure d'installation locale et CI
+- [x] valider procédure d'installation locale et CI
 
 Critères d'acceptation:
 

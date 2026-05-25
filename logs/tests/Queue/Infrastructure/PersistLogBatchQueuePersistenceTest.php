@@ -74,7 +74,7 @@ final class PersistLogBatchQueuePersistenceTest extends TestCase
      */
     public function test_it_throws_when_batch_persistence_fails(): void
     {
-        $factory = $this->createMock(LogEntryFactoryInterface::class);
+        $factory = $this->createStub(LogEntryFactoryInterface::class);
         $writer = $this->createMock(LogWriterInterface::class);
 
         $factory
