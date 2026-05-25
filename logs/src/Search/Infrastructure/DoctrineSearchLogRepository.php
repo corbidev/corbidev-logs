@@ -10,6 +10,7 @@ use App\Search\Domain\SearchLogRepositoryInterface;
 use App\Search\Domain\SearchPagination;
 use App\Search\Domain\SearchResult;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
 
 /**
  * Repository DBAL de lecture bornée.
@@ -44,6 +45,10 @@ final readonly class DoctrineSearchLogRepository implements SearchLogRepositoryI
                 . $whereSql
                 . ' ORDER BY created_at DESC, id DESC LIMIT :limit OFFSET :offset',
                 $params,
+                [
+                    'limit' => ParameterType::INTEGER,
+                    'offset' => ParameterType::INTEGER,
+                ],
             );
 
             $items = [];
