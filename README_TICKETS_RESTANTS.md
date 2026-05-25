@@ -170,6 +170,10 @@ Critères de fin :
 
 ### AUTH-001 - Créer le module ApiToken
 
+Statut :
+
+- livré
+
 Objectif :
 
 - poser la structure `src/ApiToken`
@@ -180,6 +184,10 @@ Critères de fin :
 - séparation claire domaine / application / infrastructure
 
 ### AUTH-002 - Implémenter la création de token opaque
+
+Statut :
+
+- livré
 
 Objectif :
 
@@ -192,6 +200,10 @@ Critères de fin :
 
 ### AUTH-003 - Ajouter révocation et expiration
 
+Statut :
+
+- livré
+
 Objectif :
 
 - permettre de désactiver un token sans supprimer l'historique utile
@@ -203,6 +215,10 @@ Critères de fin :
 
 ### AUTH-004 - Brancher l'autorisation sur ingestion
 
+Statut :
+
+- livré
+
 Objectif :
 
 - protéger `POST /api/logs` par `Authorization: Bearer ...`
@@ -212,16 +228,20 @@ Critères de fin :
 - accès sans token refusé
 - accès avec token valide accepté
 
-### AUTH-005 - Clarifier la stratégie JWT vs tokens opaques
+### AUTH-005 - Documenter la stratégie tokens opaques (sans JWT)
+
+Statut :
+
+- livré
 
 Objectif :
 
-- aligner documentation et dépendances sur la stratégie retenue
+- documenter explicitement la stratégie d'authentification retenue
 
 Critères de fin :
 
 - position documentée
-- aucune ambiguïté dans les README
+- aucune ambiguïté JWT/tokens opaques dans la documentation
 
 ## P1 - Modules métier de lecture
 

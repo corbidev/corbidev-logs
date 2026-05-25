@@ -23,6 +23,8 @@ labels:
 
 depends_on: none
 
+status: done
+
 body:
 
 - créer `src/Ingestion/Application`, `src/Ingestion/Domain`, `src/Ingestion/Infrastructure`
@@ -172,6 +174,8 @@ labels:
 - `p0`
 
 depends_on: none
+
+status: done
 
 body:
 
@@ -362,6 +366,8 @@ labels:
 
 depends_on: none
 
+status: done
+
 body:
 
 - poser `src/ApiToken/Application`, `src/ApiToken/Domain`, `src/ApiToken/Infrastructure`
@@ -384,6 +390,8 @@ labels:
 depends_on:
 
 - `AUTH-001`
+
+status: done
 
 body:
 
@@ -409,6 +417,8 @@ depends_on:
 
 - `AUTH-002`
 
+status: done
+
 body:
 
 - désactiver un token sans supprimer l'historique utile
@@ -432,6 +442,8 @@ depends_on:
 
 - `AUTH-003`
 
+status: done
+
 body:
 
 - protéger `POST /api/logs`
@@ -444,7 +456,7 @@ acceptance:
 
 ### AUTH-005
 
-title: `[docs] [Auth] Clarifier JWT versus tokens opaques`
+title: `[docs] [Auth] Documenter la stratégie tokens opaques (sans JWT)`
 
 labels:
 
@@ -456,14 +468,16 @@ depends_on:
 
 - `AUTH-004`
 
+status: done
+
 body:
 
-- aligner documentation et dépendances sur la stratégie retenue
+- documenter explicitement la stratégie d'authentification retenue
 
 acceptance:
 
 - position documentée
-- aucune ambiguïté dans les README
+- aucune ambiguïté JWT/tokens opaques dans la documentation
 
 ## P1 - Read side
 

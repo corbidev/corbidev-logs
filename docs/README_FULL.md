@@ -40,6 +40,15 @@ basé sur PSR-3
 - aucun appel inverse
 - aucune dépendance circulaire
 
+## Authentification ingestion
+
+- protocole : `Authorization: Bearer <token_opaque>`
+- modèle de sécurité : token opaque généré aléatoirement
+- persistence : hash du token uniquement (`token_hash`)
+- contrôles d'accès : token actif requis
+- refus explicites : token absent, token révoqué, token expiré
+- JWT : non utilisé sur la route d'ingestion
+
 ---
 
 # 📂 3. STRUCTURE DU PROJET

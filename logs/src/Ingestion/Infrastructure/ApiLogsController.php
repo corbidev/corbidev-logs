@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Ingestion\Infrastructure;
 
+use App\ApiToken\Application\ValidateApiTokenHandler;
+use App\ApiToken\Application\ValidateApiTokenRequest;
 use App\Ingestion\Domain\IngestionPayloadValidator;
 use App\Log\Application\Ingestion\LogIngestionPipeline;
 use JsonException;
@@ -24,6 +26,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class ApiLogsController
 {
     public function __construct(
+        private readonly ValidateApiTokenHandler $validateApiTokenHandler,
         private readonly IngestionPayloadValidator $payloadValidator,
         private readonly LogIngestionPipeline $ingestionPipeline,
     ) {}
@@ -44,6 +47,33 @@ final class ApiLogsController
                 error: 'unsupported_media_type',
                 message: 'Content-Type must be application/json.',
                 status: Response::HTTP_UNSUPPORTED_MEDIA_TYPE,
+            );
+        }
+
+        $plainToken = $this->extractBearerToken(
+            $request,
+        );
+
+        if ($plainToken === null) {
+            return $this->errorResponse(
+                error: 'unauthorized',
+                message: 'Authorization header with Bearer token is required.',
+                status: Response::HTTP_UNAUTHORIZED,
+            );
+        }
+
+        $tokenValidationResult = $this->validateApiTokenHandler->handle(
+            new ValidateApiTokenRequest($plainToken),
+        );
+
+        if ($tokenValidationResult->isRefused()) {
+            return $this->errorResponse(
+                error: 'unauthorized',
+                message: sprintf(
+                    'Token rejected: %s.',
+                    $tokenValidationResult->getReason(),
+                ),
+                status: Response::HTTP_UNAUTHORIZED,
             );
         }
 
@@ -124,5 +154,29 @@ final class ApiLogsController
         }
 
         return str_contains($normalizedContentType, '+json');
+    }
+
+    /**
+     * Extrait le token Bearer depuis Authorization.
+     */
+    private function extractBearerToken(Request $request): ?string
+    {
+        $authorization = (string) $request->headers->get('Authorization', '');
+
+        if ($authorization === '') {
+            return null;
+        }
+
+        if (!preg_match('/^Bearer\s+(.+)$/i', $authorization, $matches)) {
+            return null;
+        }
+
+        $token = trim((string) ($matches[1] ?? ''));
+
+        if ($token === '') {
+            return null;
+        }
+
+        return $token;
     }
 }
