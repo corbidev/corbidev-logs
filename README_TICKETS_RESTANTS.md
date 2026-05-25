@@ -382,6 +382,10 @@ Critères de fin :
 
 ### TEST-001 - Compléter les tests des cas critiques
 
+Statut :
+
+- livré
+
 Objectif :
 
 - couvrir JSON invalide, récursion, disque plein, DB indisponible, payload corrompu

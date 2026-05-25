@@ -202,7 +202,7 @@ Objectif:
 
 À faire:
 
-- [ ] compléter couverture tests sur cas critiques
+- [x] compléter couverture tests sur cas critiques
 - [ ] journaliser événements techniques clés
 - [ ] documenter runbook cron/reprise incident
 - [x] harmoniser tous les README avec l'état réel
