@@ -1,592 +1,80 @@
-# Mutualized Logging Platform
+﻿# Corbidev Logs - Guide Consommateur
 
-Plateforme de logs mutualisée conçue pour Symfony 8 et PHP 8.4, avec une priorité forte sur la robustesse d'écriture, la simplicité et la compatibilité mutualisée.
+Ce document est le point d'entree pour utiliser la plateforme.
 
-## Position du projet
+## Objectif
 
-Le README décrit la vision globale du produit, mais aussi l'état actuel du dépôt.
+Corbidev Logs permet:
 
-Ce qui est déjà en place dans le code :
+- d'ingester des logs via API HTTP
+- de traiter les logs en pipeline robuste
+- de consulter les logs via dashboard web
 
-- normalisation des payloads hostiles
-- création de `LogEntry`
-- écriture de queue disque
-- persistence SQL via Doctrine DBAL
-- endpoint d'ingestion `POST /api/logs` (JSON-only) avec auth Bearer
-- module ApiToken (création, validation, révocation, expiration)
-- module Search borné (pagination + filtres principaux)
-- module Dashboard (liste paginée + vue détail)
-- module Project (base métier + rétention)
+## Prerequis
 
-Ce qui reste encore à stabiliser ou à compléter :
+- PHP 8.4+
+- Composer
+- Docker (recommande)
 
-- le traitement batch complet de queue en exploitation continue
-- le runbook d'exploitation queue/incident
-- la couverture des cas critiques restants
-- la validation installation locale/CI répétable
-- l'UX frontend avancée
+## Installation rapide
 
-## Principes
+```bash
+cd logs
+composer install --no-interaction --prefer-dist
+cp ../env.symfony.example .env.local
+docker compose up -d
+```
 
-1. robustesse
-2. simplicité
-3. prédictibilité
-4. maintenabilité
-5. performances d'écriture
+Alternative PowerShell:
 
-Le système suit ces règles :
+```powershell
+Copy-Item ..\env.symfony.example .env.local -Force
+```
 
-- un log imparfait vaut mieux qu'un log perdu
-- toutes les données externes sont hostiles
-- aucun comportement implicite
-- aucun composant magique
-- flux simples uniquement
-- responsabilités séparées
+## Utilisation API
 
-## Architecture cible
-
-Le projet est organisé autour de deux axes.
-
-### Write side
-
-Responsable de :
-
-- ingestion
-- validation minimale
-- queue disque
-- persistence SQL
-
-Objectif : écrire vite, sans perte, avec un pipeline stable.
-
-### Read side
-
-Responsable de :
-
-- dashboard
-- recherche
-- pagination
-- filtres
-
-Objectif : lire simplement, avec des requêtes bornées et des index ciblés.
-
-## Stack technique
-
-### Backend
-
-- PHP 8.4
-- Symfony 8
-- Doctrine DBAL
-- MySQL / MariaDB
-- Monolog
-
-### Frontend
-
-- Twig
-- JavaScript vanilla
-
-### Cible ou option selon l'avancement
-
-- HTMX
-- Alpine.js
-- Tailwind CSS
-- Vite
-
-## Surfaces HTTP
-
-### API
-
-La surface d'ingestion est exposée sous `/api/*` et reste JSON-only.
-
-Route active :
+Endpoint:
 
 - `POST /api/logs`
 
-### Dashboard
+Headers obligatoires:
 
-La surface de lecture est exposée sous `/dashboard/*` et reste HTML-only.
+- `Content-Type: application/json`
+- `Authorization: Bearer <token_opaque>`
 
-Routes actives :
+Exemple minimal:
+
+```json
+{
+  "logs": [
+    {
+      "message": "Erreur paiement",
+      "level": "error",
+      "domain": "billing",
+      "env": "prod",
+      "httpStatus": 500,
+      "client": "api"
+    }
+  ]
+}
+```
+
+## Dashboard
+
+Routes:
 
 - `GET /dashboard/logs`
 - `GET /dashboard/logs/{externalId}`
 
-### Authentification
-
-La stratégie d'authentification retenue est : tokens opaques hashés, révocables et expirables.
-
-Le projet n'utilise pas JWT pour l'ingestion.
-
-Format attendu côté client :
-
-- `Authorization: Bearer cbi_...`
-- le token clair n'est jamais stocké
-- seul le hash est persisté en base
-
-## Contrat d'ingestion
-
-Le contrat officiel du payload JSON est documenté dans [README_INGESTION_CONTRACT_JSON.md](README_INGESTION_CONTRACT_JSON.md).
-
-Exemple de forme attendue pour l'ingestion :
-
-```txt
-POST /api/logs
-Authorization: Bearer cbi_xxxxxxxxx
-Content-Type: application/json
-```
-
-Réponse attendue côté API :
-
-```json
-{
-  "success": true,
-  "data": {
-    "received": 1
-  }
-}
-```
-
-## Briques déjà présentes
-
-La base réelle du write side est déjà visible dans le code :
-
-- normalisation des entrées hostiles dans [logs/src/Log/Application/Normalizer/LogPayloadNormalizer.php](logs/src/Log/Application/Normalizer/LogPayloadNormalizer.php)
-- création de `LogEntry` dans [logs/src/Log/Application/Factory/LogEntryFactory.php](logs/src/Log/Application/Factory/LogEntryFactory.php)
-- écriture disque de la queue dans [logs/src/Queue/Infrastructure/FileQueueWriter.php](logs/src/Queue/Infrastructure/FileQueueWriter.php)
-- persistence SQL dans [logs/src/Persistence/Infrastructure/Doctrine/DoctrineLogWriter.php](logs/src/Persistence/Infrastructure/Doctrine/DoctrineLogWriter.php)
-
-## Architecture des dossiers
-
-### Liste simple
-
-#### Actuel
-
-- `src/Log/`
-- `src/Queue/`
-- `src/Persistence/`
-- `src/Ingestion/`
-- `src/Search/`
-- `src/Dashboard/`
-- `src/Project/`
-- `src/ApiToken/`
-- `src/DataFixtures/`
-- `src/Shared/`
-
-### Détail dossier par dossier
-
-#### `src/Log/` - actuel
-
-Module cœur du domaine log. Il porte la normalisation, les value objects, le fingerprint, les enums et la création de `LogEntry`.
-
-#### `src/Queue/` - actuel
-
-Module de queue disque. Il gère l'écriture atomique, la lecture batch, la configuration de queue et l'isolement des fichiers corrompus.
-
-#### `src/Persistence/` - actuel
-
-Module de persistence SQL. Il contient le contrat de persistence, le batch handler, le mapping vers les records et l'écriture Doctrine DBAL.
-
-#### `src/Shared/` - actuel
-
-Zone transversale réservée aux briques communes. À ce stade, le dossier sert surtout de squelette; il ne contient pas encore de logique métier stabilisée.
-
-#### `src/DataFixtures/` - actuel
-
-Fixtures de développement et de test pour peupler rapidement un environnement local.
-
-#### `src/Ingestion/` - actuel
-
-Module d'entrée de la plateforme. Il porte l'endpoint `POST /api/logs`, la validation minimale, l'orchestration du payload HTTP et l'appel vers la queue.
-
-#### `src/Search/` - actuel
-
-Module de recherche bornée. Pagination obligatoire, LIMIT explicite et filtres principaux combinables.
-
-#### `src/Dashboard/` - actuel
-
-Module de lecture côté interface. Il affiche la liste paginée et la vue détail des logs.
-
-#### `src/Project/` - actuel
-
-Module de gestion des projets logiques. Il porte la base métier projet et la règle de rétention.
-
-#### `src/ApiToken/` - actuel
-
-Module d'authentification par jetons opaques. Il gère le hash, la révocation et l'expiration.
-
-## Quick start
-
-1. Aller dans le dossier applicatif.
-
-```bash
-cd logs
-```
-
-1. Installer les dépendances PHP.
-
-```bash
-composer install
-```
-
-1. Préparer les variables d'environnement à partir des fichiers d'exemple.
-
-```bash
-cp ../env.symfony.example .env.local
-cp ../.env.docker-compose.example ../.env
-```
-
-Alternative PowerShell Windows :
-
-```powershell
-Copy-Item ..\env.symfony.example .env.local -Force
-Copy-Item ..\.env.docker-compose.example ..\.env -Force
-```
-
-1. Adapter les valeurs locales si nécessaire, en particulier les ports Docker et les accès base de données.
-
-1. Démarrer la stack locale depuis la racine du dépôt.
-
-```bash
-docker compose up -d
-```
-
-Services fournis par Docker :
-
-- MariaDB
-- Adminer
-- phpMyAdmin
-- smtp4dev
-
 ## Tests
-
-La suite de tests Symfony/PHPUnit est configurée dans [logs/phpunit.dist.xml](logs/phpunit.dist.xml).
-
-L'environnement de test utilise SQLite via `var/test.db`.
-
-Commande de lancement :
 
 ```bash
 cd logs
 php bin/phpunit
 ```
 
-Validation OPS-001 (25/05/2026) :
+## Documentation complete
 
-- `composer install --no-interaction --prefer-dist` : OK
-- `vendor/bin/phpunit` exécuté deux fois de suite : OK
-- exécution globale stable : `860 tests`, `191414 assertions`, `6 skipped`
+Toute la documentation technique est centralisee ici:
 
-## Queue et persistence
-
-Le détail de la queue disque est documenté dans [README_Queue.md](README_Queue.md).
-
-Le détail de la persistence SQL est documenté dans [README_persistence.md](README_persistence.md).
-
-## Modèle de données
-
-La base est pensée comme un append-only store, optimisé pour :
-
-- écrire vite
-- lire simplement
-- purger facilement
-
-Tables principales visées :
-
-- projects
-- api_tokens
-- logs
-
-## Recherche
-
-La recherche doit rester bornée : pagination, LIMIT, index ciblés et chargements limités.
-
-Éviter les lectures massives et les SELECT *.
-
-## Tests et qualité
-
-Règle de base : si ce n'est pas testé, ça n'existe pas.
-
-Les cas critiques à couvrir en priorité :
-
-- JSON invalide
-- payload corrompu
-- récursion
-- données sensibles
-- disque plein
-- DB indisponible
-
-## Roadmap courte
-
-La direction actuelle du projet reste :
-
-1. fiabiliser l'ingestion
-2. bétonner la queue
-3. stabiliser la persistence
-4. finaliser le traitement queue d'exploitation
-5. compléter la documentation et les tests critiques
-
-Plan détaillé d'exécution : [README_PLAN_RESTANT.md](README_PLAN_RESTANT.md)
-
-## Statut
-
-Projet en cours de développement, avec ingestion/auth/search/dashboard déjà livrés et un focus restant sur exploitation queue, qualité et documentation.
-
-## Vision à venir
-
-Le README doit aussi porter la direction produit et l'architecture cible. Cette partie décrit ce qui reste à construire et sert de repère pour la suite du projet.
-
-### Philosophie d'ensemble
-
-Le système vise à rester :
-
-- robuste
-- simple
-- prévisible
-- maintenable
-- compatible mutualisé
-
-Principes permanents :
-
-- un log imparfait vaut mieux qu'un log perdu
-- toutes les données externes sont hostiles
-- aucun comportement implicite
-- architecture explicite
-- responsabilités uniques
-
-### Architecture cible complète
-
-Le système restera séparé en deux zones.
-
-#### Write side à venir
-
-Responsable de :
-
-- ingestion
-- validation minimale
-- normalisation
-- queue
-- persistence
-
-Priorité :
-
-- écriture rapide
-- aucune perte
-- robustesse maximale
-
-#### Read side à venir
-
-Responsable de :
-
-- dashboard
-- recherche
-- pagination
-- filtres
-
-Priorité :
-
-- lecture simple
-- requêtes bornées
-- index ciblés
-
-### Architecture HTTP
-
-#### API à venir
-
-Routes visées :
-
-```txt
-/api/*
-```
-
-Règles :
-
-- JSON uniquement
-- jamais de HTML
-
-#### Dashboard à venir
-
-Routes visées :
-
-```txt
-/dashboard/*
-```
-
-Règles :
-
-- HTML uniquement
-- jamais de JSON
-
-### Contrat LogEntry
-
-Un `LogEntry` doit rester :
-
-- immutable
-- toujours valide
-- toujours normalisé
-
-Champs obligatoires :
-
-- message
-- level
-- domain
-- env
-- httpStatus
-- client
-
-Champs auto-corrigés :
-
-- externalId
-- createdAt
-- clientDate
-- uri
-- ip
-
-### Normalization
-
-Toutes les données externes doivent être :
-
-- normalisées
-- limitées
-- filtrées
-- sécurisées
-
-Limites visées :
-
-- profondeur max : 5
-- 50 éléments max
-- string max : 1000 caractères
-
-Données sensibles filtrées :
-
-- password
-- token
-- authorization
-- cookie
-
-### Fingerprint
-
-Base visée :
-
-```txt
-level|httpStatus|domain|uri|env
-```
-
-Règles :
-
-- lowercase
-- trim
-- suppression query string
-- sha1 tronqué à 16 caractères
-
-Le fingerprint doit toujours être recalculé côté serveur.
-
-### Queue
-
-La queue absorbe les pics de charge.
-
-Principe :
-
-```txt
-1 log = 1 fichier
-```
-
-Objectifs :
-
-- robustesse
-- écriture atomique
-- isolation des erreurs
-- aucune dépendance forte
-
-Interdits :
-
-- workers permanents
-- RabbitMQ
-- Redis obligatoire
-- architecture async complexe
-
-### Cron
-
-Le cron doit traiter la queue selon ce flux :
-
-```txt
-queue
-→ normalisation
-→ persistence
-→ suppression
-```
-
-Règles :
-
-- traitement batch
-- mémoire bornée
-- traitement idempotent
-
-### Base de données
-
-La base doit rester pensée comme un append-only store.
-
-Optimisée pour :
-
-- écrire vite
-- lire simplement
-- purger facilement
-
-Tables principales visées :
-
-- projects
-- api_tokens
-- logs
-
-### Recherche à venir
-
-La recherche doit toujours rester bornée : pagination, LIMIT, requêtes ciblées et index adaptés.
-
-Jamais :
-
-- SELECT *
-- chargement massif mémoire
-
-### Tests à venir
-
-Règle absolue : si ce n'est pas testé, ça n'existe pas.
-
-Priorités :
-
-1. Domain
-2. Factory
-3. Normalizer
-4. Queue
-5. Persistence
-6. Search
-
-Cas critiques :
-
-- JSON invalide
-- récursion
-- payload corrompu
-- disque plein
-- DB indisponible
-- données sensibles
-
-### Technologies volontairement évitées
-
-- API Platform
-- Messenger
-- Event Bus
-- Event Sourcing
-- CQRS complexe
-- Microservices
-- React non justifié
-- Vue non justifié
-
-### Objectif final
-
-Construire un système :
-
-- robuste
-- lisible
-- simple
-- stable long terme
-- maintenable
-- compatible mutualisé
-
-sans sur-ingénierie.
+- [docs/README.md](docs/README.md)
