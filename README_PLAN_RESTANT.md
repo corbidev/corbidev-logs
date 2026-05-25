@@ -126,7 +126,7 @@ Objectif:
 - [ ] lier tokens à un Project
 - [ ] ajouter contrôle Authorization Bearer sur endpoint ingestion
 - [ ] gérer last_used_at et audit minimal
-- [ ] clarifier stratégie JWT vs tokens opaques dans la doc et les dépendances
+- [ ] finaliser la documentation de la stratégie tokens opaques (sans JWT)
 
 Critères d'acceptation:
 
@@ -240,7 +240,7 @@ php bin/console app:queue:process
 
 - dérive de complexité (trop de couches prématurées)
 - régressions silencieuses sur queue/persistence
-- ambiguïté auth (JWT vs opaque tokens)
+- dérive des règles d'auth (tokens opaques) entre code et documentation
 - requêtes search non bornées
 - documentation qui diverge du code
 

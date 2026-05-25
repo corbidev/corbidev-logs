@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Ingestion\Infrastructure;
 
+use App\ApiToken\Application\ValidateApiTokenHandler;
+use App\ApiToken\Domain\ApiTokenHasherInterface;
+use App\ApiToken\Domain\ApiTokenRepositoryInterface;
+use App\ApiToken\Domain\ApiTokenState;
+use App\ApiToken\Domain\ApiTokenToStore;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -43,7 +49,7 @@ final class ApiLogsControllerCrashTest extends WebTestCase
      */
     public function test_it_never_returns_html_for_hostile_json_bodies(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithApiTokenValidation();
 
         $payloads = [
             '{',
@@ -70,6 +76,7 @@ final class ApiLogsControllerCrashTest extends WebTestCase
                 server: [
                     'CONTENT_TYPE' => 'application/json',
                     'HTTP_ACCEPT' => 'application/json',
+                    'HTTP_AUTHORIZATION' => 'Bearer test-valid-token',
                 ],
                 content: $payload,
             );
@@ -106,7 +113,7 @@ final class ApiLogsControllerCrashTest extends WebTestCase
      */
     public function test_it_survives_high_frequency_hostile_requests(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithApiTokenValidation();
 
         for ($index = 0; $index < 250; ++$index) {
             $payload = $index % 2 === 0
@@ -119,6 +126,7 @@ final class ApiLogsControllerCrashTest extends WebTestCase
                 server: [
                     'CONTENT_TYPE' => 'application/json',
                     'HTTP_ACCEPT' => 'application/json',
+                    'HTTP_AUTHORIZATION' => 'Bearer test-valid-token',
                 ],
                 content: $payload,
             );
@@ -147,7 +155,7 @@ final class ApiLogsControllerCrashTest extends WebTestCase
      */
     public function test_it_rejects_non_json_content_types_without_html(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithApiTokenValidation();
 
         $contentTypes = [
             '',
@@ -164,6 +172,7 @@ final class ApiLogsControllerCrashTest extends WebTestCase
                 server: [
                     'CONTENT_TYPE' => $contentType,
                     'HTTP_ACCEPT' => 'application/json',
+                    'HTTP_AUTHORIZATION' => 'Bearer test-valid-token',
                 ],
                 content: 'hostile-body',
             );
@@ -192,5 +201,49 @@ final class ApiLogsControllerCrashTest extends WebTestCase
                 $response->getContent() ?: '',
             );
         }
+    }
+
+    /**
+     * Crée un client HTTP avec validation token pilotée par doubles de test.
+     */
+    private function createClientWithApiTokenValidation(): KernelBrowser
+    {
+        $client = static::createClient();
+        $client->disableReboot();
+
+        $container = static::getContainer();
+
+        $container->set(
+            ValidateApiTokenHandler::class,
+            new ValidateApiTokenHandler(
+                new class implements ApiTokenHasherInterface
+                {
+                    public function hash(string $plainToken): string
+                    {
+                        return trim($plainToken);
+                    }
+                },
+                new class implements ApiTokenRepositoryInterface
+                {
+                    public function store(ApiTokenToStore $tokenToStore): void {}
+
+                    public function resolveStateByHash(string $tokenHash, \DateTimeImmutable $now): ApiTokenState
+                    {
+                        if ($tokenHash === 'test-valid-token') {
+                            return ApiTokenState::ACTIVE;
+                        }
+
+                        return ApiTokenState::NOT_FOUND;
+                    }
+
+                    public function revokeByHash(string $tokenHash, \DateTimeImmutable $revokedAt): bool
+                    {
+                        return false;
+                    }
+                },
+            ),
+        );
+
+        return $client;
     }
 }

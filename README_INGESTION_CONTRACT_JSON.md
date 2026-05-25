@@ -55,6 +55,29 @@ Les futures versions devront :
 
 ---
 
+# Authentification de l'endpoint
+
+L'endpoint `POST /api/logs` est protégé par un token Bearer opaque.
+
+Format attendu :
+
+```txt
+Authorization: Bearer cbi_xxxxxxxxx
+```
+
+Règles :
+- token absent => refus
+- token révoqué => refus
+- token expiré => refus
+- token actif => ingestion autorisée
+
+Important :
+- JWT n'est pas utilisé pour l'ingestion
+- le token clair n'est jamais persisté
+- seul son hash est stocké
+
+---
+
 # Payload officiel v1
 
 ```json

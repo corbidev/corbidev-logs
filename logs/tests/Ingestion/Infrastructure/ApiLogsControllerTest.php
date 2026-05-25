@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Ingestion\Infrastructure;
 
+use App\ApiToken\Application\ValidateApiTokenHandler;
+use App\ApiToken\Domain\ApiTokenHasherInterface;
+use App\ApiToken\Domain\ApiTokenRepositoryInterface;
+use App\ApiToken\Domain\ApiTokenState;
+use App\ApiToken\Domain\ApiTokenToStore;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -58,7 +64,7 @@ final class ApiLogsControllerTest extends WebTestCase
      */
     public function test_it_accepts_post_json_request(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithApiTokenValidation();
 
         $client->request(
             'POST',
@@ -66,6 +72,7 @@ final class ApiLogsControllerTest extends WebTestCase
             server: [
                 'CONTENT_TYPE' => 'application/json',
                 'HTTP_ACCEPT' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer test-valid-token',
             ],
             content: json_encode(
                 [
@@ -129,7 +136,7 @@ final class ApiLogsControllerTest extends WebTestCase
      */
     public function test_it_handles_hostile_log_payload_without_breaking_flow(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithApiTokenValidation();
 
         $client->request(
             'POST',
@@ -137,6 +144,7 @@ final class ApiLogsControllerTest extends WebTestCase
             server: [
                 'CONTENT_TYPE' => 'application/json',
                 'HTTP_ACCEPT' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer test-valid-token',
             ],
             content: json_encode(
                 [
@@ -176,7 +184,7 @@ final class ApiLogsControllerTest extends WebTestCase
      */
     public function test_it_rejects_payload_without_logs(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithApiTokenValidation();
 
         $client->request(
             'POST',
@@ -184,6 +192,7 @@ final class ApiLogsControllerTest extends WebTestCase
             server: [
                 'CONTENT_TYPE' => 'application/json',
                 'HTTP_ACCEPT' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer test-valid-token',
             ],
             content: json_encode(
                 ['message' => 'hello'],
@@ -212,7 +221,7 @@ final class ApiLogsControllerTest extends WebTestCase
      */
     public function test_it_rejects_empty_logs_payload(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithApiTokenValidation();
 
         $client->request(
             'POST',
@@ -220,6 +229,7 @@ final class ApiLogsControllerTest extends WebTestCase
             server: [
                 'CONTENT_TYPE' => 'application/json',
                 'HTTP_ACCEPT' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer test-valid-token',
             ],
             content: json_encode(
                 [
@@ -250,7 +260,7 @@ final class ApiLogsControllerTest extends WebTestCase
      */
     public function test_it_rejects_logs_entries_that_are_not_objects(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithApiTokenValidation();
 
         $client->request(
             'POST',
@@ -258,6 +268,7 @@ final class ApiLogsControllerTest extends WebTestCase
             server: [
                 'CONTENT_TYPE' => 'application/json',
                 'HTTP_ACCEPT' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer test-valid-token',
             ],
             content: json_encode(
                 [
@@ -290,7 +301,7 @@ final class ApiLogsControllerTest extends WebTestCase
      */
     public function test_it_returns_stable_error_for_invalid_json(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithApiTokenValidation();
 
         $client->request(
             'POST',
@@ -298,6 +309,7 @@ final class ApiLogsControllerTest extends WebTestCase
             server: [
                 'CONTENT_TYPE' => 'application/json',
                 'HTTP_ACCEPT' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer test-valid-token',
             ],
             content: '{"logs": [}',
         );
@@ -330,7 +342,7 @@ final class ApiLogsControllerTest extends WebTestCase
      */
     public function test_it_returns_stable_error_for_non_json_content_type(): void
     {
-        $client = static::createClient();
+        $client = $this->createClientWithApiTokenValidation();
 
         $client->request(
             'POST',
@@ -338,6 +350,7 @@ final class ApiLogsControllerTest extends WebTestCase
             server: [
                 'CONTENT_TYPE' => 'text/plain',
                 'HTTP_ACCEPT' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer test-valid-token',
             ],
             content: 'message=test',
         );
@@ -360,6 +373,138 @@ final class ApiLogsControllerTest extends WebTestCase
             '{"success":false,"error":"unsupported_media_type","message":"Content-Type must be application/json."}',
             $response->getContent() ?: '',
         );
+    }
+
+    /**
+     * But : Vérifier qu'un POST JSON sans Authorization est refusé.
+     *
+     * Entrée : POST /api/logs sans header Authorization.
+     * Résultat attendu : HTTP 401, erreur unauthorized, message stable.
+     */
+    public function test_it_rejects_request_without_authorization_header(): void
+    {
+        $client = $this->createClientWithApiTokenValidation();
+
+        $client->request(
+            'POST',
+            '/api/logs',
+            server: [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_ACCEPT' => 'application/json',
+            ],
+            content: json_encode(
+                [
+                    'logs' => [
+                        ['message' => 'hello'],
+                    ],
+                ],
+                JSON_THROW_ON_ERROR,
+            ),
+        );
+
+        $response = $client->getResponse();
+
+        self::assertSame(
+            Response::HTTP_UNAUTHORIZED,
+            $response->getStatusCode(),
+        );
+
+        self::assertJsonStringEqualsJsonString(
+            '{"success":false,"error":"unauthorized","message":"Authorization header with Bearer token is required."}',
+            $response->getContent() ?: '',
+        );
+    }
+
+    /**
+     * But : Vérifier qu'un token inconnu est refusé explicitement.
+     *
+     * Entrée : POST /api/logs avec Bearer invalid-token.
+     * Résultat attendu : HTTP 401, erreur unauthorized avec raison token_not_found.
+     */
+    public function test_it_rejects_request_with_invalid_bearer_token(): void
+    {
+        $client = $this->createClientWithApiTokenValidation();
+
+        $client->request(
+            'POST',
+            '/api/logs',
+            server: [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_ACCEPT' => 'application/json',
+                'HTTP_AUTHORIZATION' => 'Bearer invalid-token',
+            ],
+            content: json_encode(
+                [
+                    'logs' => [
+                        ['message' => 'hello'],
+                    ],
+                ],
+                JSON_THROW_ON_ERROR,
+            ),
+        );
+
+        $response = $client->getResponse();
+
+        self::assertSame(
+            Response::HTTP_UNAUTHORIZED,
+            $response->getStatusCode(),
+        );
+
+        self::assertJsonStringEqualsJsonString(
+            '{"success":false,"error":"unauthorized","message":"Token rejected: token_not_found."}',
+            $response->getContent() ?: '',
+        );
+    }
+
+    /**
+     * Crée un client HTTP avec validation token pilotée par doubles de test.
+     */
+    private function createClientWithApiTokenValidation(): KernelBrowser
+    {
+        $client = static::createClient();
+
+        $container = static::getContainer();
+
+        $container->set(
+            ValidateApiTokenHandler::class,
+            new ValidateApiTokenHandler(
+                new class implements ApiTokenHasherInterface
+                {
+                    public function hash(string $plainToken): string
+                    {
+                        return trim($plainToken);
+                    }
+                },
+                new class implements ApiTokenRepositoryInterface
+                {
+                    public function store(ApiTokenToStore $tokenToStore): void {}
+
+                    public function resolveStateByHash(string $tokenHash, \DateTimeImmutable $now): ApiTokenState
+                    {
+                        if ($tokenHash === 'test-valid-token') {
+                            return ApiTokenState::ACTIVE;
+                        }
+
+                        if ($tokenHash === 'test-revoked-token') {
+                            return ApiTokenState::REVOKED;
+                        }
+
+                        if ($tokenHash === 'test-expired-token') {
+                            return ApiTokenState::EXPIRED;
+                        }
+
+                        return ApiTokenState::NOT_FOUND;
+                    }
+
+                    public function revokeByHash(string $tokenHash, \DateTimeImmutable $revokedAt): bool
+                    {
+                        return false;
+                    }
+                },
+            ),
+        );
+
+        return $client;
     }
 
     /**

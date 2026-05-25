@@ -98,9 +98,14 @@ La surface de lecture est prévue sous `/dashboard/*` et doit rester HTML-only.
 
 ### Authentification
 
-La cible fonctionnelle reste des tokens opaques hashés, révocables et expirables.
+La stratégie d'authentification retenue est : tokens opaques hashés, révocables et expirables.
 
-Le dépôt contient encore une dépendance JWT, donc le README ne doit pas prétendre que JWT est déjà entièrement exclu sans nuance. La situation doit être considérée comme une transition ou un héritage à clarifier.
+Le projet n'utilise pas JWT pour l'ingestion.
+
+Format attendu côté client :
+- `Authorization: Bearer cbi_...`
+- le token clair n'est jamais stocké
+- seul le hash est persisté en base
 
 ## Contrat d'ingestion
 
@@ -110,7 +115,7 @@ Exemple de forme attendue pour l'ingestion :
 
 ```txt
 POST /api/logs
-Authorization: Bearer lgp_xxxxxxxxx
+Authorization: Bearer cbi_xxxxxxxxx
 Content-Type: application/json
 ```
 
