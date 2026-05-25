@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\ApiToken\Infrastructure;
 
+use App\ApiToken\Domain\ApiTokenState;
 use App\ApiToken\Domain\ApiTokenToStore;
 use App\ApiToken\Infrastructure\DoctrineApiTokenRepository;
 use Doctrine\DBAL\Connection;
@@ -106,5 +107,145 @@ final class DoctrineApiTokenRepositoryTest extends TestCase
                 expiresAt: null,
             ),
         );
+    }
+
+    /**
+     * But : Vérifier que resolveStateByHash() retourne ACTIVE pour un token non révoqué et non expiré.
+     *
+     * Entrée : fetchAssociative() avec revoked_at=null et expires_at futur.
+     * Résultat attendu : ApiTokenState::ACTIVE.
+     */
+    public function testResolveStateByHashReturnsActiveWhenTokenIsUsable(): void
+    {
+        $connection = $this->createMock(
+            Connection::class,
+        );
+
+        $connection
+            ->expects(self::once())
+            ->method('fetchAssociative')
+            ->willReturn(
+                [
+                    'revoked_at' => null,
+                    'expires_at' => '2030-01-01 00:00:00',
+                ],
+            );
+
+        $repository = new DoctrineApiTokenRepository(
+            $connection,
+        );
+
+        $state = $repository->resolveStateByHash(
+            str_repeat('1', 64),
+            new \DateTimeImmutable('2029-01-01 00:00:00'),
+        );
+
+        self::assertSame(
+            ApiTokenState::ACTIVE,
+            $state,
+        );
+    }
+
+    /**
+     * But : Vérifier que resolveStateByHash() refuse un token révoqué.
+     *
+     * Entrée : fetchAssociative() avec revoked_at non null.
+     * Résultat attendu : ApiTokenState::REVOKED.
+     */
+    public function testResolveStateByHashReturnsRevokedWhenRevocationDateExists(): void
+    {
+        $connection = $this->createMock(
+            Connection::class,
+        );
+
+        $connection
+            ->expects(self::once())
+            ->method('fetchAssociative')
+            ->willReturn(
+                [
+                    'revoked_at' => '2026-01-01 00:00:00',
+                    'expires_at' => '2030-01-01 00:00:00',
+                ],
+            );
+
+        $repository = new DoctrineApiTokenRepository(
+            $connection,
+        );
+
+        $state = $repository->resolveStateByHash(
+            str_repeat('2', 64),
+            new \DateTimeImmutable('2026-02-01 00:00:00'),
+        );
+
+        self::assertSame(
+            ApiTokenState::REVOKED,
+            $state,
+        );
+    }
+
+    /**
+     * But : Vérifier que resolveStateByHash() refuse un token expiré.
+     *
+     * Entrée : fetchAssociative() avec expires_at passé.
+     * Résultat attendu : ApiTokenState::EXPIRED.
+     */
+    public function testResolveStateByHashReturnsExpiredWhenExpirationDateIsPast(): void
+    {
+        $connection = $this->createMock(
+            Connection::class,
+        );
+
+        $connection
+            ->expects(self::once())
+            ->method('fetchAssociative')
+            ->willReturn(
+                [
+                    'revoked_at' => null,
+                    'expires_at' => '2025-01-01 00:00:00',
+                ],
+            );
+
+        $repository = new DoctrineApiTokenRepository(
+            $connection,
+        );
+
+        $state = $repository->resolveStateByHash(
+            str_repeat('3', 64),
+            new \DateTimeImmutable('2026-01-01 00:00:00'),
+        );
+
+        self::assertSame(
+            ApiTokenState::EXPIRED,
+            $state,
+        );
+    }
+
+    /**
+     * But : Vérifier que revokeByHash() retourne true si une ligne est révoquée.
+     *
+     * Entrée : executeStatement() retourne 1.
+     * Résultat attendu : true.
+     */
+    public function testRevokeByHashReturnsTrueWhenUpdateAffectsRow(): void
+    {
+        $connection = $this->createMock(
+            Connection::class,
+        );
+
+        $connection
+            ->expects(self::once())
+            ->method('executeStatement')
+            ->willReturn(1);
+
+        $repository = new DoctrineApiTokenRepository(
+            $connection,
+        );
+
+        $result = $repository->revokeByHash(
+            str_repeat('4', 64),
+            new \DateTimeImmutable('2026-05-25 12:00:00'),
+        );
+
+        self::assertTrue($result);
     }
 }
