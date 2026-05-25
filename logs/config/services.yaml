@@ -38,5 +38,14 @@ services:
     App\Log\Application\Factory\LogEntryFactoryInterface:
         alias: App\Log\Application\Factory\LogEntryFactory
 
+    App\ApiToken\Domain\ApiTokenGeneratorInterface:
+        alias: App\ApiToken\Infrastructure\SecureRandomApiTokenGenerator
+
+    App\ApiToken\Domain\ApiTokenHasherInterface:
+        alias: App\ApiToken\Infrastructure\Sha256ApiTokenHasher
+
+    App\ApiToken\Domain\ApiTokenRepositoryInterface:
+        alias: App\ApiToken\Infrastructure\DoctrineApiTokenRepository
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
