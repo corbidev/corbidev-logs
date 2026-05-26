@@ -11,8 +11,8 @@
         }
 
         .dashboard-table {
-            font-size: 0.84rem;
-            line-height: 1.28;
+            font-size: 0.76rem;
+            line-height: 1.2;
             font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
         }
 
@@ -26,28 +26,14 @@
         }
 
         .dashboard-table thead th {
-            font-size: 0.74rem;
-            white-space: nowrap;
-            padding: 0.56rem 0.6rem;
-        }
-
-        .dashboard-table td {
-            padding: 0.54rem 0.6rem;
-            vertical-align: top;
-        }
-
-        .dashboard-shell.is-compact .dashboard-table {
-            font-size: 0.76rem;
-            line-height: 1.2;
-        }
-
-        .dashboard-shell.is-compact .dashboard-table thead th {
             font-size: 0.69rem;
+            white-space: nowrap;
             padding: 0.42rem 0.48rem;
         }
 
-        .dashboard-shell.is-compact .dashboard-table td {
+        .dashboard-table td {
             padding: 0.4rem 0.48rem;
+            vertical-align: top;
         }
 
         .mono {
@@ -61,6 +47,25 @@
             border-radius: 14px;
             padding: 0.9rem;
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            max-height: 1200px;
+            opacity: 1;
+            overflow: hidden;
+            transform-origin: top;
+            transform: translateY(0) scaleY(1);
+            will-change: max-height, opacity, transform;
+            transition: max-height 300ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease, transform 300ms cubic-bezier(0.22, 1, 0.36, 1), margin 300ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .dashboard-filters.is-collapsed {
+            max-height: 0;
+            opacity: 0;
+            transform: translateY(-6px) scaleY(0.98);
+            padding-top: 0;
+            padding-bottom: 0;
+            border-width: 0;
+            margin: 0;
+            box-shadow: none;
+            pointer-events: none;
         }
 
         .dashboard-filters .form-label {
@@ -107,6 +112,61 @@
 
         .log-row-action:hover {
             text-decoration: underline;
+        }
+
+        .filters-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.42rem;
+            min-height: 40px;
+            border-radius: 10px;
+        }
+
+        .filters-toggle .icon {
+            position: relative;
+            width: 16px;
+            height: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .filters-toggle .icon span {
+            position: absolute;
+            left: 1px;
+            width: 14px;
+            height: 2px;
+            border-radius: 2px;
+            background: currentColor;
+            transform-origin: center;
+            transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), opacity 160ms ease, top 220ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .filters-toggle .icon span:nth-child(1) {
+            top: 1px;
+        }
+
+        .filters-toggle .icon span:nth-child(2) {
+            top: 6px;
+        }
+
+        .filters-toggle .icon span:nth-child(3) {
+            top: 11px;
+        }
+
+        .filters-toggle[aria-expanded="true"] .icon span:nth-child(1) {
+            top: 6px;
+            transform: rotate(45deg);
+        }
+
+        .filters-toggle[aria-expanded="true"] .icon span:nth-child(2) {
+            opacity: 0;
+            transform: scaleX(0.3);
+        }
+
+        .filters-toggle[aria-expanded="true"] .icon span:nth-child(3) {
+            top: 6px;
+            transform: rotate(-45deg);
         }
 
         .level-badge,
@@ -323,14 +383,18 @@
                 <p class="admin-subtitle">Vue filtrable des logs persistes.</p>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <button type="button" class="btn btn-outline-secondary btn-soft" id="density-toggle" aria-pressed="false">Mode compact</button>
+                <button type="button" class="btn btn-outline-secondary btn-soft filters-toggle" id="filters-toggle" aria-expanded="false" aria-controls="dashboard-filters-panel">
+                    <span class="icon" aria-hidden="true"><span></span><span></span><span></span></span>
+                    <span>Filtres</span>
+                </button>
                 <p class="mb-0 text-muted">Total: {{ totalCount }}</p>
             </div>
         </div>
 
         <section class="card border-0 shadow-sm mb-4">
-            <div class="card-body dashboard-filters">
+            <div class="card-body dashboard-filters is-collapsed" id="dashboard-filters-panel">
                 <form method="get" action="{{ path('dashboard_logs_index') }}" class="row g-2 align-items-end">
+                    <input type="hidden" name="filters_panel" id="filters-panel-input" value="{{ app.request.query.get('filters_panel', 'closed') }}">
                     <div class="col-md-2">
                         <label class="form-label fw-semibold">Date debut</label>
                         <input class="form-control" type="datetime-local" name="from_date" value="{{ filters.from_date }}">
@@ -394,7 +458,7 @@
 
                     <div class="col-md-3 d-flex gap-2">
                         <button type="submit" class="btn btn-brand text-white flex-grow-1">Filtrer</button>
-                        <a href="{{ path('dashboard_logs_index') }}" class="btn btn-outline-secondary btn-soft">Reset</a>
+                        <a href="{{ path('dashboard_logs_index', {'filters_panel': app.request.query.get('filters_panel', 'closed')}) }}" class="btn btn-outline-secondary btn-soft">Reset</a>
                     </div>
                 </form>
             </div>
@@ -483,11 +547,11 @@
 
         <nav class="d-flex gap-2 mt-3">
             {% if page > 1 %}
-                <a class="btn btn-outline-secondary btn-soft" href="{{ path('dashboard_logs_index', paginationParams|merge({'page': page - 1})) }}">Page precedente</a>
+                <a class="btn btn-outline-secondary btn-soft" href="{{ path('dashboard_logs_index', paginationParams|merge({'page': page - 1, 'filters_panel': app.request.query.get('filters_panel', 'closed')})) }}">Page precedente</a>
             {% endif %}
 
             {% if page < totalPages %}
-                <a class="btn btn-outline-secondary btn-soft" href="{{ path('dashboard_logs_index', paginationParams|merge({'page': page + 1})) }}">Page suivante</a>
+                <a class="btn btn-outline-secondary btn-soft" href="{{ path('dashboard_logs_index', paginationParams|merge({'page': page + 1, 'filters_panel': app.request.query.get('filters_panel', 'closed')})) }}">Page suivante</a>
             {% endif %}
         </nav>
     </section>
@@ -534,32 +598,52 @@
     <script>
         (function () {
             function initDashboardLogs() {
-                const shell = document.querySelector('.dashboard-shell');
-                const densityToggle = document.getElementById('density-toggle');
+                const filtersToggle = document.getElementById('filters-toggle');
+                const filtersPanel = document.getElementById('dashboard-filters-panel');
+                const filtersPanelInput = document.getElementById('filters-panel-input');
                 const endpointTemplate = '{{ path('dashboard_logs_show_json', {'externalId': '__EXTERNAL_ID__'}) }}';
-                const storageKey = 'dashboardLogsDensity';
+                const filtersPanelQueryKey = 'filters_panel';
 
-                function applyDensity(mode) {
-                    if (!shell || !densityToggle) {
+                function readFiltersPanelStateFromUrl() {
+                    try {
+                        const params = new URL(window.location.href).searchParams;
+                        return params.get(filtersPanelQueryKey) === 'open' ? 'open' : 'closed';
+                    } catch (error) {
+                        return 'closed';
+                    }
+                }
+
+                function writeFiltersPanelStateInUrl(expanded) {
+                    try {
+                        const url = new URL(window.location.href);
+                        url.searchParams.set(filtersPanelQueryKey, expanded ? 'open' : 'closed');
+                        window.history.replaceState(null, '', url.toString());
+                    } catch (error) {
+                        // No-op: older contexts may not support URL/history APIs.
+                    }
+                }
+
+                function applyFiltersVisibility(expanded) {
+                    if (!filtersToggle || !filtersPanel) {
                         return;
                     }
 
-                    const compact = mode === 'compact';
-                    shell.classList.toggle('is-compact', compact);
-                    densityToggle.textContent = compact ? 'Mode normal' : 'Mode compact';
-                    densityToggle.setAttribute('aria-pressed', compact ? 'true' : 'false');
+                    filtersPanel.classList.toggle('is-collapsed', !expanded);
+                    filtersToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+                    if (filtersPanelInput) {
+                        filtersPanelInput.value = expanded ? 'open' : 'closed';
+                    }
+                    writeFiltersPanelStateInUrl(expanded);
                 }
 
-                if (densityToggle) {
-                    densityToggle.addEventListener('click', function () {
-                        const current = shell && shell.classList.contains('is-compact') ? 'compact' : 'normal';
-                        const next = current === 'compact' ? 'normal' : 'compact';
-                        localStorage.setItem(storageKey, next);
-                        applyDensity(next);
+                if (filtersToggle && filtersPanel) {
+                    applyFiltersVisibility(readFiltersPanelStateFromUrl() === 'open');
+
+                    filtersToggle.addEventListener('click', function () {
+                        const expanded = filtersToggle.getAttribute('aria-expanded') === 'true';
+                        applyFiltersVisibility(!expanded);
                     });
                 }
-
-                applyDensity(localStorage.getItem(storageKey) === 'compact' ? 'compact' : 'normal');
 
                 const modal = document.getElementById('log-detail-modal');
                 const closeButton = document.getElementById('log-detail-close');
