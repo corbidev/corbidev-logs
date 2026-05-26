@@ -283,7 +283,7 @@
 
         .log-modal {
             width: min(1100px, 100%);
-            max-height: calc(100vh - 2rem);
+            max-height: calc(100dvh - 2rem);
             overflow: auto;
             background: #fff;
             border-radius: 16px;
@@ -318,6 +318,10 @@
             gap: 0.35rem;
             flex-wrap: wrap;
             justify-content: flex-end;
+        }
+
+        .log-modal-actions .btn {
+            white-space: nowrap;
         }
 
         .log-modal-body {
@@ -367,6 +371,22 @@
         }
 
         @media (max-width: 992px) {
+            .admin-topbar {
+                align-items: flex-start !important;
+                flex-direction: column;
+                gap: 0.7rem;
+            }
+
+            .admin-topbar > .d-flex {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .filters-toggle {
+                min-height: 36px;
+                padding: 0.34rem 0.62rem;
+            }
+
             .log-modal-grid {
                 grid-template-columns: 1fr;
             }
@@ -377,6 +397,83 @@
 
             .dashboard-filters {
                 padding: 0.7rem;
+            }
+
+            .log-modal-backdrop {
+                padding: 0.75rem 0.5rem 0.5rem;
+            }
+
+            .log-modal {
+                width: 100%;
+                max-height: calc(100dvh - 1rem);
+                border-radius: 12px;
+            }
+
+            .log-modal-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .log-modal-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .log-modal-actions .btn {
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .admin-title {
+                font-size: 1.28rem;
+            }
+
+            .admin-subtitle {
+                margin-bottom: 0;
+            }
+
+            .admin-topbar > .d-flex {
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .admin-topbar > .d-flex .text-muted {
+                font-size: 0.9rem;
+            }
+
+            .filters-toggle span:last-child {
+                display: none;
+            }
+
+            .filters-toggle {
+                min-width: 38px;
+                padding: 0.34rem 0.5rem;
+            }
+
+            .table-wrap {
+                margin-left: -0.35rem;
+                margin-right: -0.35rem;
+                width: calc(100% + 0.7rem);
+            }
+
+            .dashboard-table {
+                font-size: 0.71rem;
+            }
+
+            .dashboard-table thead th,
+            .dashboard-table td {
+                padding-left: 0.35rem;
+                padding-right: 0.35rem;
+            }
+
+            .log-modal-body {
+                padding: 0.85rem 0.8rem;
+            }
+
+            .log-modal-card pre {
+                font-size: 0.7rem;
             }
         }
     </style>
