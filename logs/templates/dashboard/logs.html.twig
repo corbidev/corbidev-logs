@@ -2,19 +2,334 @@
 
 {% block title %}Dashboard - Logs{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .dashboard-shell {
+            max-width: none;
+            width: 100%;
+        }
+
+        .dashboard-table {
+            font-size: 0.84rem;
+            line-height: 1.28;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+        }
+
+        .dashboard-table,
+        .dashboard-table th,
+        .dashboard-table td,
+        .dashboard-table a,
+        .dashboard-table code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+            font-size: inherit;
+        }
+
+        .dashboard-table thead th {
+            font-size: 0.74rem;
+            white-space: nowrap;
+            padding: 0.56rem 0.6rem;
+        }
+
+        .dashboard-table td {
+            padding: 0.54rem 0.6rem;
+            vertical-align: top;
+        }
+
+        .dashboard-shell.is-compact .dashboard-table {
+            font-size: 0.76rem;
+            line-height: 1.2;
+        }
+
+        .dashboard-shell.is-compact .dashboard-table thead th {
+            font-size: 0.69rem;
+            padding: 0.42rem 0.48rem;
+        }
+
+        .dashboard-shell.is-compact .dashboard-table td {
+            padding: 0.4rem 0.48rem;
+        }
+
+        .mono {
+            font-family: inherit;
+            font-size: inherit;
+        }
+
+        .dashboard-filters {
+            background: linear-gradient(180deg, #ffffff 0%, #f9fcff 100%);
+            border: 1px solid #d9e3ef;
+            border-radius: 14px;
+            padding: 0.9rem;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        .dashboard-filters .form-label {
+            font-size: 0.82rem;
+            margin-bottom: 0.32rem;
+            color: #30445d;
+        }
+
+        .dashboard-filters .form-control,
+        .dashboard-filters .form-select {
+            min-height: 42px;
+            border-radius: 10px;
+            border-color: #cfdbe8;
+            font-size: 0.9rem;
+            background: #fff;
+        }
+
+        .dashboard-filters .btn {
+            min-height: 42px;
+        }
+
+        .dashboard-filters .btn-outline-secondary {
+            border-color: #becddd;
+            color: #2f4a65;
+            background: #f7fbff;
+        }
+
+        .dashboard-filters .btn-outline-secondary:hover {
+            background: #eef6ff;
+            border-color: #a9bfd6;
+        }
+
+        .text-wrap-break {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        .log-row-action {
+            color: #0a4bc8;
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .log-row-action:hover {
+            text-decoration: underline;
+        }
+
+        .level-badge,
+        .http-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 3.8rem;
+            padding: 0.16rem 0.5rem;
+            border-radius: 999px;
+            border: 1px solid transparent;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .level-badge.is-error,
+        .level-badge.is-critical,
+        .http-badge.is-5xx {
+            color: #9a3f3f;
+            background: #fff1ef;
+            border-color: #ffd8d3;
+        }
+
+        .level-badge.is-warning,
+        .http-badge.is-4xx {
+            color: #9a6b24;
+            background: #fff7ea;
+            border-color: #ffe4bb;
+        }
+
+        .level-badge.is-info,
+        .level-badge.is-notice,
+        .level-badge.is-debug,
+        .http-badge.is-2xx,
+        .http-badge.is-3xx {
+            color: #225f8f;
+            background: #eef7ff;
+            border-color: #d3e8fa;
+        }
+
+        .http-badge.is-other,
+        .level-badge.is-other {
+            color: #4c5e74;
+            background: #f2f6fa;
+            border-color: #dbe4ee;
+        }
+
+        .log-clickable-row {
+            cursor: pointer;
+        }
+
+        .log-clickable-row:hover {
+            background: #f7fbff;
+        }
+
+        .log-clickable-row.severity-critical,
+        .log-clickable-row.severity-error {
+            background: #fff7f5;
+        }
+
+        .log-clickable-row.severity-critical:hover,
+        .log-clickable-row.severity-error:hover {
+            background: #ffefea;
+        }
+
+        .log-clickable-row.severity-warning {
+            background: #fffaf2;
+        }
+
+        .log-clickable-row.severity-warning:hover {
+            background: #fff4e6;
+        }
+
+        .log-clickable-row.severity-notice,
+        .log-clickable-row.severity-info,
+        .log-clickable-row.severity-debug {
+            background: #f6fbff;
+        }
+
+        .log-clickable-row.severity-notice:hover,
+        .log-clickable-row.severity-info:hover,
+        .log-clickable-row.severity-debug:hover {
+            background: #eef7ff;
+        }
+
+        .log-clickable-row:focus-visible {
+            outline: 2px solid #67d8bf;
+            outline-offset: -2px;
+        }
+
+        .log-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(20, 33, 61, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1080;
+            padding: 1rem;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 220ms ease, visibility 220ms ease;
+        }
+
+        .log-modal-backdrop.is-open {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .log-modal {
+            width: min(1100px, 100%);
+            max-height: calc(100vh - 2rem);
+            overflow: auto;
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid var(--line);
+            box-shadow: 0 30px 60px rgba(20, 33, 61, 0.2);
+            transform: translateY(10px) scale(0.985);
+            opacity: 0;
+            transition: transform 230ms ease, opacity 230ms ease;
+        }
+
+        .log-modal-backdrop.is-open .log-modal {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+
+        .log-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.1rem;
+            border-bottom: 1px solid var(--line);
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 1;
+        }
+
+        .log-modal-body {
+            padding: 1rem 1.1rem;
+            font-size: 0.84rem;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+        }
+
+        .log-modal-grid {
+            display: grid;
+            grid-template-columns: 190px 1fr;
+            gap: 0.35rem 0.8rem;
+        }
+
+        .log-modal-grid dt {
+            margin: 0;
+            color: #4b596d;
+            font-weight: 700;
+        }
+
+        .log-modal-grid dd {
+            margin: 0;
+        }
+
+        .log-modal-card {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 0.8rem;
+            margin-top: 0.8rem;
+            background: #fcfefe;
+        }
+
+        .log-modal-card h4 {
+            margin: 0 0 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .log-modal-card pre {
+            margin: 0;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            font-size: 0.74rem;
+            background: #f7fafc;
+            border: 1px solid #e8eef5;
+            border-radius: 8px;
+            padding: 0.65rem;
+        }
+
+        @media (max-width: 992px) {
+            .log-modal-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-table {
+                font-size: 0.74rem;
+            }
+
+            .dashboard-filters {
+                padding: 0.7rem;
+            }
+        }
+    </style>
+{% endblock %}
+
 {% block body %}
 <main class="admin-page">
-    <section class="admin-shell wide">
+    <section class="admin-shell dashboard-shell">
         <div class="d-flex justify-content-between align-items-center mb-3 admin-topbar">
             <div>
                 <h1 class="h3 admin-title">Dashboard Logs</h1>
                 <p class="admin-subtitle">Vue filtrable des logs persistes.</p>
             </div>
-            <p class="mb-0 text-muted">Total: {{ totalCount }}</p>
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-outline-secondary btn-soft" id="density-toggle" aria-pressed="false">Mode compact</button>
+                <p class="mb-0 text-muted">Total: {{ totalCount }}</p>
+            </div>
         </div>
 
         <section class="card border-0 shadow-sm mb-4">
-            <div class="card-body">
+            <div class="card-body dashboard-filters">
                 <form method="get" action="{{ path('dashboard_logs_index') }}" class="row g-2 align-items-end">
                     <div class="col-md-2">
                         <label class="form-label fw-semibold">Date debut</label>
@@ -90,7 +405,7 @@
         </section>
 
         <div class="table-wrap table-responsive">
-            <table class="table align-middle">
+            <table class="table align-middle dashboard-table">
                 <thead>
                     <tr>
                         <th>Date</th>
@@ -107,18 +422,48 @@
                 </thead>
                 <tbody>
                     {% for item in items %}
-                        <tr>
-                            <td>{{ item.createdAt|date('Y-m-d H:i:s') }}</td>
+                        {% set level = item.level|lower %}
+                        <tr
+                            class="log-clickable-row js-log-detail-row severity-{{ level }}"
+                            data-external-id="{{ item.externalId }}"
+                            tabindex="0"
+                            role="button"
+                            aria-label="Ouvrir le detail du log {{ item.externalId }}"
+                        >
+                            <td class="mono">{{ item.createdAt|date('Y-m-d H:i:s') }}</td>
                             <td>
-                                <a href="{{ path('dashboard_logs_show', {'externalId': item.externalId}) }}">{{ item.externalId }}</a>
+                                <a
+                                    href="{{ path('dashboard_logs_show', {'externalId': item.externalId}) }}"
+                                    class="log-row-action mono"
+                                >{{ item.externalId }}</a>
                             </td>
                             <td>{{ item.projectId }}</td>
-                            <td>{{ item.level }}</td>
-                            <td>{{ item.httpStatus }}</td>
+                            <td>
+                                <span class="level-badge
+                                    {% if level in ['critical', 'error'] %}is-{{ level }}
+                                    {% elseif level == 'warning' %}is-warning
+                                    {% elseif level == 'info' %}is-info
+                                    {% elseif level == 'notice' %}is-notice
+                                    {% elseif level == 'debug' %}is-debug
+                                    {% else %}is-other{% endif %}">
+                                    {{ item.level|upper }}
+                                </span>
+                            </td>
+                            <td>
+                                {% set status = item.httpStatus %}
+                                <span class="http-badge
+                                    {% if status >= 500 and status < 600 %}is-5xx
+                                    {% elseif status >= 400 and status < 500 %}is-4xx
+                                    {% elseif status >= 300 and status < 400 %}is-3xx
+                                    {% elseif status >= 200 and status < 300 %}is-2xx
+                                    {% else %}is-other{% endif %}">
+                                    {{ item.httpStatus }}
+                                </span>
+                            </td>
                             <td>{{ item.domain }}</td>
-                            <td><span class="text-break">{{ item.uri }}</span></td>
-                            <td>{{ item.requestId }}</td>
-                            <td><code>{{ item.fingerprint }}</code></td>
+                            <td><span class="text-wrap-break">{{ item.uri }}</span></td>
+                            <td class="mono text-wrap-break">{{ item.requestId }}</td>
+                            <td><code class="mono">{{ item.fingerprint }}</code></td>
                             <td>
                                 {% if item.message|length > 90 %}
                                     {{ item.message|slice(0, 90) ~ '...' }}
@@ -147,4 +492,239 @@
         </nav>
     </section>
 </main>
+
+<div class="log-modal-backdrop" id="log-detail-modal" aria-hidden="true">
+    <section class="log-modal" role="dialog" aria-modal="true" aria-labelledby="log-detail-title">
+        <header class="log-modal-header">
+            <div>
+                <h3 id="log-detail-title" class="h5 mb-1">Detail du log</h3>
+                <p class="mb-0 text-muted mono" id="log-detail-subtitle">Chargement...</p>
+            </div>
+            <button type="button" class="btn btn-outline-secondary btn-soft" id="log-detail-close">Fermer</button>
+        </header>
+        <div class="log-modal-body">
+            <dl class="log-modal-grid" id="log-detail-grid"></dl>
+
+            <article class="log-modal-card">
+                <h4>Message</h4>
+                <pre id="log-detail-message"></pre>
+            </article>
+
+            <article class="log-modal-card">
+                <h4>Context</h4>
+                <pre id="log-detail-context"></pre>
+            </article>
+
+            <article class="log-modal-card">
+                <h4>Extra</h4>
+                <pre id="log-detail-extra"></pre>
+            </article>
+
+            <article class="log-modal-card">
+                <h4>Ingestion warnings</h4>
+                <pre id="log-detail-warnings"></pre>
+            </article>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        (function () {
+            function initDashboardLogs() {
+                const shell = document.querySelector('.dashboard-shell');
+                const densityToggle = document.getElementById('density-toggle');
+                const endpointTemplate = '{{ path('dashboard_logs_show_json', {'externalId': '__EXTERNAL_ID__'}) }}';
+                const storageKey = 'dashboardLogsDensity';
+
+                function applyDensity(mode) {
+                    if (!shell || !densityToggle) {
+                        return;
+                    }
+
+                    const compact = mode === 'compact';
+                    shell.classList.toggle('is-compact', compact);
+                    densityToggle.textContent = compact ? 'Mode normal' : 'Mode compact';
+                    densityToggle.setAttribute('aria-pressed', compact ? 'true' : 'false');
+                }
+
+                if (densityToggle) {
+                    densityToggle.addEventListener('click', function () {
+                        const current = shell && shell.classList.contains('is-compact') ? 'compact' : 'normal';
+                        const next = current === 'compact' ? 'normal' : 'compact';
+                        localStorage.setItem(storageKey, next);
+                        applyDensity(next);
+                    });
+                }
+
+                applyDensity(localStorage.getItem(storageKey) === 'compact' ? 'compact' : 'normal');
+
+                const modal = document.getElementById('log-detail-modal');
+                const closeButton = document.getElementById('log-detail-close');
+                const subtitle = document.getElementById('log-detail-subtitle');
+                const grid = document.getElementById('log-detail-grid');
+                const message = document.getElementById('log-detail-message');
+                const context = document.getElementById('log-detail-context');
+                const extra = document.getElementById('log-detail-extra');
+                const warnings = document.getElementById('log-detail-warnings');
+
+                if (!modal || !closeButton || !subtitle || !grid || !message || !context || !extra || !warnings) {
+                    return;
+                }
+
+                function openModal() {
+                    modal.classList.add('is-open');
+                    modal.setAttribute('aria-hidden', 'false');
+                }
+
+                function closeModal() {
+                    modal.classList.remove('is-open');
+                    modal.setAttribute('aria-hidden', 'true');
+                }
+
+                function prettyJson(value) {
+                    return JSON.stringify(value ?? {}, null, 2);
+                }
+
+                function renderGrid(data) {
+                    const fields = [
+                        ['External ID', data.externalId],
+                        ['Date', data.createdAt],
+                        ['Project ID', data.projectId],
+                        ['Level', data.level],
+                        ['HTTP', data.httpStatus],
+                        ['Domain', data.domain],
+                        ['URI', data.uri],
+                        ['Method', data.method || 'n/a'],
+                        ['Request ID', data.requestId],
+                        ['Fingerprint', data.fingerprint],
+                        ['Client', data.client],
+                        ['Environment', data.env],
+                        ['IP', data.ip || 'n/a'],
+                        ['Client date', data.clientDate || 'n/a'],
+                        ['User Agent', data.userAgent || 'n/a']
+                    ];
+
+                    grid.innerHTML = fields.map(([label, value]) => {
+                        return '<dt>' + label + '</dt><dd class="text-wrap-break">' + String(value ?? '') + '</dd>';
+                    }).join('');
+                }
+
+                async function loadDetails(externalId) {
+                    subtitle.textContent = externalId;
+                    message.textContent = 'Chargement...';
+                    context.textContent = '';
+                    extra.textContent = '';
+                    warnings.textContent = '';
+                    grid.innerHTML = '';
+
+                    const url = endpointTemplate.replace('__EXTERNAL_ID__', encodeURIComponent(externalId));
+
+                    const response = await fetch(url, {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    const payload = await response.json();
+
+                    if (!response.ok || !payload.success) {
+                        throw new Error(payload.message || 'Impossible de charger le detail du log.');
+                    }
+
+                    const data = payload.data;
+                    subtitle.textContent = data.externalId;
+                    renderGrid(data);
+                    message.textContent = data.message || '';
+                    context.textContent = prettyJson(data.context);
+                    extra.textContent = prettyJson(data.extra);
+                    warnings.textContent = Array.isArray(data.ingestionWarnings) && data.ingestionWarnings.length > 0
+                        ? data.ingestionWarnings.join('\n')
+                        : 'Aucun warning.';
+                }
+
+                async function openDetailsFor(externalId) {
+                    if (!externalId) {
+                        return;
+                    }
+
+                    openModal();
+
+                    try {
+                        await loadDetails(externalId);
+                    } catch (error) {
+                        subtitle.textContent = externalId;
+                        message.textContent = error instanceof Error ? error.message : 'Erreur inattendue.';
+                        context.textContent = '';
+                        extra.textContent = '';
+                        warnings.textContent = '';
+                    }
+                }
+
+                document.querySelectorAll('.js-log-detail-row').forEach((row) => {
+                    row.addEventListener('click', async function (event) {
+                        if (event.target instanceof Element && event.target.closest('a')) {
+                            return;
+                        }
+
+                        const externalId = this.getAttribute('data-external-id');
+                        await openDetailsFor(externalId);
+                    });
+
+                    row.addEventListener('keydown', async function (event) {
+                        if (event.key !== 'Enter' && event.key !== ' ') {
+                            return;
+                        }
+
+                        event.preventDefault();
+
+                        const externalId = this.getAttribute('data-external-id');
+                        await openDetailsFor(externalId);
+                    });
+                });
+
+                document.querySelectorAll('.log-row-action').forEach((link) => {
+                    link.addEventListener('click', async function (event) {
+                        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                            return;
+                        }
+
+                        event.preventDefault();
+                        event.stopPropagation();
+
+                        const row = this.closest('.js-log-detail-row');
+                        const externalId = row ? row.getAttribute('data-external-id') : this.textContent;
+
+                        try {
+                            await openDetailsFor(externalId);
+                        } catch (error) {
+                            window.location.href = this.getAttribute('href') || '';
+                        }
+                    });
+                });
+
+                closeButton.addEventListener('click', closeModal);
+
+                modal.addEventListener('click', function (event) {
+                    if (event.target === modal) {
+                        closeModal();
+                    }
+                });
+
+                document.addEventListener('keydown', function (event) {
+                    if (event.key === 'Escape' && modal.classList.contains('is-open')) {
+                        closeModal();
+                    }
+                });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initDashboardLogs, { once: true });
+            } else {
+                initDashboardLogs();
+            }
+        })();
+    </script>
 {% endblock %}
