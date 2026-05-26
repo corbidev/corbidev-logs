@@ -265,10 +265,10 @@
             inset: 0;
             background: rgba(20, 33, 61, 0.45);
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
             z-index: 1080;
-            padding: 1rem;
+            padding: 1.1rem 1rem 1rem;
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
@@ -310,6 +310,14 @@
             top: 0;
             background: #fff;
             z-index: 1;
+        }
+
+        .log-modal-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         .log-modal-body {
@@ -564,7 +572,11 @@
                 <h3 id="log-detail-title" class="h5 mb-1">Detail du log</h3>
                 <p class="mb-0 text-muted mono" id="log-detail-subtitle">Chargement...</p>
             </div>
-            <button type="button" class="btn btn-outline-secondary btn-soft" id="log-detail-close">Fermer</button>
+            <div class="log-modal-actions">
+                <button type="button" class="btn btn-outline-secondary btn-soft" id="log-detail-prev">Precedent</button>
+                <button type="button" class="btn btn-outline-secondary btn-soft" id="log-detail-next">Suivant</button>
+                <button type="button" class="btn btn-outline-secondary btn-soft" id="log-detail-close">Fermer</button>
+            </div>
         </header>
         <div class="log-modal-body">
             <dl class="log-modal-grid" id="log-detail-grid"></dl>
@@ -647,15 +659,31 @@
 
                 const modal = document.getElementById('log-detail-modal');
                 const closeButton = document.getElementById('log-detail-close');
+                const prevButton = document.getElementById('log-detail-prev');
+                const nextButton = document.getElementById('log-detail-next');
                 const subtitle = document.getElementById('log-detail-subtitle');
                 const grid = document.getElementById('log-detail-grid');
                 const message = document.getElementById('log-detail-message');
                 const context = document.getElementById('log-detail-context');
                 const extra = document.getElementById('log-detail-extra');
                 const warnings = document.getElementById('log-detail-warnings');
+                let visibleExternalIds = [];
+                let currentExternalIndex = -1;
 
-                if (!modal || !closeButton || !subtitle || !grid || !message || !context || !extra || !warnings) {
+                if (!modal || !closeButton || !prevButton || !nextButton || !subtitle || !grid || !message || !context || !extra || !warnings) {
                     return;
+                }
+
+                function refreshVisibleExternalIds() {
+                    visibleExternalIds = Array.from(document.querySelectorAll('.js-log-detail-row'))
+                        .map((row) => row.getAttribute('data-external-id'))
+                        .filter((externalId) => !!externalId);
+                }
+
+                function updateModalNavigationState() {
+                    const hasCurrent = currentExternalIndex >= 0;
+                    prevButton.disabled = !hasCurrent || currentExternalIndex === 0;
+                    nextButton.disabled = !hasCurrent || currentExternalIndex >= (visibleExternalIds.length - 1);
                 }
 
                 function openModal() {
@@ -734,6 +762,10 @@
                         return;
                     }
 
+                    refreshVisibleExternalIds();
+                    currentExternalIndex = visibleExternalIds.indexOf(externalId);
+                    updateModalNavigationState();
+
                     openModal();
 
                     try {
@@ -745,6 +777,8 @@
                         extra.textContent = '';
                         warnings.textContent = '';
                     }
+
+                    updateModalNavigationState();
                 }
 
                 document.querySelectorAll('.js-log-detail-row').forEach((row) => {
@@ -791,6 +825,22 @@
 
                 closeButton.addEventListener('click', closeModal);
 
+                prevButton.addEventListener('click', async function () {
+                    if (currentExternalIndex <= 0) {
+                        return;
+                    }
+
+                    await openDetailsFor(visibleExternalIds[currentExternalIndex - 1]);
+                });
+
+                nextButton.addEventListener('click', async function () {
+                    if (currentExternalIndex < 0 || currentExternalIndex >= visibleExternalIds.length - 1) {
+                        return;
+                    }
+
+                    await openDetailsFor(visibleExternalIds[currentExternalIndex + 1]);
+                });
+
                 modal.addEventListener('click', function (event) {
                     if (event.target === modal) {
                         closeModal();
@@ -800,8 +850,27 @@
                 document.addEventListener('keydown', function (event) {
                     if (event.key === 'Escape' && modal.classList.contains('is-open')) {
                         closeModal();
+                        return;
+                    }
+
+                    if (!modal.classList.contains('is-open')) {
+                        return;
+                    }
+
+                    if (event.key === 'ArrowLeft') {
+                        event.preventDefault();
+                        prevButton.click();
+                        return;
+                    }
+
+                    if (event.key === 'ArrowRight') {
+                        event.preventDefault();
+                        nextButton.click();
                     }
                 });
+
+                refreshVisibleExternalIds();
+                updateModalNavigationState();
             }
 
             if (document.readyState === 'loading') {
