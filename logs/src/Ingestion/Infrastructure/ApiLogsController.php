@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ingestion\Infrastructure;
 
+use OpenApi\Attributes as OA;
 use App\ApiToken\Application\ValidateApiTokenHandler;
 use App\ApiToken\Application\ValidateApiTokenRequest;
 use App\Ingestion\Domain\IngestionPayloadValidator;
@@ -23,6 +24,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * - retourner des réponses stables (succès/erreur)
  * - ne jamais renvoyer de HTML
  */
+#[OA\Tag(name: 'Logs')]
 final class ApiLogsController
 {
     public function __construct(
@@ -40,6 +42,43 @@ final class ApiLogsController
      * - 202 si la requête est acceptée et queueée
      */
     #[Route('/api/logs', name: 'api_ingestion_logs', methods: ['POST'])]
+    #[OA\Post(
+        path: '/api/v1/logs',
+        summary: 'Ingestion d\'un log',
+        description: 'Reçoit un log distant et le place en queue.',
+        tags: ['Logs']
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['message', 'level'],
+            properties: [
+                new OA\Property(
+                    property: 'message',
+                    type: 'string',
+                    example: 'Database timeout'
+                ),
+                new OA\Property(
+                    property: 'level',
+                    type: 'string',
+                    example: 'error'
+                ),
+                new OA\Property(
+                    property: 'env',
+                    type: 'string',
+                    example: 'prod'
+                ),
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 202,
+        description: 'Log accepté'
+    )]
+    #[OA\Response(
+        response: 400,
+        description: 'Payload invalide'
+    )]
     public function __invoke(Request $request): JsonResponse
     {
         if (!$this->isJsonRequest($request)) {
