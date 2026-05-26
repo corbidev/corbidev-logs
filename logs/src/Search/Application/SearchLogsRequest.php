@@ -18,6 +18,7 @@ final readonly class SearchLogsRequest
         private ?string $domain = null,
         private ?int $projectId = null,
         private ?string $fingerprint = null,
+        private ?string $query = null,
     ) {
     }
 
@@ -59,5 +60,10 @@ final readonly class SearchLogsRequest
     public function getFingerprint(): ?string
     {
         return $this->fingerprint;
+    }
+
+    public function getQuery(): ?string
+    {
+        return $this->query;
     }
 }

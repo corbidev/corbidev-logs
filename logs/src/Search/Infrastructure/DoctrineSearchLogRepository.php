@@ -41,7 +41,7 @@ final readonly class DoctrineSearchLogRepository implements SearchLogRepositoryI
             $params['offset'] = $pagination->getOffset();
 
             $rows = $this->connection->fetchAllAssociative(
-                'SELECT id, external_id, project_id, level, domain, message, created_at FROM logs '
+                'SELECT id, external_id, project_id, level, domain, http_status, uri, request_id, fingerprint, message, created_at FROM logs '
                 . $whereSql
                 . ' ORDER BY created_at DESC, id DESC LIMIT :limit OFFSET :offset',
                 $params,
@@ -119,6 +119,16 @@ final readonly class DoctrineSearchLogRepository implements SearchLogRepositoryI
             $params['fingerprint'] = $filters->getFingerprint() ?? '';
         }
 
+        if ($filters->getQuery() !== null) {
+            $conditions[] = '('
+                . 'message LIKE :query '
+                . 'OR uri LIKE :query '
+                . 'OR request_id LIKE :query '
+                . 'OR external_id LIKE :query'
+                . ')';
+            $params['query'] = '%' . ($filters->getQuery() ?? '') . '%';
+        }
+
         if ($conditions === []) {
             return ['', $params];
         }
@@ -140,6 +150,10 @@ final readonly class DoctrineSearchLogRepository implements SearchLogRepositoryI
             projectId: (int) ($row['project_id'] ?? 0),
             level: (string) ($row['level'] ?? ''),
             domain: (string) ($row['domain'] ?? ''),
+            httpStatus: (int) ($row['http_status'] ?? 0),
+            uri: (string) ($row['uri'] ?? ''),
+            requestId: (string) ($row['request_id'] ?? ''),
+            fingerprint: (string) ($row['fingerprint'] ?? ''),
             message: (string) ($row['message'] ?? ''),
             createdAt: new \DateTimeImmutable(
                 (string) ($row['created_at'] ?? 'now'),

@@ -1,0 +1,132 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Tokens Bearer{% endblock %}
+
+{% block body %}
+<main class="admin-page">
+    <section class="admin-shell wide">
+        <div class="d-flex justify-content-between align-items-center mb-3 admin-topbar">
+            <div>
+                <h1 class="h3 admin-title">Gestion des tokens Bearer</h1>
+                <p class="admin-subtitle">Cree, consulte et revoque les tokens utilises par l'API d'ingestion.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ path('admin_consumers') }}" class="btn btn-outline-secondary btn-soft">Consumers</a>
+                <form method="post" action="{{ path('admin_logout') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('admin_logout') }}">
+                    <button class="btn btn-outline-danger btn-soft" type="submit">Deconnexion</button>
+                </form>
+            </div>
+        </div>
+
+        {% for payload in app.flashes('token_created') %}
+            <div class="alert alert-success mb-3">
+                <strong>Token cree :</strong>
+                <div class="mt-2">
+                    <code>{{ payload.plain_token }}</code>
+                </div>
+                <small class="d-block mt-2">Copie ce token maintenant : il ne sera plus affiche ensuite.</small>
+            </div>
+        {% endfor %}
+
+        {% for message in app.flashes('success') %}
+            <div class="alert alert-success mb-3">{{ message }}</div>
+        {% endfor %}
+
+        {% for message in app.flashes('error') %}
+            <div class="alert alert-danger mb-3">{{ message }}</div>
+        {% endfor %}
+
+        {% if error is defined and error %}
+            <div class="alert alert-danger mb-3">{{ error }}</div>
+        {% endif %}
+
+        <section class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Creer un token</h2>
+
+                <form method="post" action="{{ path('admin_tokens_create') }}" class="row g-2 align-items-end">
+                    <input type="hidden" name="_token" value="{{ csrf_token('admin_token_create') }}">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Projet</label>
+                        <select class="form-select" name="project_id" required>
+                            <option value="">Selectionner...</option>
+                            {% for project in projects %}
+                                <option value="{{ project.id }}" {% if form.project_id == (project.id ~ '') %}selected{% endif %}>
+                                    {{ project.name }} ({{ project.slug }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Libelle</label>
+                        <input class="form-control" name="label" value="{{ form.label }}" placeholder="CI, Batch, Script..." required>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Expiration (optionnel)</label>
+                        <input class="form-control" type="datetime-local" name="expires_at" value="{{ form.expires_at }}">
+                    </div>
+
+                    <div class="col-md-2 d-grid">
+                        <button class="btn btn-brand text-white">Generer</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <div class="table-wrap table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Projet</th>
+                        <th>Libelle</th>
+                        <th>Prefixe</th>
+                        <th>Cree le</th>
+                        <th>Expire le</th>
+                        <th>Statut</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for token in tokens %}
+                        {% set isRevoked = token.revoked_at is not null %}
+                        {% set isExpired = (token.expires_at is not null) and (token.expires_at|date('U') <= "now"|date('U')) %}
+                        <tr>
+                            <td>{{ token.project_name }} <small class="text-muted d-block">{{ token.slug }}</small></td>
+                            <td>{{ token.label }}</td>
+                            <td><code>{{ token.token_prefix }}</code></td>
+                            <td>{{ token.created_at ? token.created_at|date('d/m/Y H:i') : '-' }}</td>
+                            <td>{{ token.expires_at ? token.expires_at|date('d/m/Y H:i') : '-' }}</td>
+                            <td>
+                                {% if isRevoked %}
+                                    <span class="status-pill inactive">Revoque</span>
+                                {% elseif isExpired %}
+                                    <span class="status-pill inactive">Expire</span>
+                                {% else %}
+                                    <span class="status-pill active">Actif</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if not isRevoked %}
+                                    <form method="post" action="{{ path('admin_tokens_revoke', {id: token.id}) }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('admin_token_revoke_' ~ token.id) }}">
+                                        <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Revoquer ce token ?');">Revoquer</button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">Aucun token configure.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+{% endblock %}

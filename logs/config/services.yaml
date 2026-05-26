@@ -47,6 +47,15 @@ services:
     App\ApiToken\Domain\ApiTokenRepositoryInterface:
         alias: App\ApiToken\Infrastructure\DoctrineApiTokenRepository
 
+    App\Jwt\Security\SecretCrypto:
+        arguments:
+            $appSecret: '%kernel.secret%'
+
+    App\Jwt\Controller\AdminAuthController:
+        arguments:
+            $adminUser: '%env(string:ADMIN_USER)%'
+            $adminPasswordHash: '%env(string:ADMIN_PASSWORD_HASH)%'
+
     App\Project\Domain\ProjectRepositoryInterface:
         alias: App\Project\Infrastructure\DoctrineProjectRepository
 

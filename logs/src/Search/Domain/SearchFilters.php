@@ -16,6 +16,7 @@ final readonly class SearchFilters
         private ?string $domain = null,
         private ?int $projectId = null,
         private ?string $fingerprint = null,
+        private ?string $query = null,
     ) {
         if ($this->fromDate !== null && $this->toDate !== null && $this->fromDate > $this->toDate) {
             throw new \InvalidArgumentException(
@@ -63,6 +64,13 @@ final readonly class SearchFilters
     {
         return $this->normalizeNullableString(
             $this->fingerprint,
+        );
+    }
+
+    public function getQuery(): ?string
+    {
+        return $this->normalizeNullableString(
+            $this->query,
         );
     }
 

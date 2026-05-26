@@ -1,0 +1,64 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}API Consumers{% endblock %}
+
+{% block body %}
+<main class="admin-page">
+    <section class="admin-shell wide">
+        <div class="d-flex justify-content-between align-items-center mb-3 admin-topbar">
+            <div>
+                <h1 class="h3 admin-title">API Consumers</h1>
+                <p class="admin-subtitle">Supervision des accès et statuts des clients applicatifs.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ path('admin_tokens') }}" class="btn btn-outline-secondary btn-soft">Tokens Bearer</a>
+                <form method="post" action="{{ path('admin_logout') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('admin_logout') }}">
+                    <button class="btn btn-outline-danger btn-soft" type="submit">Deconnexion</button>
+                </form>
+            </div>
+        </div>
+
+        <a href="/admin/consumers/create" class="btn btn-brand text-white mb-3">Créer un consumer</a>
+
+        <div class="table-wrap table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Domaine</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in consumers %}
+                    <tr>
+                        <td>{{ c.identifier }}</td>
+                        <td>
+                            {% if c.active %}
+                            <span class="status-pill active">Actif</span>
+                            {% else %}
+                            <span class="status-pill inactive">Inactif</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="actions d-flex gap-1 flex-wrap">
+                                <a href="/admin/consumers/{{ c.id }}/edit" class="btn btn-sm btn-warning">Éditer</a>
+                                <form method="post" action="{{ path('admin_consumers_toggle', {id: c.id}) }}" class="d-inline">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_consumer_toggle_' ~ c.id) }}">
+                                    <button class="btn btn-sm btn-secondary" type="submit">Basculer</button>
+                                </form>
+                                <form method="post" action="{{ path('admin_consumers_delete', {id: c.id}) }}" class="d-inline" onsubmit="return confirm('Supprimer ce consumer ?');">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_consumer_delete_' ~ c.id) }}">
+                                    <button class="btn btn-sm btn-danger" type="submit">Supprimer</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+{% endblock %}

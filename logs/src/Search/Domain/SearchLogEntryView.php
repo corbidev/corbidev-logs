@@ -15,6 +15,10 @@ final readonly class SearchLogEntryView
         private int $projectId,
         private string $level,
         private string $domain,
+        private int $httpStatus,
+        private string $uri,
+        private string $requestId,
+        private string $fingerprint,
         private string $message,
         private \DateTimeImmutable $createdAt,
     ) {
@@ -43,6 +47,26 @@ final readonly class SearchLogEntryView
     public function getDomain(): string
     {
         return $this->domain;
+    }
+
+    public function getHttpStatus(): int
+    {
+        return $this->httpStatus;
+    }
+
+    public function getUri(): string
+    {
+        return $this->uri;
+    }
+
+    public function getRequestId(): string
+    {
+        return $this->requestId;
+    }
+
+    public function getFingerprint(): string
+    {
+        return $this->fingerprint;
     }
 
     public function getMessage(): string
