@@ -32,7 +32,7 @@ final readonly class DoctrineSearchLogRepository implements SearchLogRepositoryI
                 $filters,
             );
 
-            $fromSql = ' FROM logs l INNER JOIN projects p ON p.id = l.project_id ';
+            $fromSql = ' FROM logs l INNER JOIN domains d ON d.id = l.domain_id ';
 
             $totalCount = (int) $this->connection->fetchOne(
                 'SELECT COUNT(*)' . $fromSql . $whereSql,
@@ -43,7 +43,7 @@ final readonly class DoctrineSearchLogRepository implements SearchLogRepositoryI
             $params['offset'] = $pagination->getOffset();
 
             $rows = $this->connection->fetchAllAssociative(
-                'SELECT l.id, l.external_id, l.project_id, l.level, p.slug AS token_domain, l.domain, l.http_status, l.uri, l.request_id, l.fingerprint, l.message, l.created_at'
+                'SELECT l.id, l.external_id, l.domain_id, l.level, d.slug AS token_domain, l.domain, l.http_status, l.uri, l.request_id, l.fingerprint, l.message, l.created_at'
                     . $fromSql
                 . $whereSql
                     . ' ORDER BY l.created_at DESC, l.id DESC LIMIT :limit OFFSET :offset',
@@ -108,13 +108,13 @@ final readonly class DoctrineSearchLogRepository implements SearchLogRepositoryI
         }
 
         if ($filters->getDomain() !== null) {
-            $conditions[] = 'p.slug = :domain';
+            $conditions[] = 'd.slug = :domain';
             $params['domain'] = $filters->getDomain() ?? '';
         }
 
-        if ($filters->getProjectId() !== null) {
-            $conditions[] = 'l.project_id = :project_id';
-            $params['project_id'] = $filters->getProjectId() ?? 0;
+        if ($filters->getDomainId() !== null) {
+            $conditions[] = 'l.domain_id = :domain_id';
+            $params['domain_id'] = $filters->getDomainId() ?? 0;
         }
 
         if ($filters->getFingerprint() !== null) {
@@ -150,7 +150,7 @@ final readonly class DoctrineSearchLogRepository implements SearchLogRepositoryI
         return new SearchLogEntryView(
             id: (int) ($row['id'] ?? 0),
             externalId: (string) ($row['external_id'] ?? ''),
-            projectId: (int) ($row['project_id'] ?? 0),
+            domainId: (int) ($row['domain_id'] ?? 0),
             level: (string) ($row['level'] ?? ''),
             domain: (string) (($row['token_domain'] ?? $row['domain']) ?? ''),
             httpStatus: (int) ($row['http_status'] ?? 0),

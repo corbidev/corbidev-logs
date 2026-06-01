@@ -41,7 +41,7 @@ class AdminAuthController extends AbstractController
             ) {
                 $request->getSession()->set('admin', true);
 
-                return $this->redirectToRoute('admin_tokens');
+                return $this->redirectToRoute('admin_domains');
             }
 
             return $this->render('admin/login.html.twig', [

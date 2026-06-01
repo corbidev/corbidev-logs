@@ -40,7 +40,7 @@ final class DashboardLogDetailsControllerTest extends WebTestCase
             [
                 'ext-42' => new DashboardLogDetailsView(
                     externalId: 'ext-42',
-                    projectId: 1,
+                    domainId: 1,
                     fingerprint: 'aabbccddeeff0011',
                     requestId: 'req-42',
                     level: 'error',
@@ -133,7 +133,7 @@ final class DashboardLogDetailsControllerTest extends WebTestCase
                 [
                     'ext-42' => new DashboardLogDetailsView(
                         externalId: 'ext-42',
-                        projectId: 1,
+                        domainId: 1,
                         fingerprint: 'aabbccddeeff0011',
                         requestId: 'req-42',
                         level: 'error',

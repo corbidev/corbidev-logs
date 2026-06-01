@@ -186,7 +186,7 @@ final class FakeDashboardSearchRepository implements SearchLogRepositoryInterfac
             $items[] = new SearchLogEntryView(
                 id: $index,
                 externalId: 'ext-' . $index,
-                projectId: 1,
+                domainId: 1,
                 level: 'error',
                 domain: 'billing',
                 httpStatus: 500,

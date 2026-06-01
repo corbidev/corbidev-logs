@@ -53,7 +53,7 @@ final readonly class DoctrineLogWriter implements LogWriterInterface
     /**
      * Projet par défaut en attendant le binding auth/project.
      */
-    private const int DEFAULT_PROJECT_ID = 1;
+    private const int DEFAULT_DOMAIN_ID = 1;
 
     public function __construct(
         private Connection $connection,
@@ -165,14 +165,16 @@ final readonly class DoctrineLogWriter implements LogWriterInterface
         LogEntry $entry,
     ): void {
         $record = $this->resolveMapper()->map(
-            self::DEFAULT_PROJECT_ID,
+            self::DEFAULT_DOMAIN_ID,
             $entry,
         );
 
         $this->connection->insert(
             self::TABLE_NAME,
             [
-                'project_id' => (int) $record->getProjectId(),
+                // Keep project_id mirrored during transition until final schema cleanup.
+                'project_id' => (int) $record->getDomainId(),
+                'domain_id' => (int) $record->getDomainId(),
 
                 'external_id' => $record->getExternalId(),
 

@@ -14,6 +14,17 @@
 
         <form method="post" id="consumer-edit-form" novalidate>
             <input type="hidden" name="_token" value="{{ csrf_token('admin_consumer_edit_' ~ consumer.id) }}">
+
+            <label class="form-label fw-semibold">Domaine</label>
+            <select class="form-select mb-2" name="domain_id" required>
+                <option value="">Selectionner...</option>
+                {% for domain in domains %}
+                    <option value="{{ domain.id }}" {% if consumer.domainId == domain.id %}selected{% endif %}>
+                        {{ domain.name }} ({{ domain.slug }})
+                    </option>
+                {% endfor %}
+            </select>
+
             <label class="form-label fw-semibold">Identifiant</label>
             <input class="form-control mb-2" value="{{ consumer.identifier }}" disabled>
 

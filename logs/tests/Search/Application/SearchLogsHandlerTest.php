@@ -42,7 +42,7 @@ final class SearchLogsHandlerTest extends TestCase
                 ),
                 self::callback(
                     static function (SearchFilters $filters): bool {
-                        return $filters->getProjectId() === 3
+                    return $filters->getDomainId() === 3
                             && $filters->getLevel() === 'error'
                             && $filters->getDomain() === 'billing'
                             && $filters->getFingerprint() === 'abcdef1234567890';
@@ -70,7 +70,7 @@ final class SearchLogsHandlerTest extends TestCase
                 toDate: new \DateTimeImmutable('2026-05-31 23:59:59'),
                 level: 'error',
                 domain: 'billing',
-                projectId: 3,
+                domainId: 3,
                 fingerprint: 'abcdef1234567890',
             ),
         );

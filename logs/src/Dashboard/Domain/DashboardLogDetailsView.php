@@ -16,7 +16,7 @@ final readonly class DashboardLogDetailsView
      */
     public function __construct(
         private string $externalId,
-        private int $projectId,
+        private int $domainId,
         private string $fingerprint,
         private string $requestId,
         private string $level,
@@ -42,9 +42,9 @@ final readonly class DashboardLogDetailsView
         return $this->externalId;
     }
 
-    public function getProjectId(): int
+    public function getDomainId(): int
     {
-        return $this->projectId;
+        return $this->domainId;
     }
 
     public function getFingerprint(): string

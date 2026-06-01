@@ -18,7 +18,7 @@ interface DashboardReadModelInterface
      *
      * @return array{
      *     total_logs:int,
-     *     total_projects:int,
+     *     total_domains:int,
      *     failed_ingestions:int
      * }
      */

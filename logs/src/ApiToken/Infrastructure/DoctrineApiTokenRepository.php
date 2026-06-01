@@ -25,7 +25,9 @@ final readonly class DoctrineApiTokenRepository implements ApiTokenRepositoryInt
             $this->connection->insert(
                 'api_tokens',
                 [
-                    'project_id' => $tokenToStore->getProjectId(),
+                    // Keep project_id mirrored during transition until full cutover.
+                    'project_id' => $tokenToStore->getDomainId(),
+                    'domain_id' => $tokenToStore->getDomainId(),
                     'token_hash' => $tokenToStore->getTokenHash(),
                     'token_prefix' => $tokenToStore->getTokenPrefix(),
                     'label' => $tokenToStore->getLabel(),

@@ -75,8 +75,8 @@ final class DashboardLogsController extends AbstractController
             $request->query->get('q'),
         );
 
-        $projectId = $this->parseProjectId(
-            $request->query->get('project_id'),
+        $domainId = $this->parseDomainId(
+            $request->query->get('domain_id'),
         );
 
         $page = max(
@@ -99,7 +99,7 @@ final class DashboardLogsController extends AbstractController
             toDate: $toDate,
             level: $level,
             domain: $domain,
-            projectId: $projectId,
+            domainId: $domainId,
             fingerprint: $fingerprint,
             query: $query,
         );
@@ -111,7 +111,7 @@ final class DashboardLogsController extends AbstractController
             result: $result,
             level: $level,
             domain: $domain,
-            projectId: $projectId,
+            domainId: $domainId,
             fingerprint: $fingerprint,
             query: $query,
         );
@@ -125,7 +125,7 @@ final class DashboardLogsController extends AbstractController
         SearchResult $result,
         ?string $level,
         ?string $domain,
-        ?int $projectId,
+        ?int $domainId,
         ?string $fingerprint,
         ?string $query,
     ): array {
@@ -155,21 +155,21 @@ final class DashboardLogsController extends AbstractController
                 'to_date' => $request->query->get('to_date', ''),
                 'level' => $level ?? '',
                 'domain' => $domain ?? '',
-                'project_id' => $projectId !== null ? (string) $projectId : '',
+                'domain_id' => $domainId !== null ? (string) $domainId : '',
                 'fingerprint' => $fingerprint ?? '',
                 'q' => $query ?? '',
                 'filters_panel' => $filtersPanel,
             ],
             'levels' => $this->fetchLevels(),
             'domains' => $this->fetchDomains(),
-            'projects' => $this->fetchProjects(),
+            'tenantDomains' => $this->fetchTenantDomains(),
             'paginationParams' => [
                 'per_page' => $result->getPerPage(),
                 'from_date' => $request->query->get('from_date', ''),
                 'to_date' => $request->query->get('to_date', ''),
                 'level' => $level ?? '',
                 'domain' => $domain ?? '',
-                'project_id' => $projectId !== null ? (string) $projectId : '',
+                'domain_id' => $domainId !== null ? (string) $domainId : '',
                 'fingerprint' => $fingerprint ?? '',
                 'q' => $query ?? '',
                 'filters_panel' => $filtersPanel,
@@ -211,19 +211,19 @@ final class DashboardLogsController extends AbstractController
         return $value;
     }
 
-    private function parseProjectId(mixed $value): ?int
+    private function parseDomainId(mixed $domainValue): ?int
     {
-        if (is_int($value)) {
-            return $value > 0 ? $value : null;
+        if (is_int($domainValue)) {
+            return $domainValue > 0 ? $domainValue : null;
         }
 
-        if (!is_string($value) || !ctype_digit($value)) {
-            return null;
+        if (is_string($domainValue) && ctype_digit($domainValue)) {
+            $domainId = (int) $domainValue;
+
+            return $domainId > 0 ? $domainId : null;
         }
 
-        $projectId = (int) $value;
-
-        return $projectId > 0 ? $projectId : null;
+        return null;
     }
 
     /**
@@ -251,7 +251,7 @@ final class DashboardLogsController extends AbstractController
         try {
             /** @var array<int, string> $domains */
             $domains = $this->connection->fetchFirstColumn(
-                "SELECT slug FROM projects WHERE slug <> '' ORDER BY slug ASC",
+                "SELECT slug FROM domains WHERE slug <> '' ORDER BY slug ASC",
             );
 
             return $domains;
@@ -263,15 +263,15 @@ final class DashboardLogsController extends AbstractController
     /**
      * @return array<int, array{id: int, name: string, slug: string}>
      */
-    private function fetchProjects(): array
+    private function fetchTenantDomains(): array
     {
         try {
-            /** @var array<int, array{id: int, name: string, slug: string}> $projects */
-            $projects = $this->connection->fetchAllAssociative(
-                'SELECT id, name, slug FROM projects ORDER BY name ASC',
+            /** @var array<int, array{id: int, name: string, slug: string}> $domains */
+            $domains = $this->connection->fetchAllAssociative(
+                'SELECT id, name, slug FROM domains ORDER BY name ASC',
             );
 
-            return $projects;
+            return $domains;
         } catch (\Throwable) {
             return [];
         }

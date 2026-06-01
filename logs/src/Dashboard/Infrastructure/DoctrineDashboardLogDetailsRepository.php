@@ -23,7 +23,7 @@ final readonly class DoctrineDashboardLogDetailsRepository implements DashboardL
     ): ?DashboardLogDetailsView {
         try {
             $row = $this->connection->fetchAssociative(
-                'SELECT l.external_id, l.project_id, l.fingerprint, l.request_id, l.level, l.http_status, p.slug AS token_domain, l.domain, l.uri, l.method, l.user_agent, l.env, l.client, l.message, l.context_json, l.extra_json, l.ingestion_warnings_json, l.created_at, l.client_date, l.ip FROM logs l INNER JOIN projects p ON p.id = l.project_id WHERE l.external_id = :external_id LIMIT 1',
+                'SELECT l.external_id, l.domain_id, l.fingerprint, l.request_id, l.level, l.http_status, d.slug AS token_domain, l.domain, l.uri, l.method, l.user_agent, l.env, l.client, l.message, l.context_json, l.extra_json, l.ingestion_warnings_json, l.created_at, l.client_date, l.ip FROM logs l INNER JOIN domains d ON d.id = l.domain_id WHERE l.external_id = :external_id LIMIT 1',
                 ['external_id' => $externalId],
             );
 
@@ -50,7 +50,7 @@ final readonly class DoctrineDashboardLogDetailsRepository implements DashboardL
     {
         return new DashboardLogDetailsView(
             externalId: (string) ($row['external_id'] ?? ''),
-            projectId: (int) ($row['project_id'] ?? 0),
+            domainId: (int) ($row['domain_id'] ?? 0),
             fingerprint: (string) ($row['fingerprint'] ?? ''),
             requestId: (string) ($row['request_id'] ?? ''),
             level: (string) ($row['level'] ?? ''),

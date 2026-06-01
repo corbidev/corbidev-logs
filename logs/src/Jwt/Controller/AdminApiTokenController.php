@@ -28,10 +28,10 @@ final class AdminApiTokenController extends AbstractController
         $this->checkAccess($request);
 
         return $this->render('admin/token/index.html.twig', [
-            'projects' => $this->fetchProjects(),
+            'domains' => $this->fetchDomains(),
             'tokens' => $this->fetchTokens(),
             'form' => [
-                'project_id' => '',
+                'domain_id' => '',
                 'label' => '',
                 'expires_at' => '',
             ],
@@ -47,20 +47,29 @@ final class AdminApiTokenController extends AbstractController
         if (!$this->isCsrfTokenValid('admin_token_create', (string) $request->request->get('_token'))) {
             return $this->renderFormWithError(
                 'Session invalide, merci de reessayer.',
-                (int) $request->request->get('project_id', 0),
+                (int) $request->request->get('domain_id', 0),
                 trim((string) $request->request->get('label', '')),
                 trim((string) $request->request->get('expires_at', '')),
             );
         }
 
-        $projectId = (int) $request->request->get('project_id', 0);
+        $domainId = (int) $request->request->get('domain_id', 0);
         $label = trim((string) $request->request->get('label', ''));
         $expiresAtRaw = trim((string) $request->request->get('expires_at', ''));
 
-        if ($projectId <= 0 || $label === '') {
+        if ($domainId <= 0 || $label === '') {
             return $this->renderFormWithError(
-                'Le projet et le libelle sont obligatoires.',
-                $projectId,
+                'Le domaine et le libelle sont obligatoires.',
+                $domainId,
+                $label,
+                $expiresAtRaw,
+            );
+        }
+
+        if (!$this->domainExists($domainId)) {
+            return $this->renderFormWithError(
+                'Le domaine selectionne est introuvable.',
+                $domainId,
                 $label,
                 $expiresAtRaw,
             );
@@ -74,7 +83,7 @@ final class AdminApiTokenController extends AbstractController
             } catch (\Throwable) {
                 return $this->renderFormWithError(
                     "La date d'expiration est invalide.",
-                    $projectId,
+                    $domainId,
                     $label,
                     $expiresAtRaw,
                 );
@@ -84,7 +93,7 @@ final class AdminApiTokenController extends AbstractController
         try {
             $result = $this->createApiTokenHandler->handle(
                 new CreateApiTokenRequest(
-                    projectId: $projectId,
+                    domainId: $domainId,
                     label: $label,
                     expiresAt: $expiresAt,
                 ),
@@ -92,7 +101,7 @@ final class AdminApiTokenController extends AbstractController
         } catch (\Throwable $exception) {
             return $this->renderFormWithError(
                 sprintf('Creation du token impossible: %s', $exception->getMessage()),
-                $projectId,
+                $domainId,
                 $label,
                 $expiresAtRaw,
             );
@@ -141,14 +150,14 @@ final class AdminApiTokenController extends AbstractController
     /**
      * @return array<int, array{id: int, slug: string, name: string}>
      */
-    private function fetchProjects(): array
+    private function fetchDomains(): array
     {
-        /** @var array<int, array{id: int, slug: string, name: string}> $projects */
-        $projects = $this->connection->fetchAllAssociative(
-            'SELECT id, slug, name FROM projects ORDER BY name ASC',
+        /** @var array<int, array{id: int, slug: string, name: string}> $domains */
+        $domains = $this->connection->fetchAllAssociative(
+            'SELECT id, slug, name FROM domains ORDER BY name ASC',
         );
 
-        return $projects;
+        return $domains;
     }
 
     /**
@@ -161,16 +170,16 @@ final class AdminApiTokenController extends AbstractController
             <<<'SQL'
 SELECT
     t.id,
-    t.project_id,
-    p.slug,
-    p.name AS project_name,
+    t.domain_id,
+    d.slug,
+    d.name AS domain_name,
     t.label,
     t.token_prefix,
     t.created_at,
     t.expires_at,
     t.revoked_at
 FROM api_tokens t
-INNER JOIN projects p ON p.id = t.project_id
+INNER JOIN domains d ON d.id = t.domain_id
 ORDER BY t.created_at DESC
 SQL,
         );
@@ -180,19 +189,29 @@ SQL,
 
     private function renderFormWithError(
         string $error,
-        int $projectId,
+        int $domainId,
         string $label,
         string $expiresAt,
     ): Response {
         return $this->render('admin/token/index.html.twig', [
-            'projects' => $this->fetchProjects(),
+            'domains' => $this->fetchDomains(),
             'tokens' => $this->fetchTokens(),
             'form' => [
-                'project_id' => $projectId > 0 ? (string) $projectId : '',
+                'domain_id' => $domainId > 0 ? (string) $domainId : '',
                 'label' => $label,
                 'expires_at' => $expiresAt,
             ],
             'error' => $error,
         ]);
+    }
+
+    private function domainExists(int $domainId): bool
+    {
+        $exists = $this->connection->fetchOne(
+            'SELECT id FROM domains WHERE id = :id LIMIT 1',
+            ['id' => $domainId],
+        );
+
+        return $exists !== false;
     }
 }

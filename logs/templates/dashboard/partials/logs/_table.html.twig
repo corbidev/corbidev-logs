@@ -3,7 +3,7 @@
         <thead>
             <tr>
                 <th>Date</th>
-                <th>Projet</th>
+                <th>Domaine ID</th>
                 <th>Niveau</th>
                 <th>HTTP</th>
                 <th>Domaine</th>
@@ -17,7 +17,7 @@
             {% for item in items %}
                 <tr class="dashboard-log-row" data-external-id="{{ item.externalId }}" role="button" tabindex="0" aria-label="Ouvrir les details du log {{ item.externalId }}">
                     <td class="mono" data-label="Date">{{ item.createdAt|date('Y-m-d H:i:s') }}</td>
-                    <td data-label="Projet">{{ item.projectId }}</td>
+                    <td data-label="Domaine ID">{{ item.domainId }}</td>
                     <td data-label="Niveau">{% include 'dashboard/components/_level_badge.html.twig' with { level: item.level } only %}</td>
                     <td data-label="HTTP">{% include 'dashboard/components/_http_badge.html.twig' with { status: item.httpStatus } only %}</td>
                     <td data-label="Domaine">{{ item.domain }}</td>

@@ -107,12 +107,12 @@ final class LogEntryToRecordMapperTest extends TestCase
     }
 
     /**
-     * But : Vérifier que le projectId entier est converti en string dans LogRecord.
+     * But : Vérifier que le domainId entier est converti en string dans LogRecord.
      *
-     * Entrée : projectId=999
-     * Résultat attendu : getProjectId() = '999'
+     * Entrée : domainId=999
+     * Résultat attendu : getDomainId() = '999'
      */
-    public function testItMapsProjectId(): void
+    public function testItMapsDomainId(): void
     {
         $record = $this->mapper->map(
             999,
@@ -121,7 +121,7 @@ final class LogEntryToRecordMapperTest extends TestCase
 
         self::assertSame(
             '999',
-            $record->getProjectId(),
+            $record->getDomainId(),
         );
     }
 

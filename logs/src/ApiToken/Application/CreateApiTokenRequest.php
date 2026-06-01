@@ -12,22 +12,22 @@ final readonly class CreateApiTokenRequest
     private string $label;
 
     public function __construct(
-        private int $projectId,
+        private int $domainId,
         string $label,
         private ?\DateTimeImmutable $expiresAt = null,
     ) {
-        if ($this->projectId <= 0) {
+        if ($this->domainId <= 0) {
             throw new \InvalidArgumentException(
-                'Project id must be positive.',
+                'Domain id must be positive.',
             );
         }
 
         $this->label = $this->sanitizeLabel($label);
     }
 
-    public function getProjectId(): int
+    public function getDomainId(): int
     {
-        return $this->projectId;
+        return $this->domainId;
     }
 
     public function getLabel(): string

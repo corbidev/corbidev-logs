@@ -45,11 +45,11 @@
             </div>
 
             <div class="col-md-2">
-                <label class="form-label fw-semibold" for="filter-project">Projet</label>
-                <select id="filter-project" class="form-select" name="project_id">
+                <label class="form-label fw-semibold" for="filter-domain-id">Domaine tenant</label>
+                <select id="filter-domain-id" class="form-select" name="domain_id">
                     <option value="">Tous</option>
-                    {% for project in projects %}
-                        <option value="{{ project.id }}" {% if filters.project_id == (project.id ~ '') %}selected{% endif %}>{{ project.name }}</option>
+                    {% for tenantDomain in tenantDomains %}
+                        <option value="{{ tenantDomain.id }}" {% if filters.domain_id == (tenantDomain.id ~ '') %}selected{% endif %}>{{ tenantDomain.name }}</option>
                     {% endfor %}
                 </select>
             </div>

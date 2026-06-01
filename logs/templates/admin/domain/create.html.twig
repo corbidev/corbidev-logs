@@ -1,0 +1,39 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Creer un domaine{% endblock %}
+
+{% block body %}
+<main class="admin-page centered">
+    <section class="admin-shell narrow">
+        <h1 class="h3 admin-title">Creer un domaine</h1>
+        <p class="admin-subtitle">Ajoute un domaine qui pourra porter des consumers et des tokens.</p>
+
+        {% if error is defined and error %}
+            <div class="alert alert-danger mb-3">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" novalidate>
+            <input type="hidden" name="_token" value="{{ csrf_token('admin_domain_create') }}">
+
+            <label class="form-label fw-semibold">Nom</label>
+            <input class="form-control mb-2" name="name" value="{{ form.name|default('') }}" placeholder="Mon domaine" required>
+
+            <label class="form-label fw-semibold">Slug</label>
+            <input class="form-control mb-2" name="slug" value="{{ form.slug|default('') }}" placeholder="mon-domaine" required>
+
+            <label class="form-label fw-semibold">Retention (jours)</label>
+            <input class="form-control mb-3" type="number" min="1" name="retention_days" value="{{ form.retention_days|default('30') }}" required>
+
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" role="switch" id="is_active" name="is_active" {% if form.is_active|default(true) %}checked{% endif %}>
+                <label class="form-check-label" for="is_active">Actif</label>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button class="btn btn-brand text-white flex-grow-1">Creer</button>
+                <a href="{{ path('admin_domains') }}" class="btn btn-outline-secondary btn-soft">Retour</a>
+            </div>
+        </form>
+    </section>
+</main>
+{% endblock %}

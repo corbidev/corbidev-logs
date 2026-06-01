@@ -74,7 +74,7 @@ final class CreateApiTokenHandlerCrashTest extends TestCase
 
         $handler->handle(
             new CreateApiTokenRequest(
-                projectId: 1,
+                domainId: 1,
                 label: 'ci token',
             ),
         );
