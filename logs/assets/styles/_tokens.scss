@@ -1,0 +1,24 @@
+$font-sans-ui: 'Segoe UI Variable', 'Segoe UI', 'Noto Sans', sans-serif;
+$font-sans-manrope: 'Manrope', sans-serif;
+$font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+$font-mono-consolas: Consolas, 'Lucida Console', 'DejaVu Sans Mono', 'Liberation Mono', 'Courier New', monospace;
+$font-mono-roboto: 'Roboto Mono', $font-mono-consolas;
+
+$color-white: #ffffff;
+$color-ink-900: #0f172a;
+$color-ink-800: #14213d;
+$color-ink-700: #1e293b;
+$color-ink-600: #334155;
+$color-ink-500: #475569;
+$color-ink-300: #cbd5e1;
+$color-ink-200: #d8e0ea;
+
+$radius-xs: 0.625rem;
+$radius-sm: 0.75rem;
+$radius-md: 1rem;
+$radius-lg: 1.5rem;
+$radius-pill: 9999px;
+
+$shadow-soft: 0 8px 18px rgba(15, 23, 42, 0.08);
+$shadow-panel: 0 12px 28px rgba(20, 39, 72, 0.12);
+$shadow-float: 0 24px 46px rgba(20, 33, 61, 0.1);

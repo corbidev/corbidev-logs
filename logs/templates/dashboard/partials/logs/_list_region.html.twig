@@ -1,0 +1,18 @@
+<section id="logs-list-region" class="mb-4">
+    <header class="d-flex justify-content-between align-items-center mb-3">
+        <p class="mb-0 text-muted">Page {{ page }} / {{ totalPages }} - {{ perPage }} elements par page - Total {{ totalCount }}</p>
+        <button
+            type="button"
+            class="btn btn-outline-secondary btn-soft"
+            hx-get="{{ path('dashboard_logs_fragment_list') }}"
+            hx-target="#logs-list-region"
+            hx-swap="outerHTML"
+            hx-push-url="true"
+            hx-include="#dashboard-filters-form"
+            hx-indicator="#logs-loading-indicator"
+        >Rafraichir la liste</button>
+    </header>
+
+    {% include 'dashboard/partials/logs/_table.html.twig' %}
+    {% include 'dashboard/partials/logs/_pagination.html.twig' %}
+</section>

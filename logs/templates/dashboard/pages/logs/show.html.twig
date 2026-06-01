@@ -1,0 +1,19 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Dashboard - Log {{ log.externalId }}{% endblock %}
+
+{% block body %}
+<main class="admin-page">
+    <section class="admin-shell wide">
+        <header class="d-flex justify-content-between align-items-center gap-3 mb-3 admin-topbar">
+            <div>
+                <h1 class="h3 admin-title mb-1">Log {{ log.externalId }}</h1>
+                <p class="admin-subtitle mb-0">{{ log.createdAt|date('Y-m-d H:i:s') }} - {{ log.level|upper }} - {{ log.domain }}</p>
+            </div>
+            <a class="btn btn-outline-secondary btn-soft" href="{{ path('dashboard_logs_index') }}">Retour a la liste</a>
+        </header>
+
+        {% include 'dashboard/partials/logs/_detail_panel.html.twig' with { log: log } only %}
+    </section>
+</main>
+{% endblock %}

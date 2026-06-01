@@ -1,0 +1,12 @@
+{% set normalized = (level ?? '')|lower %}
+{% set badgeClass = 'bg-secondary' %}
+
+{% if normalized in ['critical', 'error'] %}
+    {% set badgeClass = 'bg-danger' %}
+{% elseif normalized == 'warning' %}
+    {% set badgeClass = 'bg-warning text-dark' %}
+{% elseif normalized in ['info', 'notice', 'debug'] %}
+    {% set badgeClass = 'bg-info text-dark' %}
+{% endif %}
+
+<span class="badge {{ badgeClass }}">{{ (level ?? 'n/a')|upper }}</span>

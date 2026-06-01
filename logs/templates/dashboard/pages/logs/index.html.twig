@@ -1,0 +1,43 @@
+{% extends 'admin/layout.html.twig' %}
+
+{% block title %}Dashboard - Logs{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('build/dashboard.css') }}">
+{% endblock %}
+
+{% block body %}
+<main class="admin-page">
+    <section class="admin-shell dashboard-shell">
+        <header class="d-flex justify-content-between align-items-center mb-3 admin-topbar">
+            <div>
+                <h1 class="h3 admin-title">Dashboard Logs</h1>
+                <p class="admin-subtitle">Vue SSR + HTMX des logs persistes.</p>
+            </div>
+            <p class="mb-0 text-muted">Total: {{ totalCount }}</p>
+        </header>
+
+        {% include 'dashboard/components/_notification_toast.html.twig' %}
+        {% include 'dashboard/partials/logs/_filters_form.html.twig' %}
+
+        <div id="logs-loading-indicator" class="small text-muted mb-2 htmx-indicator">Chargement...</div>
+
+        <div class="row g-3 align-items-start">
+            <div class="col-lg-8">
+                {% include 'dashboard/partials/logs/_list_region.html.twig' %}
+            </div>
+            <div class="col-lg-4">
+                <div id="log-detail-region">
+                    {% include 'dashboard/partials/logs/_detail_placeholder.html.twig' %}
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('build/dashboard-htmx.js') }}" defer></script>
+{% endblock %}

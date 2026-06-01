@@ -22,7 +22,7 @@
 
             <label class="form-label fw-semibold">Recopier le nouveau mot de passe</label>
             <input class="form-control mb-1" type="password" name="password_confirm" id="edit-password-confirm" placeholder="Recopier le nouveau mot de passe">
-            <div class="invalid-feedback d-block mb-3" id="edit-password-feedback" style="display: none !important;">
+            <div class="invalid-feedback d-block mb-3 password-feedback-hidden" id="edit-password-feedback">
                 Les mots de passe ne correspondent pas.
             </div>
 
@@ -53,7 +53,7 @@
             const hasAnyValue = password.value.length > 0 || confirm.value.length > 0;
             const mismatch = hasAnyValue && password.value !== confirm.value;
             confirm.setCustomValidity(mismatch ? 'Les mots de passe ne correspondent pas.' : '');
-            feedback.style.display = mismatch ? 'block' : 'none';
+            feedback.classList.toggle('password-feedback-hidden', !mismatch);
             confirm.classList.toggle('is-invalid', mismatch);
         }
 

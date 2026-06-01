@@ -1,0 +1,48 @@
+@use 'tokens' as t;
+
+.dashboard {
+  &-shell {
+    width: 100%;
+    max-width: none;
+  }
+
+  &-table {
+    font-family: t.$font-mono;
+    font-size: 0.8rem;
+    line-height: 1.25;
+
+    th,
+    td {
+      white-space: nowrap;
+    }
+  }
+
+  &-pre-wrap {
+    white-space: pre-wrap;
+    font-family: t.$font-mono-roboto;
+  }
+}
+
+code,
+.mono {
+  font-family: t.$font-mono-roboto;
+}
+
+.text-wrap-break {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.htmx {
+  &-indicator {
+    opacity: 0;
+    transition: opacity 180ms ease;
+  }
+
+  &-request {
+    .htmx-indicator,
+    &.htmx-indicator {
+      opacity: 1;
+    }
+  }
+}

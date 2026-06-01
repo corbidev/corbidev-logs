@@ -6,7 +6,7 @@ namespace App\Dashboard\Infrastructure;
 
 use App\Dashboard\Application\GetDashboardLogDetailsHandler;
 use App\Dashboard\Application\GetDashboardLogDetailsRequest;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use App\Dashboard\Domain\DashboardLogDetailsView;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -25,11 +25,7 @@ final class DashboardLogDetailsController extends AbstractController
     public function __invoke(
         string $externalId,
     ): Response {
-        $log = $this->handler->handle(
-            new GetDashboardLogDetailsRequest(
-                externalId: $externalId,
-            ),
-        );
+        $log = $this->findLogByExternalId($externalId);
 
         if ($log === null) {
             return new Response(
@@ -42,57 +38,39 @@ final class DashboardLogDetailsController extends AbstractController
         }
 
         return $this->render(
-            'dashboard/log_details.html.twig',
+            'dashboard/pages/logs/show.html.twig',
             [
                 'log' => $log,
             ],
         );
     }
 
-    #[Route('/dashboard/logs/{externalId}/json', name: 'dashboard_logs_show_json', methods: ['GET'])]
-    public function showJson(string $externalId): JsonResponse
+    #[Route('/dashboard/htmx/logs/{externalId}/detail', name: 'dashboard_logs_fragment_detail', methods: ['GET'])]
+    public function detailFragment(string $externalId): Response
     {
-        $log = $this->handler->handle(
-            new GetDashboardLogDetailsRequest(
-                externalId: $externalId,
-            ),
-        );
+        $log = $this->findLogByExternalId($externalId);
 
         if ($log === null) {
-            return new JsonResponse(
-                [
-                    'success' => false,
-                    'message' => 'Log not found.',
-                ],
+            return new Response(
+                'Log introuvable.',
                 Response::HTTP_NOT_FOUND,
             );
         }
 
-        return new JsonResponse(
+        return $this->render(
+            'dashboard/partials/logs/_detail_panel.html.twig',
             [
-                'success' => true,
-                'data' => [
-                    'externalId' => $log->getExternalId(),
-                    'projectId' => $log->getProjectId(),
-                    'fingerprint' => $log->getFingerprint(),
-                    'requestId' => $log->getRequestId(),
-                    'level' => $log->getLevel(),
-                    'httpStatus' => $log->getHttpStatus(),
-                    'domain' => $log->getDomain(),
-                    'uri' => $log->getUri(),
-                    'method' => $log->getMethod(),
-                    'userAgent' => $log->getUserAgent(),
-                    'env' => $log->getEnv(),
-                    'client' => $log->getClient(),
-                    'message' => $log->getMessage(),
-                    'context' => $log->getContext(),
-                    'extra' => $log->getExtra(),
-                    'ingestionWarnings' => $log->getIngestionWarnings(),
-                    'createdAt' => $log->getCreatedAt()->format(DATE_ATOM),
-                    'clientDate' => $log->getClientDate()?->format(DATE_ATOM),
-                    'ip' => $log->getIp(),
-                ],
+                'log' => $log,
             ],
+        );
+    }
+
+    private function findLogByExternalId(string $externalId): ?DashboardLogDetailsView
+    {
+        return $this->handler->handle(
+            new GetDashboardLogDetailsRequest(
+                externalId: $externalId,
+            ),
         );
     }
 }

@@ -1,0 +1,14 @@
+@use 'tokens' as t;
+
+.example-wrapper {
+  width: 95%;
+  max-width: 50rem;
+  margin: 1rem auto;
+  font: 1.125rem/1.5 t.$font-sans-ui;
+
+  code {
+    font-family: t.$font-mono-roboto;
+    padding: 0.125rem 0.375rem;
+    background: #f5f5f5;
+  }
+}

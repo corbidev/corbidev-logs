@@ -1,0 +1,9 @@
+@mixin dark {
+  .dark & {
+    @content;
+  }
+}
+
+@mixin focus-ring($color, $alpha: 0.24) {
+  box-shadow: 0 0 0 0.2rem rgba($color, $alpha);
+}
