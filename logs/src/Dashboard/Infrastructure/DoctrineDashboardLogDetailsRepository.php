@@ -23,7 +23,7 @@ final readonly class DoctrineDashboardLogDetailsRepository implements DashboardL
     ): ?DashboardLogDetailsView {
         try {
             $row = $this->connection->fetchAssociative(
-                'SELECT external_id, project_id, fingerprint, request_id, level, http_status, domain, uri, method, user_agent, env, client, message, context_json, extra_json, ingestion_warnings_json, created_at, client_date, ip FROM logs WHERE external_id = :external_id LIMIT 1',
+                'SELECT l.external_id, l.project_id, l.fingerprint, l.request_id, l.level, l.http_status, p.slug AS token_domain, l.domain, l.uri, l.method, l.user_agent, l.env, l.client, l.message, l.context_json, l.extra_json, l.ingestion_warnings_json, l.created_at, l.client_date, l.ip FROM logs l INNER JOIN projects p ON p.id = l.project_id WHERE l.external_id = :external_id LIMIT 1',
                 ['external_id' => $externalId],
             );
 
@@ -55,7 +55,7 @@ final readonly class DoctrineDashboardLogDetailsRepository implements DashboardL
             requestId: (string) ($row['request_id'] ?? ''),
             level: (string) ($row['level'] ?? ''),
             httpStatus: (int) ($row['http_status'] ?? 0),
-            domain: (string) ($row['domain'] ?? ''),
+            domain: (string) (($row['token_domain'] ?? $row['domain']) ?? ''),
             uri: (string) ($row['uri'] ?? ''),
             method: $this->nullableString($row['method'] ?? null),
             userAgent: $this->nullableString($row['user_agent'] ?? null),

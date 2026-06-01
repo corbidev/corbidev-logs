@@ -1,4 +1,4 @@
-<section class="card border-0 shadow-sm mb-4">
+<section class="card border-0 shadow-sm mb-4 dashboard-filters-card">
     <div class="card-body">
         <form
             id="dashboard-filters-form"
@@ -12,6 +12,8 @@
             hx-indicator="#logs-loading-indicator"
             hx-trigger="change delay:200ms, submit"
         >
+            <input type="hidden" name="filters_panel" value="open">
+
             <div class="col-md-2">
                 <label class="form-label fw-semibold" for="filter-from-date">Date debut</label>
                 <input id="filter-from-date" class="form-control" type="datetime-local" name="from_date" value="{{ filters.from_date }}">

@@ -137,12 +137,19 @@ final class DashboardLogsController extends AbstractController
             ),
         );
 
+        $filtersPanel = strtolower((string) $request->query->get('filters_panel', ''));
+
+        if ($filtersPanel !== 'open') {
+            $filtersPanel = 'closed';
+        }
+
         return [
             'items' => $result->getItems(),
             'page' => $result->getPage(),
             'perPage' => $result->getPerPage(),
             'totalCount' => $result->getTotalCount(),
             'totalPages' => $totalPages,
+            'filtersPanel' => $filtersPanel,
             'filters' => [
                 'from_date' => $request->query->get('from_date', ''),
                 'to_date' => $request->query->get('to_date', ''),
@@ -151,6 +158,7 @@ final class DashboardLogsController extends AbstractController
                 'project_id' => $projectId !== null ? (string) $projectId : '',
                 'fingerprint' => $fingerprint ?? '',
                 'q' => $query ?? '',
+                'filters_panel' => $filtersPanel,
             ],
             'levels' => $this->fetchLevels(),
             'domains' => $this->fetchDomains(),
@@ -164,6 +172,7 @@ final class DashboardLogsController extends AbstractController
                 'project_id' => $projectId !== null ? (string) $projectId : '',
                 'fingerprint' => $fingerprint ?? '',
                 'q' => $query ?? '',
+                'filters_panel' => $filtersPanel,
             ],
         ];
     }
@@ -242,7 +251,7 @@ final class DashboardLogsController extends AbstractController
         try {
             /** @var array<int, string> $domains */
             $domains = $this->connection->fetchFirstColumn(
-                "SELECT DISTINCT domain FROM logs WHERE domain <> '' ORDER BY domain ASC",
+                "SELECT slug FROM projects WHERE slug <> '' ORDER BY slug ASC",
             );
 
             return $domains;

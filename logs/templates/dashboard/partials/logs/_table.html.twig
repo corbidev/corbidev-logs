@@ -3,7 +3,6 @@
         <thead>
             <tr>
                 <th>Date</th>
-                <th>External ID</th>
                 <th>Projet</th>
                 <th>Niveau</th>
                 <th>HTTP</th>
@@ -16,26 +15,16 @@
         </thead>
         <tbody>
             {% for item in items %}
-                <tr>
-                    <td class="mono">{{ item.createdAt|date('Y-m-d H:i:s') }}</td>
-                    <td>
-                        <a
-                            href="{{ path('dashboard_logs_show', {'externalId': item.externalId}) }}"
-                            class="log-row-action mono"
-                            hx-get="{{ path('dashboard_logs_fragment_detail', {'externalId': item.externalId}) }}"
-                            hx-target="#log-detail-region"
-                            hx-swap="innerHTML"
-                            hx-indicator="#logs-loading-indicator"
-                        >{{ item.externalId }}</a>
-                    </td>
-                    <td>{{ item.projectId }}</td>
-                    <td>{% include 'dashboard/components/_level_badge.html.twig' with { level: item.level } only %}</td>
-                    <td>{% include 'dashboard/components/_http_badge.html.twig' with { status: item.httpStatus } only %}</td>
-                    <td>{{ item.domain }}</td>
-                    <td><span class="text-wrap-break">{{ item.uri }}</span></td>
-                    <td class="mono text-wrap-break">{{ item.requestId }}</td>
-                    <td><code class="mono">{{ item.fingerprint }}</code></td>
-                    <td>
+                <tr class="dashboard-log-row" data-external-id="{{ item.externalId }}" role="button" tabindex="0" aria-label="Ouvrir les details du log {{ item.externalId }}">
+                    <td class="mono" data-label="Date">{{ item.createdAt|date('Y-m-d H:i:s') }}</td>
+                    <td data-label="Projet">{{ item.projectId }}</td>
+                    <td data-label="Niveau">{% include 'dashboard/components/_level_badge.html.twig' with { level: item.level } only %}</td>
+                    <td data-label="HTTP">{% include 'dashboard/components/_http_badge.html.twig' with { status: item.httpStatus } only %}</td>
+                    <td data-label="Domaine">{{ item.domain }}</td>
+                    <td data-label="URI"><span class="text-wrap-break">{{ item.uri }}</span></td>
+                    <td class="mono text-wrap-break" data-label="Request ID">{{ item.requestId }}</td>
+                    <td data-label="Fingerprint"><code class="mono">{{ item.fingerprint }}</code></td>
+                    <td data-label="Message">
                         {% if item.message|length > 90 %}
                             {{ item.message|slice(0, 90) ~ '...' }}
                         {% else %}
@@ -45,7 +34,7 @@
                 </tr>
             {% else %}
                 <tr>
-                    <td colspan="10" class="text-center text-muted py-4">Aucun log disponible.</td>
+                    <td colspan="9" class="text-center text-muted py-4">Aucun log disponible.</td>
                 </tr>
             {% endfor %}
         </tbody>

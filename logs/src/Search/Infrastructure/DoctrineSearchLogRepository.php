@@ -32,8 +32,10 @@ final readonly class DoctrineSearchLogRepository implements SearchLogRepositoryI
                 $filters,
             );
 
+            $fromSql = ' FROM logs l INNER JOIN projects p ON p.id = l.project_id ';
+
             $totalCount = (int) $this->connection->fetchOne(
-                'SELECT COUNT(*) FROM logs ' . $whereSql,
+                'SELECT COUNT(*)' . $fromSql . $whereSql,
                 $params,
             );
 
@@ -41,9 +43,10 @@ final readonly class DoctrineSearchLogRepository implements SearchLogRepositoryI
             $params['offset'] = $pagination->getOffset();
 
             $rows = $this->connection->fetchAllAssociative(
-                'SELECT id, external_id, project_id, level, domain, http_status, uri, request_id, fingerprint, message, created_at FROM logs '
+                'SELECT l.id, l.external_id, l.project_id, l.level, p.slug AS token_domain, l.domain, l.http_status, l.uri, l.request_id, l.fingerprint, l.message, l.created_at'
+                    . $fromSql
                 . $whereSql
-                . ' ORDER BY created_at DESC, id DESC LIMIT :limit OFFSET :offset',
+                    . ' ORDER BY l.created_at DESC, l.id DESC LIMIT :limit OFFSET :offset',
                 $params,
                 [
                     'limit' => ParameterType::INTEGER,
@@ -86,45 +89,45 @@ final readonly class DoctrineSearchLogRepository implements SearchLogRepositoryI
         $params = [];
 
         if ($filters->getFromDate() !== null) {
-            $conditions[] = 'created_at >= :from_date';
+            $conditions[] = 'l.created_at >= :from_date';
             $params['from_date'] = $filters
                 ->getFromDate()
                 ?->format('Y-m-d H:i:s') ?? '';
         }
 
         if ($filters->getToDate() !== null) {
-            $conditions[] = 'created_at <= :to_date';
+            $conditions[] = 'l.created_at <= :to_date';
             $params['to_date'] = $filters
                 ->getToDate()
                 ?->format('Y-m-d H:i:s') ?? '';
         }
 
         if ($filters->getLevel() !== null) {
-            $conditions[] = 'level = :level';
+            $conditions[] = 'l.level = :level';
             $params['level'] = $filters->getLevel() ?? '';
         }
 
         if ($filters->getDomain() !== null) {
-            $conditions[] = 'domain = :domain';
+            $conditions[] = 'p.slug = :domain';
             $params['domain'] = $filters->getDomain() ?? '';
         }
 
         if ($filters->getProjectId() !== null) {
-            $conditions[] = 'project_id = :project_id';
+            $conditions[] = 'l.project_id = :project_id';
             $params['project_id'] = $filters->getProjectId() ?? 0;
         }
 
         if ($filters->getFingerprint() !== null) {
-            $conditions[] = 'fingerprint = :fingerprint';
+            $conditions[] = 'l.fingerprint = :fingerprint';
             $params['fingerprint'] = $filters->getFingerprint() ?? '';
         }
 
         if ($filters->getQuery() !== null) {
             $conditions[] = '('
-                . 'message LIKE :query '
-                . 'OR uri LIKE :query '
-                . 'OR request_id LIKE :query '
-                . 'OR external_id LIKE :query'
+                . 'l.message LIKE :query '
+                . 'OR l.uri LIKE :query '
+                . 'OR l.request_id LIKE :query '
+                . 'OR l.external_id LIKE :query'
                 . ')';
             $params['query'] = '%' . ($filters->getQuery() ?? '') . '%';
         }
@@ -149,7 +152,7 @@ final readonly class DoctrineSearchLogRepository implements SearchLogRepositoryI
             externalId: (string) ($row['external_id'] ?? ''),
             projectId: (int) ($row['project_id'] ?? 0),
             level: (string) ($row['level'] ?? ''),
-            domain: (string) ($row['domain'] ?? ''),
+            domain: (string) (($row['token_domain'] ?? $row['domain']) ?? ''),
             httpStatus: (int) ($row['http_status'] ?? 0),
             uri: (string) ($row['uri'] ?? ''),
             requestId: (string) ($row['request_id'] ?? ''),

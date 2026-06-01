@@ -10,28 +10,67 @@
 {% block body %}
 <main class="admin-page">
     <section class="admin-shell dashboard-shell">
+        {% set filtersOpen = filtersPanel is defined and filtersPanel == 'open' %}
+        {% set initialFiltersState = filtersOpen ? 'open' : 'closed' %}
         <header class="d-flex justify-content-between align-items-center mb-3 admin-topbar">
             <div>
                 <h1 class="h3 admin-title">Dashboard Logs</h1>
                 <p class="admin-subtitle">Vue SSR + HTMX des logs persistes.</p>
             </div>
-            <p class="mb-0 text-muted">Total: {{ totalCount }}</p>
+            <div class="d-flex align-items-center gap-3">
+                <button
+                    id="dashboard-filters-toggle"
+                    type="button"
+                    class="btn btn-outline-secondary btn-soft dashboard-filters-toggle {{ filtersOpen ? 'is-open' : '' }}"
+                    aria-controls="dashboard-filters-panel"
+                    aria-expanded="{{ filtersOpen ? 'true' : 'false' }}"
+                    data-initial-state="{{ initialFiltersState }}"
+                >
+                    <span class="dashboard-filters-toggle__icon" aria-hidden="true">
+                        <span class="dashboard-filters-toggle__bar"></span>
+                        <span class="dashboard-filters-toggle__bar"></span>
+                        <span class="dashboard-filters-toggle__bar"></span>
+                    </span>
+                    <span class="dashboard-filters-toggle__label">Filtres</span>
+                </button>
+                <p class="mb-0 text-muted">Total: {{ totalCount }}</p>
+            </div>
         </header>
 
         {% include 'dashboard/components/_notification_toast.html.twig' %}
-        {% include 'dashboard/partials/logs/_filters_form.html.twig' %}
+
+        <div id="dashboard-filters-panel" class="{{ filtersOpen ? '' : 'd-none' }}">
+            {% include 'dashboard/partials/logs/_filters_form.html.twig' %}
+        </div>
 
         <div id="logs-loading-indicator" class="small text-muted mb-2 htmx-indicator">Chargement...</div>
 
         <div class="row g-3 align-items-start">
-            <div class="col-lg-8">
+            <div class="col-12">
                 {% include 'dashboard/partials/logs/_list_region.html.twig' %}
             </div>
-            <div class="col-lg-4">
-                <div id="log-detail-region">
-                    {% include 'dashboard/partials/logs/_detail_placeholder.html.twig' %}
-                </div>
-            </div>
+        </div>
+
+        <div id="dashboard-log-modal" class="dashboard-modal d-none" aria-hidden="true">
+            <div class="dashboard-modal__backdrop" data-modal-close="true"></div>
+            <section class="dashboard-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="dashboard-log-modal-title">
+                <header class="dashboard-modal__header">
+                    <div class="dashboard-modal__title-wrap">
+                        <h2 id="dashboard-log-modal-title" class="dashboard-modal__title">Details du log</h2>
+                        <span id="dashboard-log-counter" class="dashboard-modal__counter" aria-live="polite"></span>
+                    </div>
+                    <div class="dashboard-modal__actions">
+                        <button type="button" class="dashboard-modal__icon-btn" id="dashboard-log-prev" aria-label="Log precedent">
+                            <span aria-hidden="true">&#9664;</span>
+                        </button>
+                        <button type="button" class="dashboard-modal__icon-btn" id="dashboard-log-next" aria-label="Log suivant">
+                            <span aria-hidden="true">&#9654;</span>
+                        </button>
+                        <button type="button" class="dashboard-modal__close" data-modal-close="true" aria-label="Fermer">&times;</button>
+                    </div>
+                </header>
+                <div id="dashboard-modal-body" class="dashboard-modal__body"></div>
+            </section>
         </div>
     </section>
 </main>

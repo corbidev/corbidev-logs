@@ -29,12 +29,15 @@ class AdminAuthController extends AbstractController
 
             $user = $request->request->get('user');
             $password = $request->request->get('password');
+            $normalizedHash = $this->resolveAdminPasswordHash($this->adminPasswordHash);
+            $isSupportedHash = $normalizedHash !== null;
 
             if (
                 is_string($user)
                 && hash_equals($this->adminUser, $user)
                 && is_string($password)
-                && password_verify($password, $this->adminPasswordHash)
+                && $isSupportedHash
+                && password_verify($password, (string) $normalizedHash)
             ) {
                 $request->getSession()->set('admin', true);
 
@@ -59,5 +62,26 @@ class AdminAuthController extends AbstractController
         $request->getSession()->remove('admin');
 
         return $this->redirect('/admin/login');
+    }
+
+    private function resolveAdminPasswordHash(string $rawHash): ?string
+    {
+        $trimmed = trim($rawHash, " \t\n\r\0\x0B'\"");
+
+        if (password_get_info($trimmed)['algo'] !== null) {
+            return $trimmed;
+        }
+
+        if (preg_match('/\$2[aby]\$\d{2}\$[.\/A-Za-z0-9]{53}/', $trimmed, $matches) !== 1) {
+            return null;
+        }
+
+        $candidate = $matches[0];
+
+        if (password_get_info($candidate)['algo'] === null) {
+            return null;
+        }
+
+        return $candidate;
     }
 }
