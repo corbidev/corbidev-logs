@@ -36,6 +36,7 @@ final class DoctrineApiTokenRepositoryTest extends TestCase
                 self::callback(
                     static function (array $data): bool {
                         return ($data['project_id'] ?? null) === 1
+                        && ($data['domain_id'] ?? null) === 1
                             && ($data['token_hash'] ?? null) === str_repeat('c', 64)
                             && ($data['token_prefix'] ?? null) === 'cbi_prefix_01'
                             && ($data['label'] ?? null) === 'integration token'
@@ -52,7 +53,7 @@ final class DoctrineApiTokenRepositoryTest extends TestCase
 
         $repository->store(
             new ApiTokenToStore(
-                projectId: 1,
+                domainId: 1,
                 tokenHash: str_repeat('c', 64),
                 tokenPrefix: 'cbi_prefix_01',
                 label: 'integration token',
@@ -100,7 +101,7 @@ final class DoctrineApiTokenRepositoryTest extends TestCase
 
         $repository->store(
             new ApiTokenToStore(
-                projectId: 1,
+                domainId: 1,
                 tokenHash: str_repeat('d', 64),
                 tokenPrefix: 'cbi_prefix_02',
                 label: 'runtime token',

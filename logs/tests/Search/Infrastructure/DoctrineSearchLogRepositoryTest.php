@@ -38,8 +38,8 @@ final class DoctrineSearchLogRepositoryTest extends TestCase
                             && str_contains($sql, 'created_at >= :from_date')
                             && str_contains($sql, 'created_at <= :to_date')
                             && str_contains($sql, 'level = :level')
-                            && str_contains($sql, 'domain = :domain')
-                            && str_contains($sql, 'project_id = :project_id')
+                        && str_contains($sql, 'd.slug = :domain')
+                        && str_contains($sql, 'domain_id = :domain_id')
                             && str_contains($sql, 'fingerprint = :fingerprint');
                     },
                 ),
@@ -48,7 +48,7 @@ final class DoctrineSearchLogRepositoryTest extends TestCase
                     'to_date' => '2026-05-31 23:59:59',
                     'level' => 'error',
                     'domain' => 'billing',
-                    'project_id' => 1,
+                'domain_id' => 1,
                     'fingerprint' => 'abcdef1234567890',
                 ],
             )
@@ -69,7 +69,7 @@ final class DoctrineSearchLogRepositoryTest extends TestCase
                     'to_date' => '2026-05-31 23:59:59',
                     'level' => 'error',
                     'domain' => 'billing',
-                    'project_id' => 1,
+                'domain_id' => 1,
                     'fingerprint' => 'abcdef1234567890',
                     'limit' => 10,
                     'offset' => 10,
@@ -83,7 +83,7 @@ final class DoctrineSearchLogRepositoryTest extends TestCase
                 [
                     'id' => 44,
                     'external_id' => '3f5e0a61-0000-4000-8000-111111111111',
-                    'project_id' => 1,
+                'domain_id' => 1,
                     'level' => 'error',
                     'domain' => 'billing',
                     'message' => 'Payment failed',
@@ -105,7 +105,7 @@ final class DoctrineSearchLogRepositoryTest extends TestCase
                 toDate: new \DateTimeImmutable('2026-05-31 23:59:59'),
                 level: 'error',
                 domain: 'billing',
-                projectId: 1,
+                domainId: 1,
                 fingerprint: 'abcdef1234567890',
             ),
         );

@@ -1,0 +1,103 @@
+<section class="card border-0 shadow-sm mb-4 dashboard-filters-card">
+    <div class="card-body">
+        <form
+            id="dashboard-filters-form"
+            method="get"
+            action="{{ path('dashboard_logs_index') }}"
+            class="row g-2 align-items-end"
+            hx-get="{{ path('dashboard_logs_fragment_list') }}"
+            hx-target="#logs-list-region"
+            hx-swap="outerHTML"
+            hx-push-url="true"
+            hx-indicator="#logs-loading-indicator"
+            hx-trigger="change delay:200ms, submit"
+        >
+            <input type="hidden" name="filters_panel" value="open">
+
+            <div class="col-md-2">
+                <label class="form-label fw-semibold" for="filter-from-date">Date debut</label>
+                <input id="filter-from-date" class="form-control" type="datetime-local" name="from_date" value="{{ filters.from_date }}">
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label fw-semibold" for="filter-to-date">Date fin</label>
+                <input id="filter-to-date" class="form-control" type="datetime-local" name="to_date" value="{{ filters.to_date }}">
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label fw-semibold" for="filter-level">Niveau</label>
+                <select id="filter-level" class="form-select" name="level">
+                    <option value="">Tous</option>
+                    {% for level in levels %}
+                        <option value="{{ level }}" {% if filters.level == level %}selected{% endif %}>{{ level }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label fw-semibold" for="filter-domain">Domaine</label>
+                <select id="filter-domain" class="form-select" name="domain">
+                    <option value="">Tous</option>
+                    {% for domain in domains %}
+                        <option value="{{ domain }}" {% if filters.domain == domain %}selected{% endif %}>{{ domain }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label fw-semibold" for="filter-domain-id">Domaine tenant</label>
+                <select id="filter-domain-id" class="form-select" name="domain_id">
+                    <option value="">Tous</option>
+                    {% for tenantDomain in tenantDomains %}
+                        <option value="{{ tenantDomain.id }}" {% if filters.domain_id == (tenantDomain.id ~ '') %}selected{% endif %}>{{ tenantDomain.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label fw-semibold" for="filter-fingerprint">Fingerprint</label>
+                <input id="filter-fingerprint" class="form-control" name="fingerprint" value="{{ filters.fingerprint }}" placeholder="16 chars">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label fw-semibold" for="filter-query">Recherche instantanee</label>
+                <input
+                    id="filter-query"
+                    class="form-control"
+                    name="q"
+                    value="{{ filters.q }}"
+                    placeholder="message, URI, requestId, externalId"
+                    hx-get="{{ path('dashboard_logs_fragment_list') }}"
+                    hx-trigger="keyup changed delay:350ms, search"
+                    hx-target="#logs-list-region"
+                    hx-swap="outerHTML"
+                    hx-push-url="true"
+                    hx-include="#dashboard-filters-form"
+                    hx-indicator="#logs-loading-indicator"
+                >
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label fw-semibold" for="filter-per-page">Par page</label>
+                <select id="filter-per-page" class="form-select" name="per_page">
+                    {% for option in [25, 50, 100, 200] %}
+                        <option value="{{ option }}" {% if perPage == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-brand text-white flex-grow-1">Filtrer</button>
+                <a
+                    href="{{ path('dashboard_logs_index') }}"
+                    class="btn btn-outline-secondary btn-soft"
+                    hx-get="{{ path('dashboard_logs_fragment_list') }}"
+                    hx-target="#logs-list-region"
+                    hx-swap="outerHTML"
+                    hx-push-url="true"
+                    hx-indicator="#logs-loading-indicator"
+                >Reset</a>
+            </div>
+        </form>
+    </div>
+</section>

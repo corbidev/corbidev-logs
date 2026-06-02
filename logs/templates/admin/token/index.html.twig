@@ -8,9 +8,10 @@
         <div class="d-flex justify-content-between align-items-center mb-3 admin-topbar">
             <div>
                 <h1 class="h3 admin-title">Gestion des tokens Bearer</h1>
-                <p class="admin-subtitle">Cree, consulte et revoque les tokens utilises par l'API d'ingestion.</p>
+                <p class="admin-subtitle">Cree, consulte et revoque les tokens utilises par domaine sur l'API d'ingestion.</p>
             </div>
             <div class="d-flex gap-2">
+                <a href="{{ path('admin_domains') }}" class="btn btn-outline-secondary btn-soft">Domaines</a>
                 <a href="{{ path('admin_consumers') }}" class="btn btn-outline-secondary btn-soft">Consumers</a>
                 <form method="post" action="{{ path('admin_logout') }}">
                     <input type="hidden" name="_token" value="{{ csrf_token('admin_logout') }}">
@@ -48,12 +49,12 @@
                 <form method="post" action="{{ path('admin_tokens_create') }}" class="row g-2 align-items-end">
                     <input type="hidden" name="_token" value="{{ csrf_token('admin_token_create') }}">
                     <div class="col-md-4">
-                        <label class="form-label fw-semibold">Projet</label>
-                        <select class="form-select" name="project_id" required>
+                        <label class="form-label fw-semibold">Domaine</label>
+                        <select class="form-select" name="domain_id" required>
                             <option value="">Selectionner...</option>
-                            {% for project in projects %}
-                                <option value="{{ project.id }}" {% if form.project_id == (project.id ~ '') %}selected{% endif %}>
-                                    {{ project.name }} ({{ project.slug }})
+                            {% for domain in domains %}
+                                <option value="{{ domain.id }}" {% if form.domain_id == (domain.id ~ '') %}selected{% endif %}>
+                                    {{ domain.name }} ({{ domain.slug }})
                                 </option>
                             {% endfor %}
                         </select>
@@ -80,7 +81,7 @@
             <table class="table align-middle">
                 <thead>
                     <tr>
-                        <th>Projet</th>
+                        <th>Domaine</th>
                         <th>Libelle</th>
                         <th>Prefixe</th>
                         <th>Cree le</th>
@@ -94,7 +95,7 @@
                         {% set isRevoked = token.revoked_at is not null %}
                         {% set isExpired = (token.expires_at is not null) and (token.expires_at|date('U') <= "now"|date('U')) %}
                         <tr>
-                            <td>{{ token.project_name }} <small class="text-muted d-block">{{ token.slug }}</small></td>
+                            <td>{{ token.domain_name }} <small class="text-muted d-block">{{ token.slug }}</small></td>
                             <td>{{ token.label }}</td>
                             <td><code>{{ token.token_prefix }}</code></td>
                             <td>{{ token.created_at ? token.created_at|date('d/m/Y H:i') : '-' }}</td>

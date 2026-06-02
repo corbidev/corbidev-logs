@@ -1,0 +1,12 @@
+{% set code = status ?? 0 %}
+{% set badgeClass = 'bg-secondary' %}
+
+{% if code >= 500 and code < 600 %}
+    {% set badgeClass = 'bg-danger' %}
+{% elseif code >= 400 and code < 500 %}
+    {% set badgeClass = 'bg-warning text-dark' %}
+{% elseif code >= 200 and code < 400 %}
+    {% set badgeClass = 'bg-success' %}
+{% endif %}
+
+<span class="badge {{ badgeClass }}">{{ status }}</span>

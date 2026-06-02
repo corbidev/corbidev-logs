@@ -1,0 +1,17 @@
+<section class="home-section">
+    <h2 class="home-section-title">Demarrage rapide ingestion</h2>
+    <p class="home-section-lead">
+        Endpoint principal: <strong>POST /api/logs</strong>.
+        Envoyer un payload JSON avec header <strong>Authorization: Bearer &lt;token&gt;</strong>.
+    </p>
+
+    <pre class="home-code">curl -X POST "{{ app.request.schemeAndHttpHost }}/api/logs" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer VOTRE_TOKEN" \
+  -d '{"logs":[{"message":"Erreur checkout","level":"error","domain":"billing"}]}'</pre>
+
+    <p class="home-note">
+        Astuce: en cas d'erreur API, la plateforme renvoie une reponse JSON.
+        En navigation web, une page d'erreur HTML dediee est affichee.
+    </p>
+</section>

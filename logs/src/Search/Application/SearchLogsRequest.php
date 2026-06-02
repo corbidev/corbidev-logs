@@ -16,7 +16,7 @@ final readonly class SearchLogsRequest
         private ?\DateTimeImmutable $toDate = null,
         private ?string $level = null,
         private ?string $domain = null,
-        private ?int $projectId = null,
+        private ?int $domainId = null,
         private ?string $fingerprint = null,
         private ?string $query = null,
     ) {
@@ -52,9 +52,9 @@ final readonly class SearchLogsRequest
         return $this->domain;
     }
 
-    public function getProjectId(): ?int
+    public function getDomainId(): ?int
     {
-        return $this->projectId;
+        return $this->domainId;
     }
 
     public function getFingerprint(): ?string

@@ -375,7 +375,7 @@ final class LogRecordCrashTest extends TestCase
                 'id-' . $i,
             );
 
-            $record->setProjectId(
+            $record->setDomainId(
                 (string) $i,
             );
 
@@ -503,7 +503,7 @@ final class LogRecordCrashTest extends TestCase
             'external-id',
         );
 
-        $record->setProjectId(
+        $record->setDomainId(
             '1',
         );
 

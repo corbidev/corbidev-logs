@@ -11,6 +11,7 @@
                 <p class="admin-subtitle">Supervision des accès et statuts des clients applicatifs.</p>
             </div>
             <div class="d-flex gap-2">
+                <a href="{{ path('admin_domains') }}" class="btn btn-outline-secondary btn-soft">Domaines</a>
                 <a href="{{ path('admin_tokens') }}" class="btn btn-outline-secondary btn-soft">Tokens Bearer</a>
                 <form method="post" action="{{ path('admin_logout') }}">
                     <input type="hidden" name="_token" value="{{ csrf_token('admin_logout') }}">
@@ -26,6 +27,7 @@
                 <thead>
                     <tr>
                         <th>Domaine</th>
+                        <th>Identifiant</th>
                         <th>Statut</th>
                         <th>Actions</th>
                     </tr>
@@ -33,6 +35,7 @@
                 <tbody>
                     {% for c in consumers %}
                     <tr>
+                        <td>{{ domainNamesById[c.domainId]|default('Domaine inconnu') }}</td>
                         <td>{{ c.identifier }}</td>
                         <td>
                             {% if c.active %}

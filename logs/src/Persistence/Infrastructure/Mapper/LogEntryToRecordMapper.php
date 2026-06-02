@@ -87,7 +87,7 @@ final class LogEntryToRecordMapper
      * Mappe un LogEntry vers LogRecord.
      */
     public function map(
-        int $projectId,
+        int $domainId,
         LogEntry $entry,
     ): LogRecord {
         $record = new LogRecord();
@@ -101,8 +101,8 @@ final class LogEntryToRecordMapper
             ),
         );
 
-        $record->setProjectId(
-            (string) $projectId,
+        $record->setDomainId(
+            (string) $domainId,
         );
 
         $record->setFingerprint(

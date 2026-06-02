@@ -25,14 +25,14 @@ final class SearchFiltersTest extends TestCase
             toDate: new \DateTimeImmutable('2026-05-31 23:59:59'),
             level: ' ERROR ',
             domain: ' Billing ',
-            projectId: 7,
+            domainId: 7,
             fingerprint: ' ABCDEF1234567890 ',
         );
 
         self::assertSame('error', $filters->getLevel());
         self::assertSame('billing', $filters->getDomain());
         self::assertSame('abcdef1234567890', $filters->getFingerprint());
-        self::assertSame(7, $filters->getProjectId());
+        self::assertSame(7, $filters->getDomainId());
     }
 
     /**

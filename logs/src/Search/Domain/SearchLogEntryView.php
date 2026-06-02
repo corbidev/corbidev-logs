@@ -12,7 +12,7 @@ final readonly class SearchLogEntryView
     public function __construct(
         private int $id,
         private string $externalId,
-        private int $projectId,
+        private int $domainId,
         private string $level,
         private string $domain,
         private int $httpStatus,
@@ -34,9 +34,9 @@ final readonly class SearchLogEntryView
         return $this->externalId;
     }
 
-    public function getProjectId(): int
+    public function getDomainId(): int
     {
-        return $this->projectId;
+        return $this->domainId;
     }
 
     public function getLevel(): string

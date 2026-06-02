@@ -32,7 +32,7 @@ final readonly class SearchLogsHandler
             toDate: $request->getToDate(),
             level: $request->getLevel(),
             domain: $request->getDomain(),
-            projectId: $request->getProjectId(),
+            domainId: $request->getDomainId(),
             fingerprint: $request->getFingerprint(),
             query: $request->getQuery(),
         );

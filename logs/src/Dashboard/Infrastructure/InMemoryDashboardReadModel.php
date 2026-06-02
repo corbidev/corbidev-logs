@@ -19,7 +19,7 @@ final class InMemoryDashboardReadModel implements DashboardReadModelInterface
     {
         return [
             'total_logs' => 0,
-            'total_projects' => 0,
+            'total_domains' => 0,
             'failed_ingestions' => 0,
         ];
     }

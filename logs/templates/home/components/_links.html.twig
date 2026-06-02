@@ -1,0 +1,43 @@
+<section class="home-section">
+    <h2 class="home-section-title">Liens utiles</h2>
+    <p class="home-section-lead">
+        Raccourcis vers les ecrans les plus utilises pour exploiter la plateforme.
+    </p>
+
+    <div class="home-link-grid">
+        <a class="home-link-card home-link-card--dashboard" href="{{ path('dashboard_logs_index') }}" target="_blank" rel="noopener noreferrer">
+            <h3 class="home-link-title">Dashboard logs</h3>
+            <p class="home-link-text">Consulter et filtrer les logs applicatifs.</p>
+        </a>
+
+        <a class="home-link-card home-link-card--admin" href="{{ path('admin_login') }}" target="_blank" rel="noopener noreferrer">
+            <h3 class="home-link-title">Connexion admin</h3>
+            <p class="home-link-text">Authentification pour acceder aux ecrans d'administration.</p>
+        </a>
+
+        <a class="home-link-card home-link-card--admin" href="{{ path('admin_domains') }}" target="_blank" rel="noopener noreferrer">
+            <h3 class="home-link-title">Domaines</h3>
+            <p class="home-link-text">Creer et activer des domaines metier pour organiser tokens et consumers.</p>
+        </a>
+
+        <a class="home-link-card home-link-card--tokens" href="{{ path('admin_tokens') }}" target="_blank" rel="noopener noreferrer">
+            <h3 class="home-link-title">Tokens API</h3>
+            <p class="home-link-text">Creer, visualiser et revoquer les tokens par domaine.</p>
+        </a>
+
+        <a class="home-link-card home-link-card--consumers" href="{{ path('admin_consumers') }}" target="_blank" rel="noopener noreferrer">
+            <h3 class="home-link-title">Consommateurs JWT</h3>
+            <p class="home-link-text">Piloter les clients JWT et la rotation de secret.</p>
+        </a>
+
+        <a class="home-link-card home-link-card--docs" href="{{ path('app.swagger_ui') }}" target="_blank" rel="noopener noreferrer">
+            <h3 class="home-link-title">Documentation API</h3>
+            <p class="home-link-text">Interface Swagger UI pour tester les endpoints disponibles.</p>
+        </a>
+
+        <a class="home-link-card home-link-card--swagger" href="{{ path('app.swagger_json') }}" target="_blank" rel="noopener noreferrer">
+            <h3 class="home-link-title">Swagger JSON</h3>
+            <p class="home-link-text">Specification OpenAPI en JSON pour les outils externes.</p>
+        </a>
+    </div>
+</section>

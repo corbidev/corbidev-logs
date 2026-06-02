@@ -6,6 +6,7 @@ namespace App\Dashboard\Infrastructure;
 
 use App\Search\Application\SearchLogsHandler;
 use App\Search\Application\SearchLogsRequest;
+use App\Search\Domain\SearchResult;
 use Doctrine\DBAL\Connection;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,6 +26,30 @@ final class DashboardLogsController extends AbstractController
 
     #[Route('/dashboard/logs', name: 'dashboard_logs_index', methods: ['GET'])]
     public function __invoke(Request $request): Response
+    {
+        $viewData = $this->buildLogsViewData($request);
+
+        return $this->render(
+            'dashboard/pages/logs/index.html.twig',
+            $viewData,
+        );
+    }
+
+    #[Route('/dashboard/htmx/logs/list', name: 'dashboard_logs_fragment_list', methods: ['GET'])]
+    public function listFragment(Request $request): Response
+    {
+        $viewData = $this->buildLogsViewData($request);
+
+        return $this->render(
+            'dashboard/partials/logs/_list_region.html.twig',
+            $viewData,
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildLogsViewData(Request $request): array
     {
         $fromDate = $this->parseDate(
             $request->query->get('from_date'),
@@ -50,8 +75,8 @@ final class DashboardLogsController extends AbstractController
             $request->query->get('q'),
         );
 
-        $projectId = $this->parseProjectId(
-            $request->query->get('project_id'),
+        $domainId = $this->parseDomainId(
+            $request->query->get('domain_id'),
         );
 
         $page = max(
@@ -67,19 +92,43 @@ final class DashboardLogsController extends AbstractController
             ),
         );
 
-        $result = $this->searchLogsHandler->handle(
-            new SearchLogsRequest(
-                page: $page,
-                perPage: $perPage,
-                fromDate: $fromDate,
-                toDate: $toDate,
-                level: $level,
-                domain: $domain,
-                projectId: $projectId,
-                fingerprint: $fingerprint,
-                query: $query,
-            ),
+        $searchRequest = new SearchLogsRequest(
+            page: $page,
+            perPage: $perPage,
+            fromDate: $fromDate,
+            toDate: $toDate,
+            level: $level,
+            domain: $domain,
+            domainId: $domainId,
+            fingerprint: $fingerprint,
+            query: $query,
         );
+
+        $result = $this->searchLogsHandler->handle($searchRequest);
+
+        return $this->buildTemplateData(
+            request: $request,
+            result: $result,
+            level: $level,
+            domain: $domain,
+            domainId: $domainId,
+            fingerprint: $fingerprint,
+            query: $query,
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildTemplateData(
+        Request $request,
+        SearchResult $result,
+        ?string $level,
+        ?string $domain,
+        ?int $domainId,
+        ?string $fingerprint,
+        ?string $query,
+    ): array {
 
         $totalPages = max(
             1,
@@ -88,38 +137,44 @@ final class DashboardLogsController extends AbstractController
             ),
         );
 
-        return $this->render(
-            'dashboard/logs.html.twig',
-            [
-                'items' => $result->getItems(),
-                'page' => $result->getPage(),
-                'perPage' => $result->getPerPage(),
-                'totalCount' => $result->getTotalCount(),
-                'totalPages' => $totalPages,
-                'filters' => [
-                    'from_date' => $request->query->get('from_date', ''),
-                    'to_date' => $request->query->get('to_date', ''),
-                    'level' => $level ?? '',
-                    'domain' => $domain ?? '',
-                    'project_id' => $projectId !== null ? (string) $projectId : '',
-                    'fingerprint' => $fingerprint ?? '',
-                    'q' => $query ?? '',
-                ],
-                'levels' => $this->fetchLevels(),
-                'domains' => $this->fetchDomains(),
-                'projects' => $this->fetchProjects(),
-                'paginationParams' => [
-                    'per_page' => $perPage,
-                    'from_date' => $request->query->get('from_date', ''),
-                    'to_date' => $request->query->get('to_date', ''),
-                    'level' => $level ?? '',
-                    'domain' => $domain ?? '',
-                    'project_id' => $projectId !== null ? (string) $projectId : '',
-                    'fingerprint' => $fingerprint ?? '',
-                    'q' => $query ?? '',
-                ],
+        $filtersPanel = strtolower((string) $request->query->get('filters_panel', ''));
+
+        if ($filtersPanel !== 'open') {
+            $filtersPanel = 'closed';
+        }
+
+        return [
+            'items' => $result->getItems(),
+            'page' => $result->getPage(),
+            'perPage' => $result->getPerPage(),
+            'totalCount' => $result->getTotalCount(),
+            'totalPages' => $totalPages,
+            'filtersPanel' => $filtersPanel,
+            'filters' => [
+                'from_date' => $request->query->get('from_date', ''),
+                'to_date' => $request->query->get('to_date', ''),
+                'level' => $level ?? '',
+                'domain' => $domain ?? '',
+                'domain_id' => $domainId !== null ? (string) $domainId : '',
+                'fingerprint' => $fingerprint ?? '',
+                'q' => $query ?? '',
+                'filters_panel' => $filtersPanel,
             ],
-        );
+            'levels' => $this->fetchLevels(),
+            'domains' => $this->fetchDomains(),
+            'tenantDomains' => $this->fetchTenantDomains(),
+            'paginationParams' => [
+                'per_page' => $result->getPerPage(),
+                'from_date' => $request->query->get('from_date', ''),
+                'to_date' => $request->query->get('to_date', ''),
+                'level' => $level ?? '',
+                'domain' => $domain ?? '',
+                'domain_id' => $domainId !== null ? (string) $domainId : '',
+                'fingerprint' => $fingerprint ?? '',
+                'q' => $query ?? '',
+                'filters_panel' => $filtersPanel,
+            ],
+        ];
     }
 
     private function parseDate(mixed $value): ?\DateTimeImmutable
@@ -156,19 +211,19 @@ final class DashboardLogsController extends AbstractController
         return $value;
     }
 
-    private function parseProjectId(mixed $value): ?int
+    private function parseDomainId(mixed $domainValue): ?int
     {
-        if (is_int($value)) {
-            return $value > 0 ? $value : null;
+        if (is_int($domainValue)) {
+            return $domainValue > 0 ? $domainValue : null;
         }
 
-        if (!is_string($value) || !ctype_digit($value)) {
-            return null;
+        if (is_string($domainValue) && ctype_digit($domainValue)) {
+            $domainId = (int) $domainValue;
+
+            return $domainId > 0 ? $domainId : null;
         }
 
-        $projectId = (int) $value;
-
-        return $projectId > 0 ? $projectId : null;
+        return null;
     }
 
     /**
@@ -176,12 +231,16 @@ final class DashboardLogsController extends AbstractController
      */
     private function fetchLevels(): array
     {
-        /** @var array<int, string> $levels */
-        $levels = $this->connection->fetchFirstColumn(
-            "SELECT DISTINCT level FROM logs WHERE level <> '' ORDER BY level ASC",
-        );
+        try {
+            /** @var array<int, string> $levels */
+            $levels = $this->connection->fetchFirstColumn(
+                "SELECT DISTINCT level FROM logs WHERE level <> '' ORDER BY level ASC",
+            );
 
-        return $levels;
+            return $levels;
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /**
@@ -189,24 +248,32 @@ final class DashboardLogsController extends AbstractController
      */
     private function fetchDomains(): array
     {
-        /** @var array<int, string> $domains */
-        $domains = $this->connection->fetchFirstColumn(
-            "SELECT DISTINCT domain FROM logs WHERE domain <> '' ORDER BY domain ASC",
-        );
+        try {
+            /** @var array<int, string> $domains */
+            $domains = $this->connection->fetchFirstColumn(
+                "SELECT slug FROM domains WHERE slug <> '' ORDER BY slug ASC",
+            );
 
-        return $domains;
+            return $domains;
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /**
      * @return array<int, array{id: int, name: string, slug: string}>
      */
-    private function fetchProjects(): array
+    private function fetchTenantDomains(): array
     {
-        /** @var array<int, array{id: int, name: string, slug: string}> $projects */
-        $projects = $this->connection->fetchAllAssociative(
-            'SELECT id, name, slug FROM projects ORDER BY name ASC',
-        );
+        try {
+            /** @var array<int, array{id: int, name: string, slug: string}> $domains */
+            $domains = $this->connection->fetchAllAssociative(
+                'SELECT id, name, slug FROM domains ORDER BY name ASC',
+            );
 
-        return $projects;
+            return $domains;
+        } catch (\Throwable) {
+            return [];
+        }
     }
 }

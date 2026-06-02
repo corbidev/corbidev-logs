@@ -1,0 +1,76 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}CorbiDev Logs - Accueil{% endblock %}
+
+{% block stylesheets %}
+    <script>
+        (function () {
+            try {
+                var cookie = document.cookie.match(/(?:^|; )theme=([^;]+)/);
+                var mode = localStorage.getItem('theme') || (cookie ? cookie[1] : '');
+
+                if (!mode) {
+                    mode = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                }
+
+                document.documentElement.classList.toggle('dark', mode === 'dark');
+            } catch (error) {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="{{ asset('build/home.css') }}">
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        (function () {
+            var root = document.documentElement;
+
+            document.addEventListener('DOMContentLoaded', function () {
+                var toggle = document.getElementById('theme-toggle');
+                var moonIcon = document.getElementById('theme-icon-moon');
+                var sunIcon = document.getElementById('theme-icon-sun');
+
+                if (!toggle) {
+                    return;
+                }
+
+                var updateState = function () {
+                    var dark = root.classList.contains('dark');
+                    toggle.setAttribute('aria-pressed', dark ? 'true' : 'false');
+                    toggle.setAttribute('aria-label', dark ? 'Activer le mode clair' : 'Activer le mode sombre');
+                    toggle.setAttribute('title', dark ? 'Activer le mode clair' : 'Activer le mode sombre');
+
+                    if (moonIcon && sunIcon) {
+                        moonIcon.classList.toggle('is-hidden', dark);
+                        sunIcon.classList.toggle('is-hidden', !dark);
+                    }
+                };
+
+                updateState();
+
+                toggle.addEventListener('click', function () {
+                    root.classList.toggle('dark');
+
+                    var mode = root.classList.contains('dark') ? 'dark' : 'light';
+                    localStorage.setItem('theme', mode);
+                    document.cookie = 'theme=' + mode + ';path=/;max-age=31536000;SameSite=Lax';
+
+                    updateState();
+                });
+            });
+        })();
+    </script>
+{% endblock %}
+
+{% block body %}
+    <main class="home-page">
+        <div class="home-shell">
+            {% include 'home/components/_hero.html.twig' %}
+            {% include 'home/components/_links.html.twig' %}
+            {% include 'home/components/_quickstart.html.twig' %}
+            {% include 'home/components/_footer.html.twig' %}
+        </div>
+    </main>
+{% endblock %}

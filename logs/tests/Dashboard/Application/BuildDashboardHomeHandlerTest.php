@@ -30,7 +30,7 @@ final class BuildDashboardHomeHandlerTest extends TestCase
             ->method('getGlobalCounters')
             ->willReturn([
                 'total_logs' => 120,
-                'total_projects' => 4,
+            'total_domains' => 4,
                 'failed_ingestions' => 2,
             ]);
 
@@ -41,7 +41,7 @@ final class BuildDashboardHomeHandlerTest extends TestCase
         $result = $handler->handle();
 
         self::assertSame(120, $result['total_logs']);
-        self::assertSame(4, $result['total_projects']);
+        self::assertSame(4, $result['total_domains']);
         self::assertSame(2, $result['failed_ingestions']);
     }
 }

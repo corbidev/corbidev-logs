@@ -48,7 +48,7 @@ final readonly class CreateApiTokenHandler
 
             $this->repository->store(
                 new ApiTokenToStore(
-                    projectId: $request->getProjectId(),
+                    domainId: $request->getDomainId(),
                     tokenHash: $tokenHash,
                     tokenPrefix: $tokenPrefix,
                     label: $request->getLabel(),

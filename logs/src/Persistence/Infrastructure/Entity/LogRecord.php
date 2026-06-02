@@ -47,8 +47,8 @@ use Doctrine\ORM\Mapping as ORM;
     name: 'logs',
     indexes: [
         new ORM\Index(
-            name: 'idx_logs_project_id',
-            columns: ['project_id'],
+            name: 'idx_logs_domain_id',
+            columns: ['domain_id'],
         ),
 
         new ORM\Index(
@@ -82,18 +82,18 @@ use Doctrine\ORM\Mapping as ORM;
         ),
 
         new ORM\Index(
-            name: 'idx_logs_project_created',
-            columns: ['project_id', 'created_at'],
+            name: 'idx_logs_domain_created',
+            columns: ['domain_id', 'created_at'],
         ),
 
         new ORM\Index(
-            name: 'idx_logs_project_fingerprint',
-            columns: ['project_id', 'fingerprint'],
+            name: 'idx_logs_domain_fingerprint',
+            columns: ['domain_id', 'fingerprint'],
         ),
 
         new ORM\Index(
-            name: 'idx_logs_project_request',
-            columns: ['project_id', 'request_id'],
+            name: 'idx_logs_domain_request',
+            columns: ['domain_id', 'request_id'],
         ),
     ],
 
@@ -131,16 +131,16 @@ class LogRecord
     private string $externalId;
 
     /**
-     * Projet propriétaire.
+     * Domaine propriétaire.
      */
     #[ORM\Column(
-        name: 'project_id',
+        name: 'domain_id',
         type: Types::BIGINT,
         options: [
             'unsigned' => true,
         ],
     )]
-    private string $projectId;
+    private string $domainId;
 
     /**
      * Fingerprint calculé serveur.
@@ -365,20 +365,20 @@ class LogRecord
     }
 
     /**
-     * Retourne le projet.
+     * Retourne le domaine.
      */
-    public function getProjectId(): string
+    public function getDomainId(): string
     {
-        return $this->projectId;
+        return $this->domainId;
     }
 
     /**
-     * Définit le projet.
+     * Définit le domaine.
      */
-    public function setProjectId(
-        string $projectId,
+    public function setDomainId(
+        string $domainId,
     ): void {
-        $this->projectId = $projectId;
+        $this->domainId = $domainId;
     }
 
     /**

@@ -15,16 +15,20 @@ class ApiConsumer
     #[ORM\Column(unique: true)]
     private string $identifier;
 
+    #[ORM\Column(name: 'domain_id')]
+    private int $domainId;
+
     #[ORM\Column]
     private string $passwordHash;
 
     #[ORM\Column]
     private bool $active = true;
 
-    public function __construct(string $identifier, string $passwordHash)
+    public function __construct(string $identifier, string $passwordHash, int $domainId)
     {
         $this->identifier = $identifier;
         $this->passwordHash = $passwordHash;
+        $this->domainId = $domainId;
         $this->active = true;
     }
 
@@ -41,6 +45,16 @@ class ApiConsumer
     public function getPasswordHash(): string
     {
         return $this->passwordHash;
+    }
+
+    public function getDomainId(): int
+    {
+        return $this->domainId;
+    }
+
+    public function setDomainId(int $domainId): void
+    {
+        $this->domainId = $domainId;
     }
 
     public function setPasswordHash(string $password): void

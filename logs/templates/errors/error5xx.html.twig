@@ -1,0 +1,22 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Erreur {{ status_code }}{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('build/errors.css') }}">
+{% endblock %}
+
+{% block body %}
+<main class="error-page error-page-5xx">
+    <section class="error-card">
+        <p class="error-kicker">Erreur serveur</p>
+        <h1 class="error-title">Erreur {{ status_code }}</h1>
+        <p class="error-status">{{ status_text }}</p>
+        <p class="error-message">{{ message }}</p>
+        <p class="error-actions">
+            <a href="{{ path('home_index') }}" class="error-home-link">Retour a l'accueil</a>
+        </p>
+        <p class="error-path">Chemin: {{ path }}</p>
+    </section>
+</main>
+{% endblock %}

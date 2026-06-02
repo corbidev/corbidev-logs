@@ -21,7 +21,7 @@ final class CreateApiTokenHandlerTest extends TestCase
     /**
      * But : Vérifier que le handler génère un token opaque et persiste uniquement son hash.
      *
-     * Entrée : Request valide (projectId=1, label='CI token').
+     * Entrée : Request valide (domainId=1, label='CI token').
      * Résultat attendu : token clair retourné, hash persisté, préfixe stable sur 12 caractères.
      */
     public function testHandleGeneratesOpaqueTokenAndStoresHashOnly(): void
@@ -58,7 +58,7 @@ final class CreateApiTokenHandlerTest extends TestCase
             ->with(
                 self::callback(
                     static function (ApiTokenToStore $tokenToStore) use ($hash): bool {
-                        return $tokenToStore->getProjectId() === 1
+                    return $tokenToStore->getDomainId() === 1
                             && $tokenToStore->getLabel() === 'CI token'
                             && $tokenToStore->getTokenHash() === $hash
                             && $tokenToStore->getTokenPrefix() === 'cbi_abcdef12';
@@ -74,7 +74,7 @@ final class CreateApiTokenHandlerTest extends TestCase
 
         $result = $handler->handle(
             new CreateApiTokenRequest(
-                projectId: 1,
+                domainId: 1,
                 label: 'CI token',
             ),
         );

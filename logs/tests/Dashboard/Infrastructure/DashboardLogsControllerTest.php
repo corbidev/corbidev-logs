@@ -109,6 +109,45 @@ final class DashboardLogsControllerTest extends WebTestCase
         self::assertSame(200, $repository->lastPerPage);
     }
 
+    /**
+     * But : Vérifier que la route fragment HTMX retourne un HTML partiel exploitable.
+     *
+     * Entrée : GET /dashboard/htmx/logs/list?page=1&per_page=2 avec header HX-Request.
+     * Résultat attendu : HTTP 200, fragment contenant la région de liste et les logs.
+     */
+    public function testItReturnsHtmlFragmentForHtmxListRoute(): void
+    {
+        $client = $this->createClientWithFakeSearchRepository();
+
+        $client->request(
+            'GET',
+            '/dashboard/htmx/logs/list?page=1&per_page=2',
+            server: [
+                'HTTP_HX_REQUEST' => 'true',
+            ],
+        );
+
+        $response = $client->getResponse();
+
+        self::assertSame(
+            Response::HTTP_OK,
+            $response->getStatusCode(),
+        );
+
+        self::assertTrue(
+            $response->headers->contains(
+                'content-type',
+                'text/html; charset=UTF-8',
+            ),
+        );
+
+        $content = $response->getContent() ?: '';
+
+        self::assertStringContainsString('id="logs-list-region"', $content);
+        self::assertStringContainsString('Page 1 / 3', $content);
+        self::assertStringContainsString('ext-1', $content);
+    }
+
     private function createClientWithFakeSearchRepository(): KernelBrowser
     {
         $client = static::createClient();
@@ -147,9 +186,13 @@ final class FakeDashboardSearchRepository implements SearchLogRepositoryInterfac
             $items[] = new SearchLogEntryView(
                 id: $index,
                 externalId: 'ext-' . $index,
-                projectId: 1,
+                domainId: 1,
                 level: 'error',
                 domain: 'billing',
+                httpStatus: 500,
+                uri: '/api/invoices',
+                requestId: 'req-' . $index,
+                fingerprint: 'aabbccddeeff00' . str_pad((string) ($index % 100), 2, '0', STR_PAD_LEFT),
                 message: 'Message ' . $index,
                 createdAt: new \DateTimeImmutable('2026-05-25 12:00:00'),
             );

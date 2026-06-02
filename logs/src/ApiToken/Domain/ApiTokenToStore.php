@@ -11,15 +11,15 @@ namespace App\ApiToken\Domain;
 final readonly class ApiTokenToStore
 {
     public function __construct(
-        private int $projectId,
+        private int $domainId,
         private string $tokenHash,
         private ?string $tokenPrefix,
         private string $label,
         private ?\DateTimeImmutable $expiresAt,
     ) {
-        if ($this->projectId <= 0) {
+        if ($this->domainId <= 0) {
             throw new \InvalidArgumentException(
-                'Project id must be positive.',
+                'Domain id must be positive.',
             );
         }
 
@@ -36,9 +36,9 @@ final readonly class ApiTokenToStore
         }
     }
 
-    public function getProjectId(): int
+    public function getDomainId(): int
     {
-        return $this->projectId;
+        return $this->domainId;
     }
 
     public function getTokenHash(): string

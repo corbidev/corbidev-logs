@@ -14,10 +14,21 @@
 
         <form method="post" id="consumer-create-form" novalidate>
             <input type="hidden" name="_token" value="{{ csrf_token('admin_consumer_create') }}">
+
+            <label class="form-label fw-semibold">Domaine</label>
+            <select class="form-select mb-2" name="domain_id" required>
+                <option value="">Selectionner...</option>
+                {% for domain in domains %}
+                    <option value="{{ domain.id }}" {% if domain_id|default('') == (domain.id ~ '') %}selected{% endif %}>
+                        {{ domain.name }} ({{ domain.slug }})
+                    </option>
+                {% endfor %}
+            </select>
+
             <input class="form-control mb-2" name="identifier" placeholder="app.client.fr" value="{{ identifier|default('') }}" required>
             <input class="form-control mb-2" type="password" name="password" id="create-password" placeholder="Mot de passe" required>
             <input class="form-control mb-1" type="password" name="password_confirm" id="create-password-confirm" placeholder="Recopier le mot de passe" required>
-            <div class="invalid-feedback d-block mb-3" id="create-password-feedback" style="display: none !important;">
+            <div class="invalid-feedback d-block mb-3 password-feedback-hidden" id="create-password-feedback">
                 Les mots de passe ne correspondent pas.
             </div>
             <div class="d-flex gap-2">
@@ -41,7 +52,7 @@
         function validateMatch() {
             const mismatch = password.value !== confirm.value;
             confirm.setCustomValidity(mismatch ? 'Les mots de passe ne correspondent pas.' : '');
-            feedback.style.display = mismatch ? 'block' : 'none';
+            feedback.classList.toggle('password-feedback-hidden', !mismatch);
             confirm.classList.toggle('is-invalid', mismatch);
         }
 

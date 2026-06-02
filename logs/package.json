@@ -1,0 +1,13 @@
+{
+  "name": "corbidev-logs-front",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Build Sass local pour la landing page",
+  "scripts": {
+    "build:css": "sass ./assets/styles/home.scss:./public/build/home.css ./assets/styles/dashboard.scss:./public/build/dashboard.css ./assets/styles/admin.scss:./public/build/admin.css ./assets/styles/errors.scss:./public/build/errors.css ./assets/styles/default.scss:./public/build/default.css --style=compressed --source-map",
+    "watch:css": "sass ./assets/styles/home.scss:./public/build/home.css ./assets/styles/dashboard.scss:./public/build/dashboard.css ./assets/styles/admin.scss:./public/build/admin.css ./assets/styles/errors.scss:./public/build/errors.css ./assets/styles/default.scss:./public/build/default.css --watch --style=expanded"
+  },
+  "devDependencies": {
+    "sass": "^1.90.0"
+  }
+}

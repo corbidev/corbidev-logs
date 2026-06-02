@@ -1,0 +1,25 @@
+<nav class="d-flex gap-2 mt-3">
+    {% if page > 1 %}
+        <a
+            class="btn btn-outline-secondary btn-soft"
+            href="{{ path('dashboard_logs_index', paginationParams|merge({'page': page - 1})) }}"
+            hx-get="{{ path('dashboard_logs_fragment_list', paginationParams|merge({'page': page - 1})) }}"
+            hx-target="#logs-list-region"
+            hx-swap="outerHTML"
+            hx-push-url="true"
+            hx-indicator="#logs-loading-indicator"
+        >Page precedente</a>
+    {% endif %}
+
+    {% if page < totalPages %}
+        <a
+            class="btn btn-outline-secondary btn-soft"
+            href="{{ path('dashboard_logs_index', paginationParams|merge({'page': page + 1})) }}"
+            hx-get="{{ path('dashboard_logs_fragment_list', paginationParams|merge({'page': page + 1})) }}"
+            hx-target="#logs-list-region"
+            hx-swap="outerHTML"
+            hx-push-url="true"
+            hx-indicator="#logs-loading-indicator"
+        >Page suivante</a>
+    {% endif %}
+</nav>

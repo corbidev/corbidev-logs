@@ -25,11 +25,11 @@ final class InMemoryDashboardReadModelTest extends TestCase
         $counters = $model->getGlobalCounters();
 
         self::assertArrayHasKey('total_logs', $counters);
-        self::assertArrayHasKey('total_projects', $counters);
+        self::assertArrayHasKey('total_domains', $counters);
         self::assertArrayHasKey('failed_ingestions', $counters);
 
         self::assertSame(0, $counters['total_logs']);
-        self::assertSame(0, $counters['total_projects']);
+        self::assertSame(0, $counters['total_domains']);
         self::assertSame(0, $counters['failed_ingestions']);
     }
 }

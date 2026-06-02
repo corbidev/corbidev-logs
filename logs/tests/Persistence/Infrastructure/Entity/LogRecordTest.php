@@ -62,22 +62,22 @@ final class LogRecordTest extends TestCase
     }
 
     /**
-     * But : Vérifier que setProjectId()/getProjectId() stocke et retourne la valeur.
+     * But : Vérifier que setDomainId()/getDomainId() stocke et retourne la valeur.
      *
      * Entrée : '42'
-     * Résultat attendu : getProjectId() = '42'
+     * Résultat attendu : getDomainId() = '42'
      */
-    public function testItStoresProjectId(): void
+    public function testItStoresDomainId(): void
     {
         $record = new LogRecord();
 
-        $record->setProjectId(
+        $record->setDomainId(
             '42',
         );
 
         self::assertSame(
             '42',
-            $record->getProjectId(),
+            $record->getDomainId(),
         );
     }
 
@@ -628,7 +628,7 @@ final class LogRecordTest extends TestCase
             'external-id',
         );
 
-        $record->setProjectId(
+        $record->setDomainId(
             '1',
         );
 

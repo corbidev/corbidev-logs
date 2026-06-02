@@ -27,4 +27,5 @@ logs/tests
 logs/config/jwt
 logs/postman
 logs/public/bundles/
+logs/assets
 
